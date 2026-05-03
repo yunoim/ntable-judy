@@ -1,8 +1,9 @@
 // middleware.ts — 세션 쿠키 기반 가드 (role 체크는 페이지/API 단위)
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/origin";
 
 export function middleware(req: NextRequest) {
-  const APP_URL = process.env.APP_URL || req.nextUrl.origin;
+  const APP_URL = publicOrigin(req);
   const session = req.cookies.get("session")?.value;
   const { pathname } = req.nextUrl;
 

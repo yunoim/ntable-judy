@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { SESSION_COOKIE } from "@/lib/auth";
+import { publicOrigin } from "@/lib/origin";
 
 export async function POST(req: Request) {
   const c = await cookies();
@@ -10,7 +11,9 @@ export async function POST(req: Request) {
     await prisma.session.deleteMany({ where: { token } }).catch(() => {});
   }
   c.delete(SESSION_COOKIE);
-  return NextResponse.redirect(new URL("/login", req.url), { status: 303 });
+  return NextResponse.redirect(new URL("/login", publicOrigin(req)), {
+    status: 303,
+  });
 }
 
 export async function GET(req: Request) {

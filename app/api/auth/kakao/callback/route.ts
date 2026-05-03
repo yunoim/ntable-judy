@@ -3,12 +3,13 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/auth";
+import { publicOrigin } from "@/lib/origin";
 
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
 const KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me";
 
 export async function GET(req: Request) {
-  const APP_URL = process.env.APP_URL || new URL(req.url).origin;
+  const APP_URL = publicOrigin(req);
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
