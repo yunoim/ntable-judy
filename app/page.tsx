@@ -1,38 +1,78 @@
-// app/page.tsx — 03 A 홈 대시보드 (타임라인 리스트형)
+// app/page.tsx — 홈 (Prisma 동적)
 import Link from "next/link";
-import { MOCK_DATES, USERS, dDay, avgStars } from "@/lib/data";
 import { Avatar, Card, Pill, PhotoSlot, Stars, TabBar } from "@/components/ui";
+import {
+  getNextDate,
+  getPastDates,
+  getActiveUsers,
+  getDoneCount,
+  avgStarsByUserId,
+} from "@/lib/db";
+import { dDay } from "@/lib/data";
 
-export default function HomePage() {
-  const next = MOCK_DATES.find((d) => d.status === "planned");
-  const past = MOCK_DATES.filter((d) => d.status === "done").slice(0, 5);
-  const judyAvg = avgStars("judy");
-  const meAvg = avgStars("me");
-  const totalDates = MOCK_DATES.filter((d) => d.status === "done").length;
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [next, past, users, totalDates] = await Promise.all([
+    getNextDate(),
+    getPastDates(5),
+    getActiveUsers(),
+    getDoneCount(),
+  ]);
+
+  const userStars = await Promise.all(
+    users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
+  );
+  const fox = userStars.find((u) => u.role === "admin") ?? userStars[0];
+  const bunny = userStars.find((u) => u.role === "approved") ?? userStars[1];
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* sticky header */}
       <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur border-b border-fg/15 px-4 pt-3 pb-3 safe-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Avatar user={USERS.judy} size="sm" variant="warm" />
-            <Avatar user={USERS.me} size="sm" variant="dark" />
+            {bunny ? (
+              <Avatar
+                user={{ name: bunny.nickname, emoji: bunny.emoji ?? "🐰" }}
+                size="sm"
+                variant="warm"
+              />
+            ) : (
+              <Avatar user={{ name: "?", emoji: "🐰" }} size="sm" variant="warm" />
+            )}
+            {fox && (
+              <Avatar
+                user={{ name: fox.nickname, emoji: fox.emoji ?? "🦊" }}
+                size="sm"
+                variant="dark"
+              />
+            )}
             <div className="ml-1">
-              <p className="font-display text-base">주디 & 도현</p>
-              <p className="text-[11px] text-fg-faint">D+247 · 데이트 {totalDates}회</p>
+              <p className="font-display text-base">
+                {bunny?.nickname ?? "초대 대기"} & {fox?.nickname ?? "?"}
+              </p>
+              <p className="text-[11px] text-fg-faint">데이트 {totalDates}회</p>
             </div>
           </div>
-          <Link href="/settings" className="text-fg-faint text-sm">⚙</Link>
+          <Link href="/settings" className="text-fg-faint text-sm">
+            ⚙
+          </Link>
         </div>
         <div className="flex gap-2 mt-2">
-          <Pill>🐰 {judyAvg} ★</Pill>
-          <Pill>🦊 {meAvg} ★</Pill>
+          {bunny && (
+            <Pill>
+              {bunny.emoji ?? "🐰"} {bunny.avg} ★
+            </Pill>
+          )}
+          {fox && (
+            <Pill>
+              {fox.emoji ?? "🦊"} {fox.avg} ★
+            </Pill>
+          )}
         </div>
       </header>
 
       <main className="flex-1 px-4 py-3 space-y-4 pb-24">
-        {/* D-Day card */}
         {next && (
           <Link href={`/dates/${next.id}`} className="block">
             <Card variant="dark" className="space-y-2">
@@ -57,9 +97,11 @@ export default function HomePage() {
                 <Pill className="!border-accent-soft !text-accent-soft">
                   {next.plan.stops.length} stops
                 </Pill>
-                <Pill className="!border-accent-soft !text-accent-soft">
-                  ~ ₩{next.estimatedCost?.toLocaleString()}
-                </Pill>
+                {next.estimatedCost ? (
+                  <Pill className="!border-accent-soft !text-accent-soft">
+                    ~ ₩{next.estimatedCost.toLocaleString()}
+                  </Pill>
+                ) : null}
               </div>
             </Card>
           </Link>
@@ -71,11 +113,9 @@ export default function HomePage() {
 
         <ul className="space-y-3">
           {past.map((d) => {
-            const judyR = d.reviews.find((r) => r.userId === "judy");
-            const meR = d.reviews.find((r) => r.userId === "me");
-            const avg =
-              ((judyR?.stars ?? 0) + (meR?.stars ?? 0)) /
-              ((judyR ? 1 : 0) + (meR ? 1 : 0) || 1);
+            const avg = d.reviews.length
+              ? d.reviews.reduce((s, r) => s + r.stars, 0) / d.reviews.length
+              : 0;
             return (
               <li key={d.id}>
                 <Link href={`/dates/${d.id}`}>
@@ -107,7 +147,6 @@ export default function HomePage() {
         </ul>
       </main>
 
-      {/* FAB */}
       <Link
         href="/plan/new"
         className="fixed bottom-20 right-4 z-30 bg-ink-card text-bg rounded-card px-4 py-3 text-sm font-semibold shadow-lg"

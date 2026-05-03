@@ -15,6 +15,7 @@ const config: Config = {
         "accent-soft": "var(--accent-soft)",
         "ink-card": "var(--ink-card)",
         kakao: "var(--kakao)",
+        rain: "var(--rain)",
       },
       fontFamily: {
         display: ["var(--font-display)", "serif"],

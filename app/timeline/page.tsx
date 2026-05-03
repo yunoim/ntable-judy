@@ -1,14 +1,16 @@
 // app/timeline/page.tsx — 06 B 달력 + 다음 데이트
 import Link from "next/link";
-import { MOCK_DATES, dDay } from "@/lib/data";
+import { getAllDates } from "@/lib/db";
+import { dDay } from "@/lib/data";
 import { TabBar, Card } from "@/components/ui";
+
+export const dynamic = "force-dynamic";
 
 const KO_WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
 function buildMonth(year: number, month: number) {
-  // month: 0-indexed
   const first = new Date(year, month, 1);
-  const startOffset = first.getDay(); // 0 = Sun
+  const startOffset = first.getDay();
   const last = new Date(year, month + 1, 0).getDate();
   const cells: Array<{ day: number | null }> = [];
   for (let i = 0; i < startOffset; i++) cells.push({ day: null });
@@ -17,19 +19,20 @@ function buildMonth(year: number, month: number) {
   return cells;
 }
 
-export default function TimelinePage() {
+export default async function TimelinePage() {
+  const dates = await getAllDates();
+
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
   const cells = buildMonth(year, month);
 
-  // dates falling in current month
-  const inMonth = MOCK_DATES.filter((d) => {
+  const inMonth = dates.filter((d) => {
     const dt = new Date(d.scheduledAt);
     return dt.getFullYear() === year && dt.getMonth() === month;
   });
 
-  const dateByDay = new Map<number, (typeof MOCK_DATES)[number]>();
+  const dateByDay = new Map<number, (typeof dates)[number]>();
   inMonth.forEach((d) => {
     const dt = new Date(d.scheduledAt);
     dateByDay.set(dt.getDate(), d);
@@ -37,17 +40,17 @@ export default function TimelinePage() {
 
   const todayDate =
     dateByDay.get(today.getDate()) ??
-    MOCK_DATES.find(
+    dates.find(
       (d) =>
-        new Date(d.scheduledAt).toDateString() === today.toDateString()
+        new Date(d.scheduledAt).toDateString() === today.toDateString(),
     );
 
-  const nextPlanned = MOCK_DATES.filter(
-    (d) => d.status === "planned" && new Date(d.scheduledAt) > today
-  ).sort(
-    (a, b) =>
-      new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-  )[0];
+  const nextPlanned = dates
+    .filter((d) => d.status === "planned" && new Date(d.scheduledAt) > today)
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    )[0];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -69,18 +72,13 @@ export default function TimelinePage() {
       </header>
 
       <section className="px-4 py-3">
-        {/* day headers */}
         <div className="grid grid-cols-7 gap-1.5 mb-1">
           {KO_WEEK.map((d) => (
-            <div
-              key={d}
-              className="text-[10px] text-fg-faint text-center"
-            >
+            <div key={d} className="text-[10px] text-fg-faint text-center">
               {d}
             </div>
           ))}
         </div>
-        {/* cells */}
         <div className="grid grid-cols-7 gap-1.5">
           {cells.map((c, i) => {
             const isToday = c.day === today.getDate();
@@ -93,9 +91,7 @@ export default function TimelinePage() {
                 href={dRec ? `/dates/${dRec.id}` : "#"}
                 className={[
                   "aspect-square rounded-lg border flex flex-col items-center justify-center",
-                  isToday
-                    ? "border-accent border-2"
-                    : "border-fg/15",
+                  isToday ? "border-accent border-2" : "border-fg/15",
                   done ? "bg-bg-warm" : "",
                   planned ? "border-dashed" : "",
                   !c.day ? "opacity-0 pointer-events-none" : "",

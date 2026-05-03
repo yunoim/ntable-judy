@@ -1,8 +1,8 @@
-// app/api/plan/generate/route.ts — Claude로 코스 생성
+// app/api/plan/generate/route.ts — Claude로 코스 생성 + DB 저장
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-// Claude Code: replace MOCK_DATES with prisma write
-import { MOCK_DATES, type DatePlan } from "@/lib/data";
+import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 const client = new Anthropic();
 
@@ -21,7 +21,31 @@ const SYSTEM = `당신은 서울 데이트 코스 플래너입니다. 사용자 
 - 동선 효율적으로.
 - mapQuery는 네이버 지도에 그대로 검색 가능한 문자열.`;
 
+type ParsedStop = {
+  time: string;
+  name: string;
+  address?: string;
+  type?: string;
+  cost?: number;
+  mapQuery: string;
+  reservationUrl?: string | null;
+};
+
+type Parsed = {
+  title?: string;
+  area?: string;
+  stops: ParsedStop[];
+  estimatedTotal?: number;
+  summary?: string;
+};
+
 export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "unauth" }, { status: 401 });
+  if (!["admin", "approved"].includes(user.role)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
   const { prompt } = await req.json();
   if (!prompt?.trim()) {
     return NextResponse.json({ error: "empty_prompt" }, { status: 400 });
@@ -34,32 +58,58 @@ export async function POST(req: Request) {
     messages: [{ role: "user", content: prompt }],
   });
 
-  const text =
-    msg.content[0].type === "text" ? msg.content[0].text : "";
+  const text = msg.content[0]?.type === "text" ? msg.content[0].text : "";
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
-    return NextResponse.json({ error: "parse_failed", raw: text }, { status: 500 });
+    return NextResponse.json(
+      { error: "parse_failed", raw: text },
+      { status: 500 },
+    );
   }
 
-  const parsed = JSON.parse(jsonMatch[0]) as DatePlan & {
-    title: string;
-    area: string;
-  };
+  let parsed: Parsed;
+  try {
+    parsed = JSON.parse(jsonMatch[0]);
+  } catch {
+    return NextResponse.json(
+      { error: "parse_failed", raw: text },
+      { status: 500 },
+    );
+  }
 
-  // Claude Code: replace with prisma.date.create({ ... })
-  const id = `d${Date.now()}`;
-  MOCK_DATES.unshift({
-    id,
-    number: MOCK_DATES.length + 1,
-    title: parsed.title ?? "새 데이트",
-    scheduledAt: new Date().toISOString(),
-    area: parsed.area ?? "",
-    status: "planned",
-    estimatedCost: parsed.estimatedTotal,
-    plan: parsed,
-    tags: [],
-    reviews: [],
+  const max = await prisma.date.aggregate({ _max: { number: true } });
+  const nextNumber = (max._max.number ?? 0) + 1;
+
+  const date = await prisma.date.create({
+    data: {
+      number: nextNumber,
+      title: parsed.title ?? "새 데이트",
+      area: parsed.area ?? "",
+      scheduledAt: new Date(),
+      status: "planned",
+      estimatedCost: parsed.estimatedTotal,
+      summary: parsed.summary,
+      aiInput: prompt,
+      aiResponseRaw: text,
+      createdById: user.id,
+    },
   });
 
-  return NextResponse.json({ id });
+  if (parsed.stops?.length) {
+    await prisma.stop.createMany({
+      data: parsed.stops.map((s, idx) => ({
+        dateId: date.id,
+        stepOrder: idx + 1,
+        time: s.time,
+        name: s.name,
+        address: s.address ?? null,
+        type: s.type ?? null,
+        cost: s.cost ?? 0,
+        mapQuery: s.mapQuery ?? s.name,
+        reservationUrl: s.reservationUrl ?? null,
+      })),
+    });
+  }
+
+  return NextResponse.json({ id: date.id });
 }

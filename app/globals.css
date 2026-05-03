@@ -13,6 +13,7 @@
   --accent-soft: #E8D4B8;
   --ink-card: #2C2017;
   --kakao: #FEE500;
+  --rain: #7A9BAE;
 }
 
 html, body {
@@ -42,3 +43,22 @@ html, body {
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 .animate-fade-in { animation: fadeIn 200ms ease-out; }
+
+/* Rain background — used on date detail when weather === "rain" */
+.rain-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.raindrop {
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(122, 155, 174, 0.35));
+  animation: rain-fall linear infinite;
+  top: -100px;
+}
+@keyframes rain-fall {
+  to { transform: translateY(110vh); }
+}
