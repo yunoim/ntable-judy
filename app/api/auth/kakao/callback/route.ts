@@ -8,6 +8,7 @@ const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token";
 const KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me";
 
 export async function GET(req: Request) {
+  const APP_URL = process.env.APP_URL || new URL(req.url).origin;
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
@@ -18,10 +19,10 @@ export async function GET(req: Request) {
   c.delete("kakao_oauth_state");
 
   if (kError) {
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(kError)}`, req.url));
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(kError)}`, APP_URL));
   }
   if (!code || !state || !cookieState || state !== cookieState) {
-    return NextResponse.redirect(new URL("/login?error=state", req.url));
+    return NextResponse.redirect(new URL("/login?error=state", APP_URL));
   }
 
   try {
@@ -97,7 +98,7 @@ export async function GET(req: Request) {
     }
 
     if (user.role === "rejected") {
-      return NextResponse.redirect(new URL("/login?error=rejected", req.url));
+      return NextResponse.redirect(new URL("/login?error=rejected", APP_URL));
     }
 
     const token = crypto.randomBytes(48).toString("hex");
@@ -124,11 +125,11 @@ export async function GET(req: Request) {
     });
 
     if (user.role === "pending") {
-      return NextResponse.redirect(new URL("/pending", req.url));
+      return NextResponse.redirect(new URL("/pending", APP_URL));
     }
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", APP_URL));
   } catch (err) {
     console.error("[kakao callback] FATAL", err);
-    return NextResponse.redirect(new URL("/login?error=server", req.url));
+    return NextResponse.redirect(new URL("/login?error=server", APP_URL));
   }
 }

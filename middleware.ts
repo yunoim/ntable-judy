@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
+  const APP_URL = process.env.APP_URL || req.nextUrl.origin;
   const session = req.cookies.get("session")?.value;
   const { pathname } = req.nextUrl;
 
@@ -13,10 +14,10 @@ export function middleware(req: NextRequest) {
     pathname === "/robots.txt";
 
   if (!session && !isPublic) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/login", APP_URL));
   }
   if (session && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", APP_URL));
   }
   return NextResponse.next();
 }
