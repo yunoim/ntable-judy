@@ -1,6 +1,8 @@
 // app/dates/[id]/page.tsx — 데이트 상세 (date_schedule_v4 기반)
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDateById, getAllDates } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
 import Rain from "@/components/Rain";
 
@@ -30,10 +32,13 @@ export default async function DateDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const date = await getDateById(id);
+  const [date, me, all] = await Promise.all([
+    getDateById(id),
+    getCurrentUser(),
+    getAllDates(),
+  ]);
   if (!date) notFound();
-
-  const all = await getAllDates();
+  const canEdit = !!me && ["admin", "approved"].includes(me.role);
   const history = all
     .filter((d) => d.number <= date.number && d.historyLabel)
     .sort((a, b) => a.number - b.number)
@@ -53,6 +58,16 @@ export default async function DateDetailPage({
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       {date.weather === "rain" && <Rain />}
+
+      {canEdit && (
+        <Link
+          href={`/dates/${date.id}/edit`}
+          className="absolute top-3 right-3 z-20 text-[11px] text-fg-faint border border-fg/20 rounded-full px-2.5 py-1 bg-bg/80 backdrop-blur"
+          aria-label="편집"
+        >
+          ✏ 편집
+        </Link>
+      )}
 
       <main className="relative z-10 px-5 pt-10 pb-24 w-full flex-1">
         <header className="text-center mb-8">
