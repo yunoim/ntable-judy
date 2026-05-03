@@ -27,9 +27,10 @@ model User {
   createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?
 
-  sessions     Session[]
-  reviews      Review[]
-  datesCreated Date[]    @relation("DateCreator")
+  sessions          Session[]
+  reviews           Review[]
+  datesCreated      Date[]        @relation("DateCreator")
+  anniversariesCreated Anniversary[] @relation("AnniversaryCreator")
 
   @@schema("judy")
 }
@@ -124,5 +125,19 @@ model DateTag {
   date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
 
   @@id([dateId, tag])
+  @@schema("judy")
+}
+
+model Anniversary {
+  id          Int      @id @default(autoincrement())
+  label       String
+  date        DateTime
+  emoji       String?
+  recurring   Boolean  @default(true)
+  createdById String
+  createdBy   User     @relation("AnniversaryCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([date])
   @@schema("judy")
 }

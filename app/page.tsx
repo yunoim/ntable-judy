@@ -14,16 +14,50 @@ import { dDay } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
+type AnniRow = {
+  id: number;
+  label: string;
+  date: Date;
+  emoji: string | null;
+  recurring: boolean;
+};
+
+function nearestAnniversary(rows: AnniRow[]) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  let best: { row: AnniRow; days: number; nextDate: Date } | null = null;
+  for (const a of rows) {
+    let target = new Date(a.date);
+    target.setHours(0, 0, 0, 0);
+    if (a.recurring) {
+      target.setFullYear(now.getFullYear());
+      if (target.getTime() < now.getTime())
+        target.setFullYear(now.getFullYear() + 1);
+    } else if (target.getTime() < now.getTime()) {
+      continue; // 지난 1회성 기념일은 스킵
+    }
+    const days = Math.round((target.getTime() - now.getTime()) / 86400000);
+    if (!best || days < best.days) {
+      best = { row: a, days, nextDate: target };
+    }
+  }
+  return best;
+}
+
 export default async function HomePage() {
   const me = await requireApproved();
-  const [next, past, users, totalDates, pendingCount] = await Promise.all([
-    getNextDate(),
-    getPastDates(5),
-    getActiveUsers(),
-    getDoneCount(),
-    prisma.user.count({ where: { role: "pending" } }),
-  ]);
+  const [next, past, users, totalDates, pendingCount, anniversaries] =
+    await Promise.all([
+      getNextDate(),
+      getPastDates(5),
+      getActiveUsers(),
+      getDoneCount(),
+      prisma.user.count({ where: { role: "pending" } }),
+      prisma.anniversary.findMany({}),
+    ]);
   const isAdmin = me.role === "admin";
+
+  const upcomingAnni = nearestAnniversary(anniversaries);
 
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
@@ -134,6 +168,31 @@ export default async function HomePage() {
                 ) : null}
               </div>
             </Card>
+          </Link>
+        )}
+
+        {upcomingAnni && (
+          <Link
+            href="/us"
+            className="block rounded-card bg-bg-warm/60 border border-accent/40 px-4 py-3 flex items-center gap-3"
+          >
+            <span className="text-2xl shrink-0">
+              {upcomingAnni.row.emoji ?? "📅"}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm">{upcomingAnni.row.label}</p>
+              <p className="text-[11px] text-fg-faint">
+                {upcomingAnni.nextDate.toLocaleDateString("ko", {
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+            <span className="font-display text-base text-accent shrink-0">
+              {upcomingAnni.days === 0
+                ? "오늘 ★"
+                : `D-${upcomingAnni.days}`}
+            </span>
           </Link>
         )}
 

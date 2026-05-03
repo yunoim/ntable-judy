@@ -1,5 +1,6 @@
 // components/ui.tsx — shared UI primitives
 "use client";
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 export function Pill({
@@ -127,8 +128,9 @@ export function TabBar({ active }: { active: "home" | "plan" | "log" | "us" }) {
       <ul className="flex justify-around items-center px-2 pt-2">
         {items.map((it) => (
           <li key={it.id}>
-            <a
+            <Link
               href={it.href}
+              prefetch={false}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1 text-[11px]",
                 active === it.id ? "text-fg" : "text-fg-faint"
@@ -136,7 +138,7 @@ export function TabBar({ active }: { active: "home" | "plan" | "log" | "us" }) {
             >
               <span className="w-5 h-5 rounded-md border border-current" />
               <span>{it.label}</span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
