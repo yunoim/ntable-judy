@@ -7,18 +7,23 @@ import {
   getActiveUsers,
   getDoneCount,
   avgStarsByUserId,
+  prisma,
 } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { dDay } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [next, past, users, totalDates] = await Promise.all([
+  const [next, past, users, totalDates, me, pendingCount] = await Promise.all([
     getNextDate(),
     getPastDates(5),
     getActiveUsers(),
     getDoneCount(),
+    getCurrentUser(),
+    prisma.user.count({ where: { role: "pending" } }),
   ]);
+  const isAdmin = me?.role === "admin";
 
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
@@ -54,9 +59,20 @@ export default async function HomePage() {
               <p className="text-[11px] text-fg-faint">데이트 {totalDates}회</p>
             </div>
           </div>
-          <Link href="/settings" className="text-fg-faint text-sm">
-            ⚙
-          </Link>
+          {isAdmin ? (
+            <Link
+              href="/admin"
+              className="text-fg-faint text-sm relative"
+              aria-label="관리자 패널"
+            >
+              ⚙
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
+                  {pendingCount}
+                </span>
+              )}
+            </Link>
+          ) : null}
         </div>
         <div className="flex gap-2 mt-2">
           {bunny && (
