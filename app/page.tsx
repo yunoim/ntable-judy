@@ -59,19 +59,30 @@ export default async function HomePage() {
               <p className="text-[11px] text-fg-faint">데이트 {totalDates}회</p>
             </div>
           </div>
-          {isAdmin ? (
-            <Link
-              href="/admin"
-              className="text-fg-faint text-sm relative"
-              aria-label="관리자 패널"
-            >
-              ⚙
-              {pendingCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
-                  {pendingCount}
-                </span>
+          {me ? (
+            <div className="flex items-center gap-3">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="text-fg-faint text-sm relative"
+                  aria-label="관리자 패널"
+                >
+                  ⚙
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
+                      {pendingCount}
+                    </span>
+                  )}
+                </Link>
               )}
-            </Link>
+              <Link
+                href="/settings/profile"
+                className="text-fg-faint text-sm"
+                aria-label="프로필"
+              >
+                👤
+              </Link>
+            </div>
           ) : null}
         </div>
         <div className="flex gap-2 mt-2">
