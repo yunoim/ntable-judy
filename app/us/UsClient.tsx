@@ -11,7 +11,15 @@ type Anniversary = {
   date: string;
   emoji: string | null;
   recurring: boolean;
+  kind: string | null;
   createdBy: { id: string; nickname: string };
+};
+
+type Milestone = {
+  key: string;
+  label: string;
+  emoji: string;
+  date: string;
 };
 
 const EMOJI_OPTIONS = ["💍", "💝", "🌸", "🎂", "✨", "🥂", "📅", "🎁"];
@@ -50,28 +58,37 @@ function distanceLabel(dateStr: string, recurring: boolean): {
   }
 }
 
+function isoDateOnly(iso: string) {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
 export default function UsClient({
   meId,
   meRole,
   anniversaries,
+  milestones,
 }: {
   meId: string;
   meRole: string;
   anniversaries: Anniversary[];
+  milestones: Milestone[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [label, setLabel] = useState("");
   const [date, setDate] = useState("");
   const [emoji, setEmoji] = useState<string>("📅");
   const [recurring, setRecurring] = useState(true);
+  const [kind, setKind] = useState<"" | "couple_start">("");
   const [saving, setSaving] = useState(false);
 
-  // 정렬: 다가오는 (D-N>=0) 먼저, D-N 작은 것부터; 그 다음 D+N
+  const hasCoupleStart = anniversaries.some((a) => a.kind === "couple_start");
+
   const sorted = [...anniversaries].sort((a, b) => {
     const aDays = daysUntil(nextOccurrence(a.date, a.recurring));
     const bDays = daysUntil(nextOccurrence(b.date, b.recurring));
@@ -79,8 +96,37 @@ export default function UsClient({
     const bFuture = bDays >= 0;
     if (aFuture !== bFuture) return aFuture ? -1 : 1;
     if (aFuture) return aDays - bDays;
-    return bDays - aDays; // 과거는 가까운 것부터
+    return bDays - aDays;
   });
+
+  function resetForm() {
+    setLabel("");
+    setDate("");
+    setEmoji("📅");
+    setRecurring(true);
+    setKind("");
+    setEditingId(null);
+  }
+
+  function startEdit(a: Anniversary) {
+    setAdding(false);
+    setEditingId(a.id);
+    setLabel(a.label);
+    setDate(isoDateOnly(a.date));
+    setEmoji(a.emoji ?? "📅");
+    setRecurring(a.recurring);
+    setKind(a.kind === "couple_start" ? "couple_start" : "");
+    setError(null);
+  }
+
+  function chooseKind(next: "" | "couple_start") {
+    setKind(next);
+    if (next === "couple_start") {
+      setRecurring(false);
+      if (!label.trim()) setLabel("사귄 날");
+      if (emoji === "📅") setEmoji("💝");
+    }
+  }
 
   async function add() {
     if (!label.trim() || !date) {
@@ -93,18 +139,47 @@ export default function UsClient({
       const res = await fetch("/api/anniversaries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label, date, emoji, recurring }),
+        body: JSON.stringify({ label, date, emoji, recurring, kind }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setError(
+          data.error === "couple_start_exists"
+            ? "이미 만남 시작한 날이 등록되어 있어요"
+            : data.error ?? "실패",
+        );
+        return;
+      }
+      resetForm();
+      setAdding(false);
+      startTransition(() => router.refresh());
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editingId) return;
+    if (!label.trim() || !date) {
+      setError("이름이랑 날짜는 필수");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/anniversaries/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, date, emoji, recurring }),
+      });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data.error ?? "실패");
         return;
       }
-      setLabel("");
-      setDate("");
-      setEmoji("📅");
-      setRecurring(true);
-      setAdding(false);
+      resetForm();
       startTransition(() => router.refresh());
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -132,6 +207,8 @@ export default function UsClient({
     }
   }
 
+  const formOpen = adding || editingId !== null;
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-10 bg-bg/95 backdrop-blur border-b border-fg/15 px-4 pt-4 pb-3 safe-top flex items-center justify-between">
@@ -142,11 +219,18 @@ export default function UsClient({
           우리의 <em className="italic text-accent">날들</em>
         </p>
         <button
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => {
+            if (formOpen) {
+              resetForm();
+              setAdding(false);
+            } else {
+              setAdding(true);
+            }
+          }}
           className="text-sm text-accent"
           aria-label="추가"
         >
-          {adding ? "✕" : "+"}
+          {formOpen ? "✕" : "+"}
         </button>
       </header>
 
@@ -156,8 +240,50 @@ export default function UsClient({
         </div>
       )}
 
-      {adding && (
+      {formOpen && (
         <section className="mx-4 mt-3 p-4 rounded-card bg-bg-warm/50 border border-accent/30 space-y-3">
+          <p className="text-[11px] tracking-widest uppercase text-fg-faint">
+            {editingId ? "수정" : "추가"}
+          </p>
+          {!editingId && (
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => chooseKind("")}
+                className={[
+                  "flex-1 rounded-card text-xs py-2 px-2 border",
+                  kind === ""
+                    ? "bg-ink-card text-bg border-ink-card"
+                    : "bg-bg text-fg-soft border-fg/20",
+                ].join(" ")}
+              >
+                일반 기념일
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseKind("couple_start")}
+                disabled={hasCoupleStart}
+                className={[
+                  "flex-1 rounded-card text-xs py-2 px-2 border",
+                  kind === "couple_start"
+                    ? "bg-ink-card text-bg border-ink-card"
+                    : "bg-bg text-fg-soft border-fg/20 disabled:opacity-40",
+                ].join(" ")}
+              >
+                만남 시작한 날
+              </button>
+            </div>
+          )}
+          {kind === "couple_start" && !editingId && (
+            <p className="text-[10px] text-fg-faint italic">
+              저장하면 100일이 자동 등록돼요 (이미 지난 경우 생략).
+            </p>
+          )}
+          {hasCoupleStart && !editingId && kind === "" && (
+            <p className="text-[10px] text-fg-faint italic">
+              만남 시작한 날은 이미 등록돼 있어요.
+            </p>
+          )}
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value.slice(0, 30))}
@@ -185,26 +311,92 @@ export default function UsClient({
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-xs text-fg-soft">
-            <input
-              type="checkbox"
-              checked={recurring}
-              onChange={(e) => setRecurring(e.target.checked)}
-            />
-            매년 반복 (생일/기념일이면 ✓)
-          </label>
+          {kind !== "couple_start" && (
+            <label className="flex items-center gap-2 text-xs text-fg-soft">
+              <input
+                type="checkbox"
+                checked={recurring}
+                onChange={(e) => setRecurring(e.target.checked)}
+              />
+              매년 반복 (생일/기념일이면 ✓)
+            </label>
+          )}
           <button
             type="button"
-            onClick={add}
+            onClick={editingId ? saveEdit : add}
             disabled={saving || !label.trim() || !date}
             className="w-full bg-ink-card text-bg rounded-card py-2.5 text-sm font-semibold disabled:opacity-40"
           >
-            {saving ? "추가 중..." : "추가 ✓"}
+            {saving ? "저장 중..." : editingId ? "수정 ✓" : "추가 ✓"}
           </button>
         </section>
       )}
 
       <main className="flex-1 px-4 py-4 pb-24 space-y-3">
+        <Link
+          href="/us/saju"
+          className="block rounded-card bg-ink-card text-bg px-4 py-3 flex items-center gap-3"
+        >
+          <span className="text-2xl shrink-0">🔥</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-sm">사주 · 궁합</p>
+            <p className="text-[11px] text-accent-soft">
+              용광로(丁火) × 무쇠(庚金) — 정화연경
+            </p>
+          </div>
+          <span className="text-accent-soft text-xs">→</span>
+        </Link>
+
+        {milestones.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[11px] tracking-widest uppercase text-fg-faint">
+              마일스톤 (자동)
+            </p>
+            <ul className="space-y-1.5">
+              {milestones.map((m) => {
+                const days = daysUntil(new Date(m.date));
+                const dist =
+                  days === 0
+                    ? { text: "오늘 ★", highlight: true }
+                    : days > 0
+                    ? { text: `D-${days}`, highlight: days <= 30 }
+                    : { text: `D+${Math.abs(days)}`, highlight: false };
+                return (
+                  <li
+                    key={m.key}
+                    className={[
+                      "rounded-card border p-3 flex items-center gap-3",
+                      dist.highlight
+                        ? "bg-bg-warm border-accent"
+                        : "bg-bg border-fg/15",
+                    ].join(" ")}
+                  >
+                    <span className="text-xl shrink-0">{m.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-sm truncate">{m.label}</p>
+                      <p className="text-[10px] text-fg-faint">
+                        {new Date(m.date).toLocaleDateString("ko", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <span
+                      className={[
+                        "font-display text-xs shrink-0",
+                        dist.highlight ? "text-accent" : "text-fg-soft",
+                      ].join(" ")}
+                    >
+                      {dist.text}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         {sorted.length === 0 ? (
           <div className="text-center pt-12">
             <span className="text-5xl">📅</span>
@@ -221,7 +413,14 @@ export default function UsClient({
               const dist = distanceLabel(a.date, a.recurring);
               const baseDate = new Date(a.date);
               const isMine = a.createdBy.id === meId;
-              const canDelete = isMine || meRole === "admin";
+              const canManage = isMine || meRole === "admin";
+              const autoManaged = a.kind === "birthday";
+              const kindBadge =
+                a.kind === "birthday"
+                  ? "프로필 생일"
+                  : a.kind === "couple_start"
+                  ? "만남 시작"
+                  : null;
               return (
                 <li
                   key={a.id}
@@ -234,7 +433,14 @@ export default function UsClient({
                 >
                   <span className="text-2xl shrink-0">{a.emoji ?? "📅"}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-display text-base truncate">{a.label}</p>
+                    <p className="font-display text-base truncate">
+                      {a.label}
+                      {kindBadge && (
+                        <span className="ml-1.5 text-[10px] text-fg-faint align-middle">
+                          ({kindBadge})
+                        </span>
+                      )}
+                    </p>
                     <p className="text-[11px] text-fg-faint">
                       {baseDate.toLocaleDateString("ko", {
                         year: "numeric",
@@ -252,15 +458,32 @@ export default function UsClient({
                   >
                     {dist.text}
                   </span>
-                  {canDelete && (
-                    <button
-                      onClick={() => remove(a.id)}
-                      disabled={busyId === a.id}
+                  {canManage && !autoManaged && (
+                    <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
+                      <button
+                        onClick={() => startEdit(a)}
+                        className="text-[10px] text-fg-faint underline"
+                        aria-label="수정"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => remove(a.id)}
+                        disabled={busyId === a.id}
+                        className="text-[10px] text-fg-faint underline"
+                        aria-label="삭제"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )}
+                  {autoManaged && a.kind === "birthday" && (
+                    <Link
+                      href="/settings/profile"
                       className="text-[10px] text-fg-faint underline shrink-0 ml-1"
-                      aria-label="삭제"
                     >
-                      ✕
-                    </button>
+                      프로필
+                    </Link>
                   )}
                 </li>
               );

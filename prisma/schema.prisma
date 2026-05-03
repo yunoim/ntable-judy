@@ -10,27 +10,31 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  kakaoId      String    @unique
+  id           String  @id @default(cuid())
+  kakaoId      String  @unique
   nickname     String
   emoji        String?
   profileImage String?
   email        String?
 
-  role         String    @default("pending")
-  partner      Boolean   @default(false)
-  approvedAt   DateTime?
-  approvedBy   String?
-  rejectedAt   DateTime?
-  rejectedBy   String?
+  birthday  DateTime?
+  birthTime String?
 
-  createdAt    DateTime  @default(now())
-  lastLoginAt  DateTime?
+  role       String    @default("pending")
+  partner    Boolean   @default(false)
+  approvedAt DateTime?
+  approvedBy String?
+  rejectedAt DateTime?
+  rejectedBy String?
 
-  sessions          Session[]
-  reviews           Review[]
-  datesCreated      Date[]        @relation("DateCreator")
+  createdAt   DateTime  @default(now())
+  lastLoginAt DateTime?
+
+  sessions             Session[]
+  reviews              Review[]
+  datesCreated         Date[]        @relation("DateCreator")
   anniversariesCreated Anniversary[] @relation("AnniversaryCreator")
+  anniversariesAbout   Anniversary[] @relation("AnniversarySubject")
 
   @@schema("judy")
 }
@@ -50,15 +54,15 @@ model Session {
 }
 
 model Date {
-  id            String    @id @default(cuid())
-  number        Int       @unique
+  id            String   @id @default(cuid())
+  number        Int      @unique
   title         String
   subtitle      String?
   area          String
   scheduledAt   DateTime
   startTime     String?
   endTime       String?
-  status        String    @default("planned")
+  status        String   @default("planned")
   estimatedCost Int?
   summary       String?
   themeNote     String?
@@ -68,34 +72,34 @@ model Date {
   aiInput       String?
   aiResponseRaw String?
 
-  createdById   String
-  createdBy     User      @relation("DateCreator", fields: [createdById], references: [id])
+  createdById String
+  createdBy   User   @relation("DateCreator", fields: [createdById], references: [id])
 
-  stops         Stop[]
-  reviews       Review[]
-  tags          DateTag[]
+  stops   Stop[]
+  reviews Review[]
+  tags    DateTag[]
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@schema("judy")
 }
 
 model Stop {
-  id              Int      @id @default(autoincrement())
-  dateId          String
-  stepOrder       Int
-  time            String
-  emoji           String?
-  name            String
-  address         String?
-  type            String?
-  description     String?
-  mapQuery        String
-  naverMapUrl     String?
-  cost            Int      @default(0)
-  reservationUrl  String?
-  reserved        Boolean  @default(false)
+  id             Int     @id @default(autoincrement())
+  dateId         String
+  stepOrder      Int
+  time           String
+  emoji          String?
+  name           String
+  address        String?
+  type           String?
+  description    String?
+  mapQuery       String
+  naverMapUrl    String?
+  cost           Int     @default(0)
+  reservationUrl String?
+  reserved       Boolean @default(false)
 
   date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
 
@@ -136,8 +140,14 @@ model Anniversary {
   recurring   Boolean  @default(true)
   createdById String
   createdBy   User     @relation("AnniversaryCreator", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
 
+  userId  String?
+  subject User?   @relation("AnniversarySubject", fields: [userId], references: [id], onDelete: Cascade)
+  kind    String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind])
   @@index([date])
   @@schema("judy")
 }

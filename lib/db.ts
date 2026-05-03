@@ -35,9 +35,20 @@ export async function getAllDates() {
   return dates.map(adaptDate);
 }
 
+function startOfTodayKstUtc(): Date {
+  // 서버 TZ에 무관하게 KST 자정 기준의 UTC 인스턴트를 반환.
+  const now = new Date();
+  const kstYmd = now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  return new Date(`${kstYmd}T00:00:00+09:00`);
+}
+
 export async function getNextDate() {
+  const startOfToday = startOfTodayKstUtc();
   const d = await prisma.date.findFirst({
-    where: { status: "planned" },
+    where: {
+      status: "planned",
+      scheduledAt: { gte: startOfToday },
+    },
     orderBy: { scheduledAt: "asc" },
     include: dateInclude,
   });

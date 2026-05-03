@@ -14,12 +14,16 @@ export default function ProfileClient({
     emoji: string | null;
     profileImage: string | null;
     role: string;
+    birthday: string | null;
+    birthTime: string | null;
   };
   emojis: string[];
 }) {
   const router = useRouter();
   const [nickname, setNickname] = useState(user.nickname);
   const [emoji, setEmoji] = useState<string | null>(user.emoji);
+  const [birthday, setBirthday] = useState<string>(user.birthday ?? "");
+  const [birthTime, setBirthTime] = useState<string>(user.birthTime ?? "");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +35,12 @@ export default function ProfileClient({
       const res = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, emoji: emoji ?? "" }),
+        body: JSON.stringify({
+          nickname,
+          emoji: emoji ?? "",
+          birthday: birthday || null,
+          birthTime: birthTime || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -47,7 +56,11 @@ export default function ProfileClient({
     }
   }
 
-  const dirty = nickname !== user.nickname || emoji !== user.emoji;
+  const dirty =
+    nickname !== user.nickname ||
+    emoji !== user.emoji ||
+    (birthday || "") !== (user.birthday ?? "") ||
+    (birthTime || "") !== (user.birthTime ?? "");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -126,6 +139,45 @@ export default function ProfileClient({
               해제
             </button>
           )}
+        </section>
+
+        <section className="space-y-1.5">
+          <label className="text-[11px] tracking-widest uppercase text-fg-faint">
+            생일
+          </label>
+          <input
+            type="date"
+            value={birthday}
+            onChange={(e) => setBirthday(e.target.value)}
+            className="w-full bg-bg-warm/40 border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+          />
+          <p className="text-[10px] text-fg-faint italic">
+            저장하면 <em className="not-italic text-accent">우리</em>에 생일 기념일이 자동으로 추가돼요.
+          </p>
+          {birthday && (
+            <button
+              type="button"
+              onClick={() => setBirthday("")}
+              className="text-[11px] text-fg-faint underline"
+            >
+              지우기
+            </button>
+          )}
+        </section>
+
+        <section className="space-y-1.5">
+          <label className="text-[11px] tracking-widest uppercase text-fg-faint">
+            태어난 시간 <span className="lowercase tracking-normal text-fg-faint">(선택)</span>
+          </label>
+          <input
+            type="time"
+            value={birthTime}
+            onChange={(e) => setBirthTime(e.target.value)}
+            className="w-full bg-bg-warm/40 border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+          />
+          <p className="text-[10px] text-fg-faint italic">
+            사주/궁합용. 모르면 비워둬도 돼요.
+          </p>
         </section>
 
         {savedAt && (

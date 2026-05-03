@@ -20,6 +20,8 @@ export default async function ProfileSettingsPage() {
         emoji: user.emoji,
         profileImage: user.profileImage,
         role: user.role,
+        birthday: user.birthday ? user.birthday.toISOString().slice(0, 10) : null,
+        birthTime: user.birthTime,
       }}
       emojis={EMOJIS}
     />

@@ -11,6 +11,8 @@ import {
 } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { dDay } from "@/lib/data";
+import { coupleDayNumber, COUPLE_START_KIND } from "@/lib/saju";
+import { nextMilestone } from "@/lib/milestones";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,14 @@ export default async function HomePage() {
   const isAdmin = me.role === "admin";
 
   const upcomingAnni = nearestAnniversary(anniversaries);
+  const coupleStart = anniversaries.find((a) => a.kind === COUPLE_START_KIND);
+  const coupleStartIso = coupleStart
+    ? coupleStart.date.toISOString().slice(0, 10)
+    : null;
+  const dayNo = coupleStartIso ? coupleDayNumber(coupleStartIso) : 0;
+  const upcomingMilestone = coupleStartIso
+    ? nextMilestone(coupleStartIso)
+    : null;
 
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
@@ -137,7 +147,7 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-4 py-3 space-y-4 pb-24">
-        {next && (
+        {next ? (
           <Link href={`/dates/${next.id}`} className="block">
             <Card variant="dark" className="space-y-2">
               <div className="flex items-baseline justify-between">
@@ -169,6 +179,40 @@ export default async function HomePage() {
               </div>
             </Card>
           </Link>
+        ) : (
+          <Link href="/plan/new" className="block">
+            <Card className="!border-dashed !border-accent/50 space-y-1 text-center py-6">
+              <p className="text-[11px] tracking-wider uppercase text-fg-faint">
+                다음 데이트
+              </p>
+              <p className="font-display text-base text-accent">
+                + 다음 데이트 등록하기
+              </p>
+              <p className="text-[11px] text-fg-faint">
+                계획을 짜고 D-day 시작
+              </p>
+            </Card>
+          </Link>
+        )}
+
+        {dayNo > 0 && (
+          <Link
+            href="/us/saju"
+            className="block rounded-card bg-bg-warm/40 border border-fg/15 px-4 py-3 flex items-center gap-3"
+          >
+            <span className="text-xl shrink-0">🔥</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm">
+                용광로 × 무쇠
+              </p>
+              <p className="text-[11px] text-fg-faint">
+                정화연경 · 丁火 × 庚金
+              </p>
+            </div>
+            <span className="font-display text-base text-accent shrink-0">
+              {dayNo}일
+            </span>
+          </Link>
         )}
 
         {upcomingAnni && (
@@ -183,6 +227,7 @@ export default async function HomePage() {
               <p className="font-display text-sm">{upcomingAnni.row.label}</p>
               <p className="text-[11px] text-fg-faint">
                 {upcomingAnni.nextDate.toLocaleDateString("ko", {
+                  year: "numeric",
                   month: "long",
                   day: "numeric",
                 })}
@@ -196,8 +241,39 @@ export default async function HomePage() {
           </Link>
         )}
 
+        {upcomingMilestone && (() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const days = Math.round(
+            (upcomingMilestone.date.getTime() - today.getTime()) / 86400000,
+          );
+          return (
+            <Link
+              href="/us"
+              className="block rounded-card bg-bg border border-fg/15 px-4 py-3 flex items-center gap-3"
+            >
+              <span className="text-2xl shrink-0">{upcomingMilestone.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-sm">
+                  {upcomingMilestone.label}
+                </p>
+                <p className="text-[11px] text-fg-faint">
+                  {upcomingMilestone.date.toLocaleDateString("ko", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+              <span className="font-display text-sm text-fg-soft shrink-0">
+                {days === 0 ? "오늘 ★" : `D-${days}`}
+              </span>
+            </Link>
+          );
+        })()}
+
         <p className="text-[11px] tracking-widest uppercase text-fg-faint pt-2">
-          최근 데이트
+          지난 데이트
         </p>
 
         <ul className="space-y-3">
@@ -219,6 +295,7 @@ export default async function HomePage() {
                       <p className="text-[11px] text-fg-faint mt-0.5">
                         {d.area} ·{" "}
                         {new Date(d.scheduledAt).toLocaleDateString("ko", {
+                          year: "numeric",
                           month: "long",
                           day: "numeric",
                         })}
