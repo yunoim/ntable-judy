@@ -202,6 +202,17 @@ export default async function DateDetailPage({
           </ol>
         )}
 
+        {canEdit && date.status === "done" && (
+          <div className="mt-8 flex justify-center">
+            <Link
+              href={`/dates/${date.id}/review`}
+              className="text-xs px-4 py-2 rounded-full border border-accent text-accent"
+            >
+              ★ 리뷰 {date.reviews.some((r) => r.userId === me?.id) ? "수정" : "남기기"}
+            </Link>
+          </div>
+        )}
+
         <footer className="text-center mt-11">
           <div className="text-2xl tracking-widest mb-2.5">🦊 🌧️ 🐰</div>
           <p

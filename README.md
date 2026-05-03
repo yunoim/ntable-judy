@@ -1,62 +1,128 @@
-# judy.ntable.kr — Next.js 14 App Router scaffold
+# judy.ntable.kr
 
-선택된 와이어프레임 변형 (01B / 03A / 04A / 05A / 06B) 기준으로 짠 .tsx 스캐폴드입니다.
+둘이서 쓰는 데이트 다이어리. Next.js 16 + Prisma + PostgreSQL + Kakao OAuth + Anthropic Claude.
 
-## 설치 / 실행
+운영: <https://judy.ntable.kr> (Railway 배포, Cloudflare 프록시)
+
+## 스택
+
+- Next.js 16 (App Router, Turbopack, async params)
+- React 19
+- Tailwind 3 + DM Serif Display + Noto Serif KR
+- Prisma 6 + PostgreSQL (multiSchema, `judy` 스키마)
+- Anthropic SDK (`@anthropic-ai/sdk`) — Claude `claude-sonnet-4-5`
+- pnpm
+
+## 로컬 실행
 
 ```bash
-pnpm create next-app@latest judy --typescript --tailwind --app --src-dir=false --import-alias="@/*"
-# 위에서 생성된 폴더에 이 tsx/ 의 파일들을 그대로 덮어쓰기
-cp -r tsx/* judy/
-cd judy
-pnpm add @anthropic-ai/sdk
+pnpm install
+pnpm prisma generate
 pnpm dev
 ```
 
-## 환경변수 (.env.local)
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-JUDY_LOGIN_KEY=judy_xxxxxxxxxxxxx
-ME_LOGIN_KEY=me_xxxxxxxxxxxxx
+운영 DB로 시드:
+```bash
+pnpm prisma db seed
 ```
 
-## 첫 로그인
+## 환경변수 (.env / .env.local)
 
 ```
-http://localhost:3000/login?key=me_xxxxxxxxxxxxx
+DATABASE_URL=postgres://...?schema=judy
+ANTHROPIC_API_KEY=sk-ant-...        # 없으면 /plan/new가 mock 응답
+KAKAO_REST_API_KEY=...
+KAKAO_CLIENT_SECRET=...
+KAKAO_REDIRECT_URI=https://judy.ntable.kr/api/auth/kakao/callback
+APP_URL=https://judy.ntable.kr
+ADMIN_KAKAO_ID=4876568041            # 카카오 회원번호 → 자동 admin
+SESSION_SECRET=...                   # crypto.randomBytes(32).toString('hex')
 ```
-또는 입력란에 직접 키 붙여넣기.
 
-## 폴더 구조
+## 라우트
+
+| 경로 | 설명 | 가드 |
+|---|---|---|
+| `/` | 홈 (다음 데이트 D-Day + 최근 데이트) | 세션 |
+| `/login` | 카카오 로그인 | public |
+| `/pending` | 승인 대기 화면 | 세션 |
+| `/admin` | 사용자 승인/거부/차단 | admin |
+| `/timeline` | 달력 + 다음 데이트 | 세션 |
+| `/plan/new` | 자연어 → AI 코스 preview → 확정 | approved+ |
+| `/dates/[id]` | 데이트 상세 (코스, 비, 타임라인) | 세션 |
+| `/dates/[id]/edit` | 데이트 편집 (메타 + 단계) | approved+ |
+| `/dates/[id]/review` | 리뷰 (별점 + 한 줄 + 태그) | approved+ |
+| `/settings/profile` | 닉네임 + 이모지 변경 | 세션 |
+
+API:
+- `POST /api/auth/kakao` — OAuth 시작
+- `GET /api/auth/kakao/callback` — 콜백 + 세션 생성
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/plan/generate` — Claude preview (저장 X)
+- `POST /api/dates` — 데이트 생성
+- `PATCH/DELETE /api/dates/[id]` — 수정/삭제
+- `POST /api/reviews` — 리뷰 upsert + 태그
+- `PATCH /api/admin/users/[id]` — approve/reject/unblock
+- `GET/PATCH /api/users/me`
+
+## 권한
+
+| role | 페이지 접근 | 데이트 생성/수정 | 사용자 관리 |
+|---|---|---|---|
+| admin | 전부 | 전부 | 가능 |
+| approved | 전부 (관리자 외) | 가능 | 불가 |
+| pending | `/pending` 만 | 불가 | 불가 |
+| rejected | 자동 로그아웃 | — | — |
+
+## 디자인 토큰 (`app/globals.css`)
+
+```
+--bg: #FAF7F2          크림
+--bg-warm: #F0E6D4     따뜻한 크림
+--accent: #C4956A      골드
+--accent-soft: #E8D4B8
+--fg: #2C2017          다크 브라운
+--fg-soft: #4A4038
+--fg-faint: #8A7E72
+--ink-card: #2C2017
+--rain: #7A9BAE        블루그레이 (날씨 알림 / 위험 액션)
+```
+
+## 구조
 
 ```
 app/
-  layout.tsx                 폰트, 메타, 모바일 max-w 390 컨테이너
-  globals.css                CSS 변수 + tailwind
-  login/page.tsx             01 B 풀블리드 + 키 입력
-  page.tsx                   03 A 홈 대시보드
-  plan/new/page.tsx          04 A 자유 텍스트 + 로딩
-  plan/[id]/page.tsx         AI 결과 타임라인
-  dates/[id]/review/page.tsx 05 A 바텀시트 리뷰
-  timeline/page.tsx          06 B 달력 + 다음 데이트
-  api/
-    auth/login/route.ts
-    plan/generate/route.ts   ← Anthropic Claude 호출
-    reviews/route.ts
-components/ui.tsx            Pill / Avatar / Stars / Card / TabBar / PhotoSlot
+  layout.tsx                 폰트 + max-w 390 컨테이너
+  globals.css                토큰 + 빗방울 애니메이션
+  page.tsx                   홈 (Prisma 동적)
+  login, pending, timeline   각자 라우트
+  admin/                     관리자 패널 (server + client split)
+  plan/new/                  AI 코스 생성
+  dates/[id]/
+    page.tsx                 코스 상세 (date_schedule_v4 디자인)
+    edit/                    편집 폼
+    review/                  리뷰 입력
+  settings/profile/          프로필 수정
+  api/                       라우트 핸들러
+components/
+  ui.tsx                     Pill / Avatar / Stars / Card / TabBar / PhotoSlot
+  Rain.tsx                   빗방울 (weather === "rain")
 lib/
-  data.ts                    타입 + MOCK 데이터 (Prisma로 교체)
-  cn.ts
-middleware.ts                인증 가드
-tailwind.config.ts
+  db.ts                      Prisma 클라이언트 + 헬퍼 + AdaptedDate 타입
+  auth.ts                    getCurrentUser / requireUser
+  data.ts                    dDay, naverMapUrl, COUPLE_START (mock 잔재)
+prisma/
+  schema.prisma              User, Session, Date, Stop, Review, DateTag
+  seed.ts                    1~3번 placeholder + 4번 (성수동 5/4) + 4 stops
+middleware.ts                세션 가드
 ```
 
-## 다음 단계
+## 운영
 
-- [ ] `MOCK_DATES` → Prisma + SQLite 로 교체 (`prisma/schema.prisma`)
-- [ ] `app/dates/[id]/page.tsx` 데이트 상세 (계획 vs 실제, 둘의 별점)
-- [ ] `lib/auth.ts` 로 `await getCurrentUser()` 헬퍼 추출 (현재는 cookies() 직접)
-- [ ] AI 결과 화면에서 stop 단위 재생성 (`PATCH /api/plan/[id]/stops/[i]`)
-- [ ] 사진 업로드 (v2)
-- [ ] 푸시 알림 (v2)
+Railway에 main 브랜치 자동 배포. push 후 1-2분.
+
+DB 시드는 로컬에서 실행 (idempotent upsert):
+```bash
+pnpm prisma db seed
+```
