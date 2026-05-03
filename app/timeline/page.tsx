@@ -1,6 +1,7 @@
 // app/timeline/page.tsx — 06 B 달력 + 다음 데이트
 import Link from "next/link";
 import { getAllDates } from "@/lib/db";
+import { requireApproved } from "@/lib/auth";
 import { dDay } from "@/lib/data";
 import { TabBar, Card } from "@/components/ui";
 
@@ -20,6 +21,7 @@ function buildMonth(year: number, month: number) {
 }
 
 export default async function TimelinePage() {
+  await requireApproved();
   const dates = await getAllDates();
 
   const today = new Date();

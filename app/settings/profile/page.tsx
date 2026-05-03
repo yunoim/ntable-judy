@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApproved } from "@/lib/auth";
 import ProfileClient from "./ProfileClient";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +10,7 @@ const EMOJIS = [
 ];
 
 export default async function ProfileSettingsPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  const user = await requireApproved();
 
   return (
     <ProfileClient

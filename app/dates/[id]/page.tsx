@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDateById, getAllDates } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
 import Rain from "@/components/Rain";
 
@@ -31,14 +31,14 @@ export default async function DateDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const me = await requireApproved();
   const { id } = await params;
-  const [date, me, all] = await Promise.all([
+  const [date, all] = await Promise.all([
     getDateById(id),
-    getCurrentUser(),
     getAllDates(),
   ]);
   if (!date) notFound();
-  const canEdit = !!me && ["admin", "approved"].includes(me.role);
+  const canEdit = ["admin", "approved"].includes(me.role);
   const history = all
     .filter((d) => d.number <= date.number && d.historyLabel)
     .sort((a, b) => a.number - b.number)

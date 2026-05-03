@@ -9,21 +9,21 @@ import {
   avgStarsByUserId,
   prisma,
 } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApproved } from "@/lib/auth";
 import { dDay } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [next, past, users, totalDates, me, pendingCount] = await Promise.all([
+  const me = await requireApproved();
+  const [next, past, users, totalDates, pendingCount] = await Promise.all([
     getNextDate(),
     getPastDates(5),
     getActiveUsers(),
     getDoneCount(),
-    getCurrentUser(),
     prisma.user.count({ where: { role: "pending" } }),
   ]);
-  const isAdmin = me?.role === "admin";
+  const isAdmin = me.role === "admin";
 
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
