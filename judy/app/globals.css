@@ -1,0 +1,44 @@
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAF7F2;
+  --bg-warm: #F0E6D4;
+  --fg: #2C2017;
+  --fg-soft: #4A4038;
+  --fg-faint: #8A7E72;
+  --accent: #C4956A;
+  --accent-soft: #E8D4B8;
+  --ink-card: #2C2017;
+  --kakao: #FEE500;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), "Noto Serif KR", serif;
+}
+
+.font-display {
+  font-family: var(--font-display), "DM Serif Display", serif;
+}
+
+/* safe-area helpers */
+.safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
+
+/* hide scrollbars */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Bottom sheet animation */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up { animation: slideUp 280ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.animate-fade-in { animation: fadeIn 200ms ease-out; }

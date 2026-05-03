@@ -1,0 +1,127 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["judy"]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  kakaoId      String    @unique
+  nickname     String
+  emoji        String?
+  profileImage String?
+  email        String?
+
+  role         String    @default("pending")
+  approvedAt   DateTime?
+  approvedBy   String?
+  rejectedAt   DateTime?
+  rejectedBy   String?
+
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  sessions     Session[]
+  reviews      Review[]
+  datesCreated Date[]    @relation("DateCreator")
+
+  @@schema("judy")
+}
+
+model Session {
+  token     String   @id
+  userId    String
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@schema("judy")
+}
+
+model Date {
+  id            String    @id @default(cuid())
+  number        Int       @unique
+  title         String
+  subtitle      String?
+  area          String
+  scheduledAt   DateTime
+  startTime     String?
+  endTime       String?
+  status        String    @default("planned")
+  estimatedCost Int?
+  summary       String?
+  themeNote     String?
+  weather       String?
+  historyLabel  String?
+
+  aiInput       String?
+  aiResponseRaw String?
+
+  createdById   String
+  createdBy     User      @relation("DateCreator", fields: [createdById], references: [id])
+
+  stops         Stop[]
+  reviews       Review[]
+  tags          DateTag[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@schema("judy")
+}
+
+model Stop {
+  id              Int      @id @default(autoincrement())
+  dateId          String
+  stepOrder       Int
+  time            String
+  emoji           String?
+  name            String
+  address         String?
+  type            String?
+  description     String?
+  mapQuery        String
+  naverMapUrl     String?
+  cost            Int      @default(0)
+  reservationUrl  String?
+  reserved        Boolean  @default(false)
+
+  date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
+
+  @@index([dateId])
+  @@schema("judy")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  dateId    String
+  userId    String
+  stars     Int
+  oneLine   String?
+  createdAt DateTime @default(now())
+
+  date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([dateId, userId])
+  @@schema("judy")
+}
+
+model DateTag {
+  dateId String
+  tag    String
+
+  date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
+
+  @@id([dateId, tag])
+  @@schema("judy")
+}
