@@ -23,7 +23,7 @@ export default async function ReviewPage({
       role: { in: ["admin", "approved"] },
       id: { not: user.id },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ partner: "desc" }, { createdAt: "asc" }],
   });
 
   const myReview = date.reviews.find((r) => r.userId === user.id) ?? null;

@@ -126,3 +126,29 @@ DB 시드는 로컬에서 실행 (idempotent upsert):
 ```bash
 pnpm prisma db seed
 ```
+
+스키마 변경은 로컬에서 prod DB에 직접 push (single-dev 환경):
+```bash
+pnpm prisma db push
+```
+
+## 파트너 시스템
+
+`User.partner: Boolean` — 한 명만 true. 홈/리뷰 폼이 이 사용자를 "파트너"로 픽.
+
+- 첫 approved 사용자가 자동 partner=true (편의)
+- `/admin` 에서 admin 이 다른 approved 사용자에게 "👫 파트너" 토글 가능 (기존 partner 자동 해제)
+- reject 되면 partner 자동 false
+
+테스트 계정 (yunoim@naver.com 같은) 을 approved 시켜놔도 진짜 주디 approve 후 admin 이 주디한테 파트너 옮기면 됨.
+
+## 백로그 (Day 5+)
+
+- **서울 실시간 데이터 활용 약속장소 추천** — <https://data.seoul.go.kr/SeoulRtd/>
+  실시간 인구/혼잡도 API 로 "지금 덜 붐비는 곳" 추천 가능
+- AI 코스 생성 시 stop 단위 재생성 (`PATCH /api/plan/[id]/stops/[i]`)
+- 사진 업로드 (리뷰 + 데이트)
+- 푸시 알림 (D-1, D-day 아침)
+- middleware → proxy.ts 마이그레이션 (Next 16 deprecation)
+- API 라우트는 401 JSON 반환 (현재 middleware 가 redirect 처리해서 fetch 가 HTML 받음)
+- Prisma 7 마이그레이션 + `prisma.config.ts`

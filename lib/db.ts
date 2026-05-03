@@ -65,6 +65,10 @@ export async function getActiveUsers() {
   });
 }
 
+export async function getPartnerUser() {
+  return prisma.user.findFirst({ where: { partner: true } });
+}
+
 export async function avgStarsByUserId(userId: string) {
   const reviews = await prisma.review.findMany({ where: { userId } });
   if (!reviews.length) return 0;

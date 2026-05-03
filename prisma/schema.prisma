@@ -18,6 +18,7 @@ model User {
   email        String?
 
   role         String    @default("pending")
+  partner      Boolean   @default(false)
   approvedAt   DateTime?
   approvedBy   String?
   rejectedAt   DateTime?

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { AdminUser } from "./page";
 
-type Action = "approve" | "reject" | "unblock";
+type Action = "approve" | "reject" | "unblock" | "setPartner";
 
 export default function AdminClient({
   pending,
@@ -104,25 +104,30 @@ export default function AdminClient({
           {approved.map((u) => {
             const isMe = u.id === currentAdminId;
             const isAdmin = u.role === "admin";
+            const actions: { label: string; variant: "primary" | "ghost" | "danger"; onClick: () => void }[] = [];
+            if (!u.partner && !isAdmin) {
+              actions.push({
+                label: "👫 파트너",
+                variant: "ghost",
+                onClick: () => act(u.id, "setPartner"),
+              });
+            }
+            if (!isAdmin) {
+              actions.push({
+                label: "차단",
+                variant: "danger",
+                onClick: () => act(u.id, "reject"),
+              });
+            }
             return (
               <UserRow
                 key={u.id}
                 user={u}
                 variant="approved"
-                badge={isAdmin ? "admin" : undefined}
+                badge={isAdmin ? "admin" : u.partner ? "👫 파트너" : undefined}
                 meLabel={isMe}
                 busy={busyId === u.id}
-                actions={
-                  isAdmin
-                    ? []
-                    : [
-                        {
-                          label: "차단",
-                          variant: "danger",
-                          onClick: () => act(u.id, "reject"),
-                        },
-                      ]
-                }
+                actions={actions}
               />
             );
           })}

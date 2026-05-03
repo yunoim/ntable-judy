@@ -29,7 +29,10 @@ export default async function HomePage() {
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
   );
   const fox = userStars.find((u) => u.role === "admin") ?? userStars[0];
-  const bunny = userStars.find((u) => u.role === "approved") ?? userStars[1];
+  const partner = userStars.find((u) => u.partner && u.id !== fox?.id);
+  const bunny =
+    partner ??
+    userStars.find((u) => u.role === "approved" && u.id !== fox?.id);
 
   return (
     <div className="min-h-screen flex flex-col">

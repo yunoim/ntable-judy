@@ -43,6 +43,7 @@ function serializeUser(u: {
   emoji: string | null;
   profileImage: string | null;
   role: string;
+  partner: boolean;
   createdAt: Date;
   approvedAt: Date | null;
   rejectedAt: Date | null;
@@ -55,6 +56,7 @@ function serializeUser(u: {
     emoji: u.emoji,
     profileImage: u.profileImage,
     role: u.role,
+    partner: u.partner,
     createdAt: u.createdAt.toISOString(),
     approvedAt: u.approvedAt?.toISOString() ?? null,
     rejectedAt: u.rejectedAt?.toISOString() ?? null,
