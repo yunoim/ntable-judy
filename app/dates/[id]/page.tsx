@@ -216,15 +216,57 @@ export default async function DateDetailPage({
           </ol>
         )}
 
-        {canEdit && date.status === "done" && (
-          <div className="mt-8 flex justify-center">
-            <Link
-              href={`/dates/${date.id}/review`}
-              className="text-xs px-4 py-2 rounded-full border border-accent text-accent"
-            >
-              ★ 리뷰 {date.reviews.some((r) => r.userId === me?.id) ? "수정" : "남기기"}
-            </Link>
-          </div>
+        {(date.reviews.length > 0 || (canEdit && date.status === "done")) && (
+          <section className="mt-10 space-y-3">
+            <p className="eyebrow">★ 후기 · {date.reviews.length}</p>
+            {date.reviews.length > 0 && (
+              <ul className="space-y-2.5">
+                {date.reviews.map((r) => {
+                  const filled = "★".repeat(r.stars);
+                  const empty = "★".repeat(Math.max(0, 5 - r.stars));
+                  return (
+                    <li
+                      key={r.userId}
+                      className="editorial-card px-4 py-3 flex gap-3 items-start"
+                    >
+                      <span className="text-base shrink-0 mt-0.5">
+                        {r.userEmoji ?? "👤"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-display text-sm">
+                            {r.userNickname}
+                          </span>
+                          <span className="font-display text-accent text-sm tracking-wider">
+                            {filled}
+                            <span className="text-fg-faint/40">{empty}</span>
+                          </span>
+                        </div>
+                        {r.oneLine && (
+                          <p className="text-sm text-fg-soft leading-relaxed mt-1.5 italic">
+                            &ldquo;{r.oneLine}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {canEdit && date.status === "done" && (
+              <div className="flex justify-center pt-1">
+                <Link
+                  href={`/dates/${date.id}/review`}
+                  className="text-xs px-4 py-2 rounded-full border border-accent text-accent"
+                >
+                  ★ 리뷰{" "}
+                  {date.reviews.some((r) => r.userId === me?.id)
+                    ? "수정"
+                    : "남기기"}
+                </Link>
+              </div>
+            )}
+          </section>
         )}
 
         <PhotosSection
