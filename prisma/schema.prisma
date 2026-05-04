@@ -1,6 +1,5 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -218,6 +217,7 @@ model DatePhoto {
   dateId       String
   date         Date     @relation(fields: [dateId], references: [id], onDelete: Cascade)
   url          String
+  key          String?
   caption      String?
   width        Int?
   height       Int?
