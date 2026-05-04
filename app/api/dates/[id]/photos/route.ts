@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { put } from "@vercel/blob";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { storage } from "@/lib/storage";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
@@ -16,9 +16,9 @@ export async function POST(
   if (!["admin", "approved"].includes(user.role)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!storage.isConfigured()) {
     return NextResponse.json(
-      { error: "blob_not_configured" },
+      { error: "storage_not_configured" },
       { status: 503 },
     );
   }
@@ -49,17 +49,20 @@ export async function POST(
         : file.type === "image/heic"
           ? "heic"
           : "jpg";
-  const filename = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
-  const blob = await put(filename, file, {
-    access: "public",
-    addRandomSuffix: false,
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { url, key } = await storage.put({
+    path,
+    data: buffer,
+    contentType: file.type,
   });
 
   const created = await prisma.datePhoto.create({
     data: {
       dateId: id,
-      url: blob.url,
+      url,
+      key,
       caption,
       uploadedById: user.id,
     },

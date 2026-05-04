@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { del } from "@vercel/blob";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { storage, keyFromUrl } from "@/lib/storage";
 
 export async function DELETE(
   _req: Request,
@@ -25,13 +25,16 @@ export async function DELETE(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  // key 우선, 없으면 URL에서 추출 (legacy)
+  const key = existing.key ?? keyFromUrl(existing.url);
+  if (key && storage.isConfigured()) {
     try {
-      await del(existing.url);
+      await storage.del(key);
     } catch {
-      // 블롭 정리 실패는 무시 (DB row만 삭제)
+      // 블롭 정리 실패는 무시 — DB row는 그대로 삭제
     }
   }
+
   await prisma.datePhoto.delete({ where: { id: numId } });
   revalidatePath(`/dates/${existing.dateId}`);
   return NextResponse.json({ ok: true });

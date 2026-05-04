@@ -47,8 +47,8 @@ export default function PhotosSection({
         const data = await res.json();
         if (!res.ok) {
           setError(
-            data.error === "blob_not_configured"
-              ? "사진 저장소가 아직 설정되지 않았어요 (BLOB_READ_WRITE_TOKEN)"
+            data.error === "storage_not_configured"
+              ? "사진 저장소가 아직 설정되지 않았어요 (R2 env 확인)"
               : data.error === "too_large"
                 ? "파일이 너무 커요 (8MB 이하)"
                 : data.error === "bad_mime"
