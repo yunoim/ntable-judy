@@ -1,3 +1,14 @@
+// 알림 보류 (2026-05-04). 채팅 기능 도입 시 부활.
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  return NextResponse.json({ error: "disabled" }, { status: 410 });
+}
+export async function DELETE() {
+  return NextResponse.json({ error: "disabled" }, { status: 410 });
+}
+
+/* === 원래 구현 (보류) ===========================================
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -39,3 +50,4 @@ export async function DELETE(req: Request) {
     .catch(() => {});
   return NextResponse.json({ ok: true });
 }
+=================================================================== */

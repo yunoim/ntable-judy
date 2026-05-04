@@ -1,8 +1,17 @@
-// Vercel Cron 또는 외부 스케줄러로 매일 1회 호출 (KST 기준 오전 9시 권장).
-// vercel.json에 schedule 등록.
+// 알림 cron 보류 (2026-05-04). 채팅 기능 도입 시 부활.
+// Railway 배포는 cron 트리거 자체가 없어 호출 안 됨. 외부 호출 시 410.
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({ error: "disabled" }, { status: 410 });
+}
+
+/* === 원래 구현 (보류) ===========================================
+// Vercel Cron 또는 외부 스케줄러로 매일 1회 호출 (KST 09:00 권장).
 //
-// 보호: Vercel cron은 자동으로 Authorization: Bearer <CRON_SECRET> 헤더 송신
-//      외부 호출 시 같은 토큰 필요.
+// 보호: Authorization: Bearer <CRON_SECRET>
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -154,3 +163,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ ok: true, sent });
 }
+=================================================================== */

@@ -1,3 +1,28 @@
+// 알림(Web Push) — 채팅 기능 도입 시 부활 예정 (2026-05-04 보류).
+// 부활 시 아래 주석 해제 + .env 의 VAPID_* + sw.js + PushToggle + cron 함께 활성화.
+
+export type PushPayload = {
+  title: string;
+  body: string;
+  url?: string;
+  icon?: string;
+  tag?: string;
+};
+
+export async function sendPushTo(
+  _userId: string,
+  _payload: PushPayload,
+): Promise<{ sent: number; removed: number }> {
+  return { sent: 0, removed: 0 };
+}
+
+export async function broadcast(
+  _payload: PushPayload,
+): Promise<{ sent: number; removed: number }> {
+  return { sent: 0, removed: 0 };
+}
+
+/* === 원래 구현 (보류) ===========================================
 import webpush from "web-push";
 import { prisma } from "@/lib/db";
 
@@ -13,14 +38,6 @@ function ensureConfigured() {
   return true;
 }
 
-export type PushPayload = {
-  title: string;
-  body: string;
-  url?: string;
-  icon?: string;
-  tag?: string;
-};
-
 export async function sendPushTo(
   userId: string,
   payload: PushPayload,
@@ -32,10 +49,7 @@ export async function sendPushTo(
   for (const s of subs) {
     try {
       await webpush.sendNotification(
-        {
-          endpoint: s.endpoint,
-          keys: { p256dh: s.p256dh, auth: s.auth },
-        },
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify(payload),
       );
       sent++;
@@ -46,7 +60,6 @@ export async function sendPushTo(
         })
         .catch(() => {});
     } catch (e: any) {
-      // 410 Gone / 404 — 구독 만료
       const status = e?.statusCode;
       if (status === 410 || status === 404) {
         await prisma.pushSubscription
@@ -76,3 +89,4 @@ export async function broadcast(
   }
   return { sent, removed };
 }
+=================================================================== */
