@@ -31,7 +31,7 @@ export default async function TimelinePage() {
   const monthStart = new Date(year, month, 1);
   const monthEnd = new Date(year, month + 1, 1);
 
-  const [dates, eventsRaw, admin] = await Promise.all([
+  const [dates, eventsRaw, admin, partner] = await Promise.all([
     getAllDates(),
     prisma.personalEvent.findMany({
       where: { startsAt: { gte: monthStart, lt: monthEnd } },
@@ -39,6 +39,7 @@ export default async function TimelinePage() {
       include: { user: { select: { id: true, nickname: true, emoji: true } } },
     }),
     prisma.user.findFirst({ where: { role: "admin" } }),
+    prisma.user.findFirst({ where: { partner: true } }),
   ]);
 
   const adminId = admin?.id ?? null;
@@ -149,11 +150,11 @@ export default async function TimelinePage() {
                   </span>
                 )}
                 {dayEvents.length > 0 && (
-                  <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
+                  <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1">
                     {dayEvents.slice(0, 3).map((e, idx) => (
                       <span
                         key={idx}
-                        className="w-1 h-1 rounded-full"
+                        className="w-2 h-2 rounded-full"
                         style={{
                           background:
                             e.user.id === adminId
@@ -163,7 +164,7 @@ export default async function TimelinePage() {
                       />
                     ))}
                     {dayEvents.length > 3 && (
-                      <span className="text-[7px] text-fg-faint leading-none">
+                      <span className="text-[9px] text-fg-faint leading-none font-display">
                         +{dayEvents.length - 3}
                       </span>
                     )}
@@ -173,23 +174,24 @@ export default async function TimelinePage() {
             );
           })}
         </div>
-        <div className="flex items-center gap-3 mt-3 text-[10px] text-fg-faint">
-          <span className="flex items-center gap-1">
-            <span className="text-accent text-xs">♡</span> 데이트
+        <div className="flex items-center gap-4 mt-3 text-[11px] text-fg-soft">
+          <span className="flex items-center gap-1.5">
+            <span className="text-accent text-base leading-none">♡</span>
+            데이트
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <span
-              className="w-1.5 h-1.5 rounded-full"
+              className="w-2.5 h-2.5 rounded-full"
               style={{ background: "var(--accent)" }}
             />
             {admin?.nickname ?? "닉"}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <span
-              className="w-1.5 h-1.5 rounded-full"
+              className="w-2.5 h-2.5 rounded-full"
               style={{ background: "var(--rain)" }}
             />
-            상대
+            {partner?.nickname ?? "주디"}
           </span>
         </div>
       </section>

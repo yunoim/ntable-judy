@@ -1,36 +1,45 @@
-// app/api/plan/generate/route.ts — Claude로 코스 preview 생성 (저장 X)
+// app/api/plan/generate/route.ts — Claude로 3개 코스 안 생성 (저장 X)
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getCurrentUser } from "@/lib/auth";
 
 const SYSTEM_PROMPT = `너는 두 사람의 데이트 코스를 짜주는 큐레이터야.
+서로 다른 무드로 3개의 코스 안을 제시해.
 응답은 반드시 아래 JSON 스키마로만. 다른 텍스트, 마크다운 코드블록 모두 금지.
 
 {
-  "title": "string (짧고 시적, 12자 이내)",
-  "subtitle": "string (지역+무드, 예: '성수동 봄 산책 코스')",
-  "themeNote": "string (한 줄, 따뜻하게)",
-  "area": "string (대표 지역명)",
-  "weather": "rain | sun | cloud | snow",
-  "stops": [
+  "previews": [
     {
-      "stepOrder": 1,
-      "time": "HH:MM (24시간)",
-      "emoji": "단일 이모지",
-      "name": "정확한 장소명",
-      "address": "도로명 주소",
-      "type": "카페 | 식당 | 전시 | 산책 | 와인바 | 쇼핑 | 기타",
-      "description": "1~2문장. 왜 이 장소인지 한 줄 포함",
-      "mapQuery": "네이버 지도 검색어 (장소명+지역)",
-      "estimatedCost": 0,
-      "reserved": false
+      "title": "string (짧고 시적, 12자 이내)",
+      "subtitle": "string (지역+무드, 예: '성수동 봄 산책 코스')",
+      "themeNote": "string (한 줄, 따뜻하게)",
+      "area": "string (대표 지역명)",
+      "weather": "rain | sun | cloud | snow",
+      "stops": [
+        {
+          "stepOrder": 1,
+          "time": "HH:MM (24시간)",
+          "emoji": "단일 이모지",
+          "name": "정확한 장소명",
+          "address": "도로명 주소",
+          "type": "카페 | 식당 | 전시 | 산책 | 와인바 | 쇼핑 | 기타",
+          "description": "1~2문장. 왜 이 장소인지 한 줄 포함",
+          "mapQuery": "네이버 지도 검색어 (장소명+지역)",
+          "estimatedCost": 0,
+          "reserved": false
+        }
+      ],
+      "estimatedTotal": 0
     }
-  ],
-  "estimatedTotal": 0
+  ]
 }
 
 규칙:
-- 단계 3~5개
+- previews는 정확히 3개 (서로 분명히 다른 무드/동선)
+  - 안 1: 가장 안전한 정석 코스
+  - 안 2: 다른 무드 (활동/액티비티 또는 미식 중심)
+  - 안 3: 의외성 (덜 알려진 곳, 작가 취향, 컨셉 분명)
+- 각 안의 단계 3~5개
 - 시간 흐름 자연스럽게 (이동 시간 고려, 보통 60~120분 간격)
 - weather가 rain이면 실내 위주
 - 장소는 실제 검색 가능한 곳 (한국 기준)
@@ -54,7 +63,7 @@ export async function POST(req: Request) {
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({
-      preview: mockPreview(input),
+      previews: mockPreviews(input),
       saved: false,
       mock: true,
       message: "ANTHROPIC_API_KEY 미설정 — 데모 응답입니다",
@@ -65,7 +74,7 @@ export async function POST(req: Request) {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 2000,
+      max_tokens: 4500,
       system: SYSTEM_PROMPT,
       messages: [
         {
@@ -81,14 +90,14 @@ export async function POST(req: Request) {
       .join("");
 
     const parsed = parseJson(text);
-    if (!parsed) {
+    if (!parsed || !Array.isArray(parsed.previews)) {
       return NextResponse.json(
         { error: "parse_failed", raw: text.slice(0, 500) },
         { status: 500 },
       );
     }
 
-    return NextResponse.json({ preview: parsed, saved: false });
+    return NextResponse.json({ previews: parsed.previews, saved: false });
   } catch (err) {
     console.error("[ai generate]", err);
     return NextResponse.json(
@@ -110,39 +119,80 @@ function parseJson(text: string) {
   }
 }
 
-function mockPreview(input: string) {
-  return {
-    title: "성수 데모 코스",
+function mockPreviews(input: string) {
+  const base = (variant: string) => ({
+    title: `데모 ${variant}`,
     subtitle: "ANTHROPIC_API_KEY 설정 후 다시 시도",
-    themeNote: `요청: "${input.slice(0, 40)}"... (실제 AI 응답이 아닙니다)`,
+    themeNote: `요청: "${input.slice(0, 30)}"... (실제 AI 응답이 아닙니다)`,
     area: "성수동",
-    weather: "cloud",
-    stops: [
-      {
-        stepOrder: 1,
-        time: "14:00",
-        emoji: "☕",
-        name: "데모 카페",
-        address: "서울 성동구",
-        type: "카페",
-        description: "Anthropic API 키가 설정되면 실제 코스가 생성됩니다.",
-        mapQuery: "성수 카페",
-        estimatedCost: 8000,
-        reserved: false,
-      },
-      {
-        stepOrder: 2,
-        time: "16:30",
-        emoji: "🍽️",
-        name: "데모 식당",
-        address: "서울 성동구",
-        type: "식당",
-        description: "운영자에게 ANTHROPIC_API_KEY 환경변수 설정 요청.",
-        mapQuery: "성수 식당",
-        estimatedCost: 35000,
-        reserved: false,
-      },
-    ],
-    estimatedTotal: 43000,
-  };
+    weather: "cloud" as const,
+  });
+  return [
+    {
+      ...base("정석"),
+      stops: [
+        {
+          stepOrder: 1,
+          time: "14:00",
+          emoji: "☕",
+          name: "데모 카페",
+          address: "서울 성동구",
+          type: "카페",
+          description: "기본형 데모 코스 첫 단계.",
+          mapQuery: "성수 카페",
+          estimatedCost: 8000,
+          reserved: false,
+        },
+        {
+          stepOrder: 2,
+          time: "16:30",
+          emoji: "🍽️",
+          name: "데모 식당",
+          address: "서울 성동구",
+          type: "식당",
+          description: "기본형 두 번째 단계.",
+          mapQuery: "성수 식당",
+          estimatedCost: 35000,
+          reserved: false,
+        },
+      ],
+      estimatedTotal: 43000,
+    },
+    {
+      ...base("활동"),
+      stops: [
+        {
+          stepOrder: 1,
+          time: "13:00",
+          emoji: "🎨",
+          name: "데모 전시",
+          address: "서울 성동구",
+          type: "전시",
+          description: "활동형 데모 첫 단계.",
+          mapQuery: "성수 전시",
+          estimatedCost: 12000,
+          reserved: false,
+        },
+      ],
+      estimatedTotal: 12000,
+    },
+    {
+      ...base("의외성"),
+      stops: [
+        {
+          stepOrder: 1,
+          time: "15:00",
+          emoji: "🧭",
+          name: "데모 골목",
+          address: "서울 성동구",
+          type: "산책",
+          description: "의외성 데모.",
+          mapQuery: "성수 골목",
+          estimatedCost: 0,
+          reserved: false,
+        },
+      ],
+      estimatedTotal: 0,
+    },
+  ];
 }
