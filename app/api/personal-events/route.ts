@@ -64,9 +64,22 @@ export async function POST(req: Request) {
     : null;
   const allDay = !!body.allDay;
 
+  // 본인 또는 활성 파트너(admin/approved) 한 명 중 선택 가능
+  let ownerId = user.id;
+  if (typeof body.userId === "string" && body.userId.trim() && body.userId !== user.id) {
+    const target = await prisma.user.findUnique({
+      where: { id: body.userId },
+      select: { id: true, role: true },
+    });
+    if (!target || !["admin", "approved"].includes(target.role)) {
+      return NextResponse.json({ error: "bad_owner" }, { status: 400 });
+    }
+    ownerId = target.id;
+  }
+
   const created = await prisma.personalEvent.create({
     data: {
-      userId: user.id,
+      userId: ownerId,
       title,
       startsAt,
       endsAt,

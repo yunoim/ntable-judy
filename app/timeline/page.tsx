@@ -252,7 +252,19 @@ export default async function TimelinePage() {
         )}
       </section>
 
-      <EventsSection events={events} meId={me.id} meRole={me.role} />
+      <EventsSection
+        events={events}
+        meId={me.id}
+        meRole={me.role}
+        owners={[
+          ...(admin
+            ? [{ id: admin.id, nickname: admin.nickname, color: "accent" as const }]
+            : []),
+          ...(partner
+            ? [{ id: partner.id, nickname: partner.nickname, color: "rain" as const }]
+            : []),
+        ].filter((o, i, arr) => arr.findIndex((x) => x.id === o.id) === i)}
+      />
 
       <div className="flex-1" />
       <TabBar active="log" />

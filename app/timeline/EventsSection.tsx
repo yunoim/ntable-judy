@@ -22,14 +22,18 @@ function localInput(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+type Owner = { id: string; nickname: string; color: "accent" | "rain" };
+
 export default function EventsSection({
   events,
   meId,
   meRole,
+  owners,
 }: {
   events: EventRow[];
   meId: string;
   meRole: string;
+  owners: Owner[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -46,6 +50,7 @@ export default function EventsSection({
   const [allDay, setAllDay] = useState(false);
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
+  const [ownerId, setOwnerId] = useState<string>(meId);
 
   const formOpen = adding || editingId !== null;
 
@@ -56,6 +61,7 @@ export default function EventsSection({
     setAllDay(false);
     setCategory("");
     setNote("");
+    setOwnerId(meId);
     setEditingId(null);
     setAdding(false);
   }
@@ -70,6 +76,7 @@ export default function EventsSection({
     setAllDay(e.allDay);
     setCategory(e.category ?? "");
     setNote(e.note ?? "");
+    setOwnerId(e.user.id);
     setError(null);
   }
 
@@ -84,13 +91,17 @@ export default function EventsSection({
       const startsAt = allDay
         ? new Date(`${date}T00:00:00`).toISOString()
         : new Date(`${date}T${time}:00`).toISOString();
-      const payload = {
+      const payload: Record<string, unknown> = {
         title,
         startsAt,
         allDay,
         category: category || null,
         note: note || null,
       };
+      // 신규 등록 시에만 owner 지정 (수정은 원래 owner 유지)
+      if (!editingId && ownerId !== meId) {
+        payload.userId = ownerId;
+      }
       const url = editingId
         ? `/api/personal-events/${editingId}`
         : "/api/personal-events";
@@ -158,6 +169,46 @@ export default function EventsSection({
       {formOpen && (
         <div className="editorial-card-warm p-4 space-y-3">
           <p className="eyebrow">{editingId ? "수정" : "새 약속"}</p>
+          {!editingId && owners.length > 1 && (
+            <div className="space-y-1.5">
+              <p className="eyebrow !text-[9px]">누구 일정</p>
+              <div className="flex gap-1.5">
+                {owners.map((o) => {
+                  const active = ownerId === o.id;
+                  const isMe = o.id === meId;
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => setOwnerId(o.id)}
+                      className={[
+                        "flex-1 rounded-card text-xs py-2 px-2 border flex items-center justify-center gap-1.5 transition-colors",
+                        active
+                          ? "bg-ink-card text-bg border-ink-card"
+                          : "bg-bg text-fg-soft border-fg/20",
+                      ].join(" ")}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          background:
+                            o.color === "accent"
+                              ? "var(--accent)"
+                              : "var(--rain)",
+                        }}
+                      />
+                      {isMe ? `내 일정 (${o.nickname})` : `${o.nickname} 일정`}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {editingId && (
+            <p className="text-[10px] text-fg-faint italic">
+              {events.find((e) => e.id === editingId)?.user.nickname} 의 일정
+            </p>
+          )}
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value.slice(0, 80))}
@@ -231,8 +282,7 @@ export default function EventsSection({
         <ul className="space-y-2">
           {events.map((e) => {
             const start = new Date(e.startsAt);
-            const isMine = e.user.id === meId;
-            const canManage = isMine || meRole === "admin";
+            const canManage = ["admin", "approved"].includes(meRole);
             return (
               <li
                 key={e.id}
@@ -275,14 +325,12 @@ export default function EventsSection({
                   )}
                   {canManage && (
                     <div className="flex gap-2.5 mt-1.5">
-                      {isMine && (
-                        <button
-                          onClick={() => startEdit(e)}
-                          className="text-[10px] text-fg-faint underline"
-                        >
-                          수정
-                        </button>
-                      )}
+                      <button
+                        onClick={() => startEdit(e)}
+                        className="text-[10px] text-fg-faint underline"
+                      >
+                        수정
+                      </button>
                       <button
                         onClick={() => remove(e.id)}
                         disabled={busyId === e.id}

@@ -19,7 +19,8 @@ export async function PATCH(
   });
   if (!existing)
     return NextResponse.json({ error: "not_found" }, { status: 404 });
-  if (user.role !== "admin" && existing.userId !== user.id) {
+  // 커플 앱이라 admin/approved면 서로 수정 가능
+  if (!["admin", "approved"].includes(user.role)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -96,7 +97,7 @@ export async function DELETE(
   });
   if (!existing)
     return NextResponse.json({ error: "not_found" }, { status: 404 });
-  if (user.role !== "admin" && existing.userId !== user.id) {
+  if (!["admin", "approved"].includes(user.role)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   await prisma.personalEvent.delete({ where: { id: numId } });
