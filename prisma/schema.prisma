@@ -39,6 +39,7 @@ model User {
   comments             DateComment[]
   photos               DatePhoto[]        @relation("PhotoUploader")
   pushSubs             PushSubscription[]
+  personalEvents       PersonalEvent[]
 
   @@schema("judy")
 }
@@ -226,6 +227,25 @@ model DatePhoto {
   createdAt    DateTime @default(now())
 
   @@index([dateId, createdAt])
+  @@schema("judy")
+}
+
+model PersonalEvent {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  startsAt  DateTime
+  endsAt    DateTime?
+  allDay    Boolean   @default(false)
+  category  String?
+  emoji     String?
+  note      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, startsAt])
+  @@index([startsAt])
   @@schema("judy")
 }
 
