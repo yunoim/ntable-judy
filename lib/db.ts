@@ -56,8 +56,12 @@ export async function getNextDate() {
 }
 
 export async function getPastDates(limit = 5) {
+  const startOfToday = startOfTodayKstUtc();
   const dates = await prisma.date.findMany({
-    where: { status: "done" },
+    where: {
+      status: { not: "cancelled" },
+      scheduledAt: { lt: startOfToday },
+    },
     orderBy: { scheduledAt: "desc" },
     take: limit,
     include: dateInclude,
