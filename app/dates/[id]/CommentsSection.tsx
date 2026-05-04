@@ -27,6 +27,8 @@ export default function CommentsSection({
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editBody, setEditBody] = useState("");
 
   async function add() {
     const text = body.trim();
@@ -54,6 +56,49 @@ export default function CommentsSection({
     }
   }
 
+  function startEdit(c: Comment) {
+    setEditingId(c.id);
+    setEditBody(c.body);
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditBody("");
+  }
+
+  async function saveEdit() {
+    if (editingId == null) return;
+    const text = editBody.trim();
+    if (!text) {
+      setError("내용이 비어있어요");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/comments/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "실패");
+        return;
+      }
+      setComments((cs) =>
+        cs.map((c) => (c.id === editingId ? { ...c, body: data.body } : c)),
+      );
+      cancelEdit();
+      startTransition(() => router.refresh());
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function remove(id: number) {
     if (!confirm("삭제할까요?")) return;
     try {
@@ -64,6 +109,7 @@ export default function CommentsSection({
         return;
       }
       setComments((cs) => cs.filter((c) => c.id !== id));
+      if (editingId === id) cancelEdit();
       startTransition(() => router.refresh());
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -82,7 +128,8 @@ export default function CommentsSection({
         <ul className="space-y-2.5">
           {comments.map((c) => {
             const mine = c.user.id === meId;
-            const canDelete = mine || meRole === "admin";
+            const canManage = mine || meRole === "admin";
+            const isEditing = editingId === c.id;
             return (
               <li
                 key={c.id}
@@ -105,16 +152,54 @@ export default function CommentsSection({
                       })}
                     </span>
                   </div>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1 text-fg-soft">
-                    {c.body}
-                  </p>
-                  {canDelete && (
-                    <button
-                      onClick={() => remove(c.id)}
-                      className="text-[10px] text-fg-faint underline mt-1.5"
-                    >
-                      삭제
-                    </button>
+                  {isEditing ? (
+                    <div className="mt-1.5 space-y-2">
+                      <textarea
+                        value={editBody}
+                        onChange={(e) =>
+                          setEditBody(e.target.value.slice(0, 2000))
+                        }
+                        rows={3}
+                        className="w-full bg-bg border border-accent rounded-card px-3 py-2 text-sm focus:outline-none resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveEdit}
+                          disabled={saving || !editBody.trim()}
+                          className="flex-1 bg-ink-card text-bg rounded-card py-2 text-xs font-semibold disabled:opacity-40"
+                        >
+                          {saving ? "저장 중..." : "수정 ✓"}
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="px-4 rounded-card border border-fg/20 text-xs"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1 text-fg-soft">
+                      {c.body}
+                    </p>
+                  )}
+                  {canManage && !isEditing && (
+                    <div className="flex gap-3 mt-1.5">
+                      {mine && (
+                        <button
+                          onClick={() => startEdit(c)}
+                          className="text-[10px] text-fg-faint underline"
+                        >
+                          수정
+                        </button>
+                      )}
+                      <button
+                        onClick={() => remove(c.id)}
+                        className="text-[10px] text-fg-faint underline"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   )}
                 </div>
               </li>
