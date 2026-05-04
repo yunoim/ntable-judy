@@ -1,10 +1,12 @@
 // app/dates/[id]/page.tsx — 데이트 상세 (date_schedule_v4 기반)
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDateById, getAllDates } from "@/lib/db";
+import { getDateById, getAllDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
 import Rain from "@/components/Rain";
+import CommentsSection from "./CommentsSection";
+import PhotosSection from "./PhotosSection";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +35,21 @@ export default async function DateDetailPage({
 }) {
   const me = await requireApproved();
   const { id } = await params;
-  const [date, all] = await Promise.all([
+  const [date, all, comments, photos] = await Promise.all([
     getDateById(id),
     getAllDates(),
+    prisma.dateComment.findMany({
+      where: { dateId: id },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { id: true, nickname: true, emoji: true } } },
+    }),
+    prisma.datePhoto.findMany({
+      where: { dateId: id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        uploadedBy: { select: { id: true, nickname: true, emoji: true } },
+      },
+    }),
   ]);
   if (!date) notFound();
   const canEdit = ["admin", "approved"].includes(me.role);
@@ -212,6 +226,33 @@ export default async function DateDetailPage({
             </Link>
           </div>
         )}
+
+        <PhotosSection
+          dateId={date.id}
+          initial={photos.map((p) => ({
+            id: p.id,
+            url: p.url,
+            caption: p.caption,
+            width: p.width,
+            height: p.height,
+            uploadedBy: p.uploadedBy,
+            createdAt: p.createdAt.toISOString(),
+          }))}
+          meId={me.id}
+          meRole={me.role}
+        />
+
+        <CommentsSection
+          dateId={date.id}
+          initial={comments.map((c) => ({
+            id: c.id,
+            body: c.body,
+            createdAt: c.createdAt.toISOString(),
+            user: c.user,
+          }))}
+          meId={me.id}
+          meRole={me.role}
+        />
 
         <footer className="text-center mt-11">
           <div className="text-2xl tracking-widest mb-2.5">🦊 🌧️ 🐰</div>

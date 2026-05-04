@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import PushToggle from "@/components/PushToggle";
 
 export default function ProfileClient({
   user,
@@ -178,6 +179,16 @@ export default function ProfileClient({
           <p className="text-[10px] text-fg-faint italic">
             사주/궁합용. 모르면 비워둬도 돼요.
           </p>
+        </section>
+
+        <section className="space-y-1.5 pt-4 border-t border-fg/10">
+          <label className="text-[11px] tracking-widest uppercase text-fg-faint">
+            푸시 알림
+          </label>
+          <p className="text-[10px] text-fg-faint italic mb-2">
+            기념일·데이트·마일스톤·캡슐 알림. 끄면 더 이상 안 와요.
+          </p>
+          <PushToggle />
         </section>
 
         {savedAt && (

@@ -341,6 +341,30 @@ export default function UsClient({
       )}
 
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+        {/* Quick links */}
+        <section className="grid grid-cols-2 gap-2.5">
+          <Link
+            href="/buckets"
+            className="editorial-card px-4 py-3 flex items-center gap-2.5"
+          >
+            <span className="text-base">🌱</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm">버킷리스트</p>
+              <p className="text-[10px] text-fg-faint">같이 가고싶은</p>
+            </div>
+          </Link>
+          <Link
+            href="/capsules"
+            className="editorial-card px-4 py-3 flex items-center gap-2.5"
+          >
+            <span className="text-base">📜</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm">타임캡슐</p>
+              <p className="text-[10px] text-fg-faint">미래에 보내는</p>
+            </div>
+          </Link>
+        </section>
+
         {/* ─── 마일스톤 ─────────────────────── */}
         {milestones.length > 0 && (
           <section className="space-y-3">

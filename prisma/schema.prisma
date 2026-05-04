@@ -32,9 +32,14 @@ model User {
 
   sessions             Session[]
   reviews              Review[]
-  datesCreated         Date[]        @relation("DateCreator")
-  anniversariesCreated Anniversary[] @relation("AnniversaryCreator")
-  anniversariesAbout   Anniversary[] @relation("AnniversarySubject")
+  datesCreated         Date[]             @relation("DateCreator")
+  anniversariesCreated Anniversary[]      @relation("AnniversaryCreator")
+  anniversariesAbout   Anniversary[]      @relation("AnniversarySubject")
+  buckets              Bucket[]           @relation("BucketCreator")
+  capsules             TimeCapsule[]      @relation("CapsuleCreator")
+  comments             DateComment[]
+  photos               DatePhoto[]        @relation("PhotoUploader")
+  pushSubs             PushSubscription[]
 
   @@schema("judy")
 }
@@ -75,9 +80,12 @@ model Date {
   createdById String
   createdBy   User   @relation("DateCreator", fields: [createdById], references: [id])
 
-  stops   Stop[]
-  reviews Review[]
-  tags    DateTag[]
+  stops    Stop[]
+  reviews  Review[]
+  tags     DateTag[]
+  comments DateComment[]
+  photos   DatePhoto[]
+  buckets  Bucket[]      @relation("BucketDoneOn")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -149,5 +157,89 @@ model Anniversary {
 
   @@unique([userId, kind])
   @@index([date])
+  @@schema("judy")
+}
+
+model Bucket {
+  id          Int       @id @default(autoincrement())
+  title       String
+  emoji       String?
+  description String?
+  area        String?
+  priority    Int       @default(0)
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+
+  doneDateId String?
+  doneDate   Date?   @relation("BucketDoneOn", fields: [doneDateId], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User   @relation("BucketCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([done, priority])
+  @@schema("judy")
+}
+
+model TimeCapsule {
+  id       Int       @id @default(autoincrement())
+  title    String
+  body     String
+  openAt   DateTime
+  opened   Boolean   @default(false)
+  openedAt DateTime?
+
+  createdById String
+  createdBy   User   @relation("CapsuleCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([openAt])
+  @@schema("judy")
+}
+
+model DateComment {
+  id        Int      @id @default(autoincrement())
+  dateId    String
+  date      Date     @relation(fields: [dateId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([dateId, createdAt])
+  @@schema("judy")
+}
+
+model DatePhoto {
+  id           Int      @id @default(autoincrement())
+  dateId       String
+  date         Date     @relation(fields: [dateId], references: [id], onDelete: Cascade)
+  url          String
+  caption      String?
+  width        Int?
+  height       Int?
+  uploadedById String
+  uploadedBy   User     @relation("PhotoUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([dateId, createdAt])
+  @@schema("judy")
+}
+
+model PushSubscription {
+  id         Int       @id @default(autoincrement())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
   @@schema("judy")
 }
