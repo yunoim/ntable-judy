@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { TabBar } from "@/components/ui";
+import { Eyebrow, Rule, SectionTitle, TabBar } from "@/components/ui";
 
 type Anniversary = {
   id: number;
@@ -43,18 +43,20 @@ function nextOccurrence(date: string, recurring: boolean): Date {
 function distanceLabel(dateStr: string, recurring: boolean): {
   text: string;
   highlight: boolean;
+  past: boolean;
 } {
   if (recurring) {
     const next = nextOccurrence(dateStr, true);
     const days = daysUntil(next);
-    if (days === 0) return { text: "오늘 ★", highlight: true };
-    if (days < 0) return { text: `D+${Math.abs(days)}`, highlight: false };
-    return { text: `D-${days}`, highlight: days <= 30 };
+    if (days === 0) return { text: "오늘 ★", highlight: true, past: false };
+    if (days < 0)
+      return { text: `D+${Math.abs(days)}`, highlight: false, past: true };
+    return { text: `D-${days}`, highlight: days <= 30, past: false };
   } else {
     const days = daysUntil(new Date(dateStr));
-    if (days > 0) return { text: `D-${days}`, highlight: days <= 30 };
-    if (days === 0) return { text: "오늘 ★", highlight: true };
-    return { text: `D+${Math.abs(days)}`, highlight: false };
+    if (days > 0) return { text: `D-${days}`, highlight: days <= 30, past: false };
+    if (days === 0) return { text: "오늘 ★", highlight: true, past: false };
+    return { text: `D+${Math.abs(days)}`, highlight: false, past: true };
   }
 }
 
@@ -172,7 +174,7 @@ export default function UsClient({
       const res = await fetch(`/api/anniversaries/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label, date, emoji, recurring }),
+        body: JSON.stringify({ label, date, emoji, recurring, kind }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -211,13 +213,17 @@ export default function UsClient({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 bg-bg/95 backdrop-blur border-b border-fg/15 px-4 pt-4 pb-3 safe-top flex items-center justify-between">
-        <Link href="/" className="text-sm text-fg-faint">
+      {/* Masthead */}
+      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
+        <Link href="/" className="text-xs text-fg-faint pt-1">
           ← 홈
         </Link>
-        <p className="font-display text-base">
-          우리의 <em className="italic text-accent">날들</em>
-        </p>
+        <div className="text-center">
+          <Eyebrow>倆 · our days</Eyebrow>
+          <p className="font-display text-2xl mt-1">
+            우리의 <em className="italic">날들</em>
+          </p>
+        </div>
         <button
           onClick={() => {
             if (formOpen) {
@@ -227,31 +233,31 @@ export default function UsClient({
               setAdding(true);
             }
           }}
-          className="text-sm text-accent"
+          className="text-fg-faint text-base pt-1 w-8 text-right"
           aria-label="추가"
         >
           {formOpen ? "✕" : "+"}
         </button>
       </header>
 
+      <Rule variant="dot" className="mx-5" />
+
       {error && (
-        <div className="mx-4 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
+        <div className="mx-5 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
           {error}
         </div>
       )}
 
       {formOpen && (
-        <section className="mx-4 mt-3 p-4 rounded-card bg-bg-warm/50 border border-accent/30 space-y-3">
-          <p className="text-[11px] tracking-widest uppercase text-fg-faint">
-            {editingId ? "수정" : "추가"}
-          </p>
+        <section className="mx-5 mt-4 p-5 editorial-card-warm space-y-3">
+          <Eyebrow>{editingId ? "edit" : "new entry"}</Eyebrow>
           {!editingId && (
             <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => chooseKind("")}
                 className={[
-                  "flex-1 rounded-card text-xs py-2 px-2 border",
+                  "flex-1 rounded-card text-xs py-2 px-2 border transition-colors",
                   kind === ""
                     ? "bg-ink-card text-bg border-ink-card"
                     : "bg-bg text-fg-soft border-fg/20",
@@ -264,7 +270,7 @@ export default function UsClient({
                 onClick={() => chooseKind("couple_start")}
                 disabled={hasCoupleStart}
                 className={[
-                  "flex-1 rounded-card text-xs py-2 px-2 border",
+                  "flex-1 rounded-card text-xs py-2 px-2 border transition-colors",
                   kind === "couple_start"
                     ? "bg-ink-card text-bg border-ink-card"
                     : "bg-bg text-fg-soft border-fg/20 disabled:opacity-40",
@@ -276,7 +282,7 @@ export default function UsClient({
           )}
           {kind === "couple_start" && !editingId && (
             <p className="text-[10px] text-fg-faint italic">
-              저장하면 100일이 자동 등록돼요 (이미 지난 경우 생략).
+              저장하면 100일·N주년 마일스톤이 자동 계산돼요.
             </p>
           )}
           {hasCoupleStart && !editingId && kind === "" && (
@@ -288,13 +294,13 @@ export default function UsClient({
             value={label}
             onChange={(e) => setLabel(e.target.value.slice(0, 30))}
             placeholder="이름 (예: 사귄 날, 100일, 주디 생일)"
-            className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+            className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
           />
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+            className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
           />
           <div className="flex gap-1.5 flex-wrap">
             {EMOJI_OPTIONS.map((e) => (
@@ -303,8 +309,10 @@ export default function UsClient({
                 type="button"
                 onClick={() => setEmoji(e)}
                 className={[
-                  "w-9 h-9 rounded-card text-base flex items-center justify-center",
-                  emoji === e ? "bg-accent text-bg" : "bg-bg border border-fg/20",
+                  "w-9 h-9 rounded-card text-base flex items-center justify-center transition-colors",
+                  emoji === e
+                    ? "bg-accent text-bg"
+                    : "bg-bg border border-fg/20",
                 ].join(" ")}
               >
                 {e}
@@ -332,150 +340,183 @@ export default function UsClient({
         </section>
       )}
 
-      <main className="flex-1 px-4 py-4 pb-24 space-y-3">
+      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+        {/* ─── 마일스톤 ─────────────────────── */}
         {milestones.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[11px] tracking-widest uppercase text-fg-faint">
-              마일스톤 (자동)
-            </p>
-            <ul className="space-y-1.5">
-              {milestones.map((m) => {
-                const days = daysUntil(new Date(m.date));
-                const dist =
-                  days === 0
-                    ? { text: "오늘 ★", highlight: true }
-                    : days > 0
-                    ? { text: `D-${days}`, highlight: days <= 30 }
-                    : { text: `D+${Math.abs(days)}`, highlight: false };
-                return (
-                  <li
-                    key={m.key}
-                    className={[
-                      "rounded-card border p-3 flex items-center gap-3",
-                      dist.highlight
-                        ? "bg-bg-warm border-accent"
-                        : "bg-bg border-fg/15",
-                    ].join(" ")}
-                  >
-                    <span className="text-xl shrink-0">{m.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display text-sm truncate">{m.label}</p>
-                      <p className="text-[10px] text-fg-faint">
+          <section className="space-y-3">
+            <SectionTitle index="壹" title="마일스톤" hint="자동 계산" />
+            <div className="-mx-5 px-5 overflow-x-auto no-scrollbar">
+              <ul className="flex gap-2.5 pb-1 min-w-max">
+                {milestones.map((m) => {
+                  const days = daysUntil(new Date(m.date));
+                  const past = days < 0;
+                  const today = days === 0;
+                  return (
+                    <li
+                      key={m.key}
+                      className={[
+                        "shrink-0 w-[140px] editorial-card px-4 py-3.5",
+                        today ? "!border-accent !bg-bg-warm" : "",
+                        past ? "opacity-60" : "",
+                      ].join(" ")}
+                    >
+                      <div className="text-base">{m.emoji}</div>
+                      <p className="font-display text-sm mt-1.5 truncate">
+                        {m.label}
+                      </p>
+                      <p className="text-[10px] text-fg-faint mt-0.5">
                         {new Date(m.date).toLocaleDateString("ko", {
                           year: "numeric",
-                          month: "long",
+                          month: "short",
                           day: "numeric",
                         })}
                       </p>
-                    </div>
+                      <p
+                        className={[
+                          "font-display text-sm mt-2",
+                          today ? "text-accent" : "text-fg-soft",
+                        ].join(" ")}
+                      >
+                        {today ? "오늘 ★" : past ? `D+${Math.abs(days)}` : `D-${days}`}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* ─── 기념일 timeline ─────────────────── */}
+        <section className="space-y-3">
+          <SectionTitle
+            index="貳"
+            title="기념일"
+            hint={`${sorted.length} entries`}
+          />
+          {sorted.length === 0 ? (
+            <div className="text-center pt-8 pb-4">
+              <span className="text-4xl">📅</span>
+              <p className="font-display text-base mt-3">
+                아직 등록된 <em className="italic text-accent">날</em>이 없어요
+              </p>
+              <p className="text-[11px] text-fg-faint mt-2">
+                + 버튼으로 첫 기념일 추가
+              </p>
+            </div>
+          ) : (
+            <ul className="relative pl-6">
+              {/* timeline rule */}
+              <span className="absolute left-[7px] top-2 bottom-2 w-px bg-fg/15" />
+              {sorted.map((a, idx) => {
+                const dist = distanceLabel(a.date, a.recurring);
+                const baseDate = new Date(a.date);
+                const isMine = a.createdBy.id === meId;
+                const canManage = isMine || meRole === "admin";
+                const autoManaged = a.kind === "birthday";
+                const kindBadge =
+                  a.kind === "birthday"
+                    ? "프로필 생일"
+                    : a.kind === "couple_start"
+                      ? "만남 시작"
+                      : null;
+                return (
+                  <li key={a.id} className="relative pb-4 last:pb-0">
+                    {/* dot */}
                     <span
                       className={[
-                        "font-display text-xs shrink-0",
-                        dist.highlight ? "text-accent" : "text-fg-soft",
+                        "absolute -left-6 top-3.5 w-3 h-3 rounded-full border-2 border-bg",
+                        dist.highlight
+                          ? "bg-accent"
+                          : dist.past
+                            ? "bg-fg-faint/40"
+                            : "bg-fg/30",
+                      ].join(" ")}
+                    />
+                    <div
+                      className={[
+                        "px-4 py-3 rounded-card border flex items-start gap-3",
+                        dist.highlight
+                          ? "bg-bg-warm border-accent"
+                          : "bg-bg border-fg/15",
+                        dist.past ? "opacity-70" : "",
                       ].join(" ")}
                     >
-                      {dist.text}
-                    </span>
+                      <span className="text-xl shrink-0 leading-none pt-0.5">
+                        {a.emoji ?? "📅"}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="font-display text-base truncate">
+                            {a.label}
+                          </p>
+                          <span
+                            className={[
+                              "font-display text-sm shrink-0",
+                              dist.highlight
+                                ? "text-accent"
+                                : dist.past
+                                  ? "text-fg-faint"
+                                  : "text-fg-soft",
+                            ].join(" ")}
+                          >
+                            {dist.text}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-fg-faint mt-0.5">
+                          {baseDate.toLocaleDateString("ko", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                          {a.recurring && " · 매년"}
+                          {kindBadge && (
+                            <>
+                              <span className="mx-1.5 text-fg-faint/50">·</span>
+                              <span className="serif-italic">{kindBadge}</span>
+                            </>
+                          )}
+                        </p>
+                        {(canManage && !autoManaged) || autoManaged ? (
+                          <div className="flex gap-3 mt-1.5">
+                            {canManage && !autoManaged && (
+                              <>
+                                <button
+                                  onClick={() => startEdit(a)}
+                                  className="text-[10px] text-fg-faint underline"
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  onClick={() => remove(a.id)}
+                                  disabled={busyId === a.id}
+                                  className="text-[10px] text-fg-faint underline"
+                                >
+                                  삭제
+                                </button>
+                              </>
+                            )}
+                            {autoManaged && a.kind === "birthday" && (
+                              <Link
+                                href="/settings/profile"
+                                className="text-[10px] text-fg-faint underline"
+                              >
+                                프로필에서 수정
+                              </Link>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    {idx < sorted.length - 1 && (
+                      <div className="ml-2 mt-3 dot-rule" />
+                    )}
                   </li>
                 );
               })}
             </ul>
-          </div>
-        )}
-
-        {sorted.length === 0 ? (
-          <div className="text-center pt-12">
-            <span className="text-5xl">📅</span>
-            <p className="font-display text-base mt-3">
-              아직 등록된 <em className="italic text-accent">날</em>이 없어요
-            </p>
-            <p className="text-xs text-fg-faint mt-2">
-              + 버튼으로 첫 기념일 추가
-            </p>
-          </div>
-        ) : (
-          <ul className="space-y-2.5">
-            {sorted.map((a) => {
-              const dist = distanceLabel(a.date, a.recurring);
-              const baseDate = new Date(a.date);
-              const isMine = a.createdBy.id === meId;
-              const canManage = isMine || meRole === "admin";
-              const autoManaged = a.kind === "birthday";
-              const kindBadge =
-                a.kind === "birthday"
-                  ? "프로필 생일"
-                  : a.kind === "couple_start"
-                  ? "만남 시작"
-                  : null;
-              return (
-                <li
-                  key={a.id}
-                  className={[
-                    "rounded-card border p-4 flex items-center gap-3",
-                    dist.highlight
-                      ? "bg-bg-warm border-accent"
-                      : "bg-bg border-fg/15",
-                  ].join(" ")}
-                >
-                  <span className="text-2xl shrink-0">{a.emoji ?? "📅"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-base truncate">
-                      {a.label}
-                      {kindBadge && (
-                        <span className="ml-1.5 text-[10px] text-fg-faint align-middle">
-                          ({kindBadge})
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-fg-faint">
-                      {baseDate.toLocaleDateString("ko", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                      {a.recurring && " · 매년"}
-                    </p>
-                  </div>
-                  <span
-                    className={[
-                      "font-display text-sm shrink-0",
-                      dist.highlight ? "text-accent" : "text-fg-soft",
-                    ].join(" ")}
-                  >
-                    {dist.text}
-                  </span>
-                  {canManage && !autoManaged && (
-                    <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
-                      <button
-                        onClick={() => startEdit(a)}
-                        className="text-[10px] text-fg-faint underline"
-                        aria-label="수정"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => remove(a.id)}
-                        disabled={busyId === a.id}
-                        className="text-[10px] text-fg-faint underline"
-                        aria-label="삭제"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  )}
-                  {autoManaged && a.kind === "birthday" && (
-                    <Link
-                      href="/settings/profile"
-                      className="text-[10px] text-fg-faint underline shrink-0 ml-1"
-                    >
-                      프로필
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+          )}
+        </section>
       </main>
 
       <TabBar active="us" />

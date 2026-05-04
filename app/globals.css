@@ -62,3 +62,90 @@ html, body {
 @keyframes rain-fall {
   to { transform: translateY(110vh); }
 }
+
+/* Editorial typography utilities */
+.serif-italic {
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-style: italic;
+  font-weight: 400;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  font-weight: 500;
+}
+.numeral-xl {
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-size: 64px;
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+}
+.numeral-lg {
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-size: 40px;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.numeral-md {
+  font-family: var(--font-display), "DM Serif Display", serif;
+  font-size: 28px;
+  line-height: 1;
+}
+.divide-rule {
+  height: 1px;
+  background: var(--fg);
+  opacity: 0.12;
+}
+.divide-rule-strong {
+  height: 1px;
+  background: var(--fg);
+  opacity: 0.4;
+}
+.dot-rule {
+  background-image: radial-gradient(circle, var(--fg) 0.5px, transparent 0.5px);
+  background-size: 5px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 center;
+  height: 1px;
+  opacity: 0.3;
+}
+.ornament-mark::before {
+  content: "◆";
+  margin-right: 0.4em;
+  color: var(--accent);
+  font-size: 0.7em;
+  vertical-align: 0.1em;
+}
+
+/* Subtle premium card border */
+.editorial-card {
+  background: var(--bg);
+  border: 1px solid rgba(44, 32, 23, 0.1);
+  border-radius: 16px;
+  position: relative;
+}
+.editorial-card-warm {
+  background: var(--bg-warm);
+  border: 1px solid rgba(196, 149, 106, 0.25);
+  border-radius: 16px;
+}
+.editorial-card-dark {
+  background: var(--ink-card);
+  color: var(--bg);
+  border: 1px solid var(--ink-card);
+  border-radius: 16px;
+}
+
+/* Top-right corner mark for cards */
+.corner-mark {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--fg-faint);
+}

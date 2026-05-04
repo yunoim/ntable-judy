@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { requireApproved } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { TabBar, Card, Pill } from "@/components/ui";
+import {
+  Eyebrow,
+  Numeral,
+  Rule,
+  SectionTitle,
+  TabBar,
+} from "@/components/ui";
 import {
   findSaju,
   compatibilityFor,
@@ -26,16 +32,14 @@ function PillarCell({
   return (
     <div
       className={[
-        "flex flex-col items-center gap-1 py-2 rounded-card border text-center flex-1",
+        "flex flex-col items-center gap-1 py-3 rounded-card border text-center flex-1 transition-colors",
         highlight
           ? "bg-bg-warm border-accent"
           : "bg-bg border-fg/15",
       ].join(" ")}
     >
-      <span className="text-[9px] tracking-widest uppercase text-fg-faint">
-        {label}
-      </span>
-      <span className="font-display text-2xl leading-none">{stem}</span>
+      <span className="eyebrow !text-[8px]">{label}</span>
+      <span className="font-display text-2xl leading-none mt-0.5">{stem}</span>
       <span className="font-display text-2xl leading-none text-fg-soft">
         {branch}
       </span>
@@ -54,15 +58,15 @@ function ElementBar({
 }) {
   const pct = Math.min(100, (value / max) * 100);
   return (
-    <div className="flex items-center gap-2">
-      <span className="font-display text-xs w-5">{label}</span>
-      <div className="flex-1 h-1.5 bg-bg-warm rounded-full overflow-hidden">
+    <div className="flex items-center gap-2.5">
+      <span className="font-display text-sm w-6 text-fg">{label}</span>
+      <div className="flex-1 h-[3px] bg-fg/8 rounded-full overflow-hidden relative">
         <div
           className="h-full bg-accent rounded-full"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[10px] text-fg-faint w-7 text-right">
+      <span className="serif-italic text-fg-faint w-10 text-right text-xs">
         {value.toFixed(1)}
       </span>
     </div>
@@ -73,10 +77,12 @@ function SajuCard({
   saju,
   nickname,
   emoji,
+  index,
 }: {
   saju: SajuProfile;
   nickname: string;
   emoji: string | null;
+  index: string;
 }) {
   const elementOrder: Array<keyof typeof saju.elements> = [
     "木",
@@ -86,37 +92,64 @@ function SajuCard({
     "水",
   ];
   return (
-    <Card className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">{emoji ?? "👤"}</span>
+    <article className="editorial-card relative px-5 py-5 space-y-4">
+      <span className="corner-mark">{index}</span>
+      <header className="flex items-center gap-3">
+        <span className="text-3xl">{emoji ?? "👤"}</span>
         <div className="flex-1 min-w-0">
-          <p className="font-display text-base">{nickname}</p>
-          <p className="text-[10px] text-fg-faint">
-            {saju.birthday} {saju.birthTime} · 일간 {saju.dayMaster}{" "}
-            {saju.dayMasterKo} · {saju.metaphor}
+          <p className="font-display text-lg leading-tight">
+            {nickname}
+          </p>
+          <p className="text-[11px] text-fg-faint mt-0.5">
+            {saju.birthday} · {saju.birthTime}
           </p>
         </div>
-      </div>
+        <div className="text-right">
+          <p className="eyebrow !text-[9px]">일간</p>
+          <p className="font-display text-2xl leading-none mt-0.5">
+            {saju.dayMaster}
+          </p>
+        </div>
+      </header>
+
+      <Rule variant="dot" />
+
+      <p className="serif-italic text-fg text-sm">
+        “{saju.metaphor}”
+      </p>
 
       <div className="flex gap-1.5">
-        <PillarCell label="시" stem={saju.pillars.hour.stem} branch={saju.pillars.hour.branch} />
+        <PillarCell
+          label="시"
+          stem={saju.pillars.hour.stem}
+          branch={saju.pillars.hour.branch}
+        />
         <PillarCell
           label="일"
           stem={saju.pillars.day.stem}
           branch={saju.pillars.day.branch}
           highlight
         />
-        <PillarCell label="월" stem={saju.pillars.month.stem} branch={saju.pillars.month.branch} />
-        <PillarCell label="연" stem={saju.pillars.year.stem} branch={saju.pillars.year.branch} />
+        <PillarCell
+          label="월"
+          stem={saju.pillars.month.stem}
+          branch={saju.pillars.month.branch}
+        />
+        <PillarCell
+          label="연"
+          stem={saju.pillars.year.stem}
+          branch={saju.pillars.year.branch}
+        />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2 pt-1">
+        <p className="eyebrow">오행 분포</p>
         {elementOrder.map((el) => (
           <ElementBar key={el} label={el} value={saju.elements[el]} />
         ))}
       </div>
 
-      <p className="text-xs text-fg-soft italic leading-relaxed">
+      <p className="text-[11px] text-fg-soft leading-relaxed pt-1">
         {saju.oneLine}
       </p>
 
@@ -124,11 +157,11 @@ function SajuCard({
         href={saju.notionUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-[11px] text-accent underline"
+        className="inline-flex items-center gap-1 text-[11px] text-accent underline"
       >
-        노션에서 전체 분석 보기 →
+        노션 단독 분석 보고서 →
       </a>
-    </Card>
+    </article>
   );
 }
 
@@ -175,89 +208,154 @@ export default async function SajuPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 bg-bg/95 backdrop-blur border-b border-fg/15 px-4 pt-4 pb-3 safe-top flex items-center justify-between">
-        <Link href="/us" className="text-sm text-fg-faint">
+      {/* Masthead */}
+      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
+        <Link href="/us" className="text-xs text-fg-faint pt-1">
           ← 우리
         </Link>
-        <p className="font-display text-base">
-          <em className="italic text-accent">사주</em> · 궁합
-        </p>
-        <span className="w-12" />
+        <div className="text-center">
+          <Eyebrow>命 · 사주 궁합</Eyebrow>
+          <p className="font-display text-2xl mt-1">
+            <em className="italic">정화연경</em>
+          </p>
+        </div>
+        <span className="w-8" />
       </header>
 
-      <main className="flex-1 px-4 py-4 pb-24 space-y-4">
-        <Card variant="dark" className="space-y-1">
-          <p className="text-[10px] tracking-widest uppercase text-accent-soft">
-            용광로 × 무쇠
-          </p>
-          <p className="font-display text-2xl text-bg">
-            {dayNo > 0 ? `${dayNo}번째 날` : "사귀기 전"}
-          </p>
-          <p className="text-[11px] text-accent-soft">
-            정화연경 · 丁火가 庚金을 단련하는 날들
-          </p>
-        </Card>
+      <Rule variant="dot" className="mx-5" />
 
+      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+        {/* Hero — 용광로 × 무쇠 */}
+        <section className="editorial-card-dark px-5 pt-6 pb-7 relative overflow-hidden">
+          <span className="absolute -right-3 -bottom-6 font-display text-[140px] leading-none text-accent-soft/5 select-none pointer-events-none">
+            煉
+          </span>
+          <Eyebrow className="!text-accent-soft">용광로 × 무쇠</Eyebrow>
+          <div className="mt-3 flex items-baseline gap-3">
+            {dayNo > 0 ? (
+              <>
+                <Numeral value={dayNo} size="xl" className="text-bg" />
+                <span className="serif-italic text-accent-soft text-2xl">
+                  번째 날
+                </span>
+              </>
+            ) : (
+              <span className="serif-italic text-accent-soft text-xl">
+                만남 시작한 날 미등록
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-accent-soft mt-3 leading-relaxed">
+            丁火 (정화) — 용광로의 불 ·{"  "}庚金 (경금) — 다듬어지지 않은 강철
+          </p>
+          <p className="serif-italic text-bg text-base mt-3">
+            “庚金을 단련할 수 있는 불은 오직 丁火뿐이다.”
+          </p>
+        </section>
+
+        {/* 궁합 카드 */}
         {compat && (
-          <Card variant="warm" className="space-y-2">
-            <div className="flex items-baseline justify-between">
-              <p className="font-display text-lg">
-                {compat.title}{" "}
-                <span className="text-fg-soft text-sm">({compat.titleKo})</span>
-              </p>
-              <p className="font-display text-2xl text-accent">
-                {compat.score}
-                <span className="text-xs text-fg-soft"> / 100</span>
-              </p>
-            </div>
-            <p className="text-sm italic text-fg-soft">&ldquo;{compat.headline}&rdquo;</p>
-            <p className="text-xs leading-relaxed">{compat.body}</p>
-            <div className="space-y-1.5 pt-2">
-              {compat.tenGodsRow.map((g) => (
-                <div key={`${g.from}-${g.to}`} className="flex gap-2 text-[11px]">
-                  <span className="text-fg-faint shrink-0">
-                    {g.from} → {g.to}
-                  </span>
-                  <span className="font-display">{g.label}</span>
-                  <span className="text-fg-soft truncate">— {g.meaning}</span>
+          <section className="space-y-3">
+            <SectionTitle index="壹" title="궁합" hint="compatibility" />
+            <article className="editorial-card-warm relative px-5 py-5 space-y-4">
+              <span className="corner-mark">No.壹</span>
+              <header className="flex items-baseline justify-between gap-3">
+                <div>
+                  <p className="font-display text-2xl">{compat.title}</p>
+                  <p className="serif-italic text-fg-soft text-sm">
+                    {compat.titleKo}
+                  </p>
                 </div>
-              ))}
-            </div>
-            <div className="flex gap-1.5 flex-wrap pt-1">
-              {compat.combinations.map((c) => (
-                <Pill key={c.name} className="!text-[10px]">
-                  {c.name}
-                </Pill>
-              ))}
-            </div>
-            <a
-              href={compat.notionUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-[11px] text-accent underline pt-1"
-            >
-              노션 궁합 보고서 전체 보기 →
-            </a>
-          </Card>
+                <div className="text-right">
+                  <span className="font-display text-5xl text-accent leading-none">
+                    {compat.score}
+                  </span>
+                  <span className="serif-italic text-fg-faint text-xs ml-1">
+                    /100
+                  </span>
+                </div>
+              </header>
+
+              <Rule variant="dot" />
+
+              <p className="text-sm leading-relaxed text-fg-soft">
+                {compat.body}
+              </p>
+
+              <div className="space-y-2.5 pt-1">
+                {compat.tenGodsRow.map((g) => (
+                  <div
+                    key={`${g.from}-${g.to}`}
+                    className="flex items-baseline gap-3"
+                  >
+                    <span className="serif-italic text-fg-faint text-xs shrink-0 w-16">
+                      {g.from} → {g.to}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-sm">{g.label}</p>
+                      <p className="text-[11px] text-fg-soft">{g.meaning}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <p className="eyebrow mb-1.5">합 (合)</p>
+                <div className="space-y-1">
+                  {compat.combinations.map((c) => (
+                    <p key={c.name} className="text-[11px] text-fg-soft">
+                      <span className="font-display text-fg">{c.name}</span>
+                      {"  "}— {c.explanation}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <a
+                href={compat.notionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] text-accent underline"
+              >
+                노션 궁합 보고서 →
+              </a>
+            </article>
+          </section>
         )}
 
-        {fox && foxSaju && (
-          <SajuCard saju={foxSaju} nickname={fox.nickname} emoji={fox.emoji} />
-        )}
-        {bunny && bunnySaju && (
-          <SajuCard saju={bunnySaju} nickname={bunny.nickname} emoji={bunny.emoji} />
+        {/* 단독 사주 */}
+        {(fox || bunny) && (
+          <section className="space-y-3">
+            <SectionTitle index="貳" title="단독 사주" hint="profiles" />
+            <div className="space-y-3">
+              {fox && foxSaju && (
+                <SajuCard
+                  saju={foxSaju}
+                  nickname={fox.nickname}
+                  emoji={fox.emoji}
+                  index="No.甲"
+                />
+              )}
+              {bunny && bunnySaju && (
+                <SajuCard
+                  saju={bunnySaju}
+                  nickname={bunny.nickname}
+                  emoji={bunny.emoji}
+                  index="No.乙"
+                />
+              )}
+            </div>
+          </section>
         )}
 
         {(!foxSaju || !bunnySaju) && (
-          <Card className="text-xs text-fg-soft space-y-2">
-            <p className="font-display text-sm">
-              사주 데이터가 부족해요
-            </p>
+          <section className="editorial-card px-5 py-4 space-y-2 text-xs text-fg-soft">
+            <p className="font-display text-sm">사주 데이터가 부족해요</p>
             {!foxBirthday && fox && (
               <p>
                 · {fox.nickname} 생일 미입력 —{" "}
                 <Link href="/settings/profile" className="text-accent underline">
-                  프로필에서 추가
+                  프로필
                 </Link>
               </p>
             )}
@@ -265,53 +363,67 @@ export default async function SajuPage() {
               <p>
                 · {bunny.nickname} 생일 미입력 —{" "}
                 <Link href="/settings/profile" className="text-accent underline">
-                  프로필에서 추가
+                  프로필
                 </Link>
               </p>
             )}
             {foxBirthday && !foxSaju && fox && (
               <p>
-                · {fox.nickname}({foxBirthday}) 사주 분석이 노션에 없어요. 분석을 만들어 <code className="bg-bg-warm/50 px-1 rounded">lib/saju.ts</code>에 추가해 주세요.
+                · {fox.nickname}({foxBirthday}) 분석 노션에 없음 —{" "}
+                <code className="bg-bg-warm/50 px-1 rounded text-[10px]">
+                  lib/saju.ts
+                </code>{" "}
+                에 추가 필요
               </p>
             )}
             {bunnyBirthday && !bunnySaju && bunny && (
               <p>
-                · {bunny.nickname}({bunnyBirthday}) 사주 분석이 노션에 없어요. 분석을 만들어 <code className="bg-bg-warm/50 px-1 rounded">lib/saju.ts</code>에 추가해 주세요.
+                · {bunny.nickname}({bunnyBirthday}) 분석 노션에 없음 —{" "}
+                <code className="bg-bg-warm/50 px-1 rounded text-[10px]">
+                  lib/saju.ts
+                </code>{" "}
+                에 추가 필요
               </p>
             )}
-          </Card>
+          </section>
         )}
 
-        <Card className="space-y-1.5 text-[11px] text-fg-soft">
-          <p className="font-display text-xs text-fg">출처 · 노션 보고서</p>
-          <a
-            href="https://www.notion.so/34feff09d942817dbfe2d3500f6839f2"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-accent underline"
-          >
-            💎 닉 & 주디 사주 궁합 보고서
-          </a>
-          <a
-            href="https://www.notion.so/34feff09d942811599b1d680987c8f64"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-accent underline"
-          >
-            🔥 닉 사주 단독 분석 보고서
-          </a>
-          <a
-            href="https://www.notion.so/34feff09d9428115be0ffac94d8ceb76"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-accent underline"
-          >
-            🌙 주디 사주 단독 분석 보고서
-          </a>
-          <p className="text-[10px] text-fg-faint italic pt-1">
-            만세력 기반 정밀 계산 + 명리학 고전(궁통보감, 적천수) 해석
+        {/* Sources */}
+        <section className="space-y-2 pt-1">
+          <SectionTitle index="參" title="출처" hint="notion" />
+          <div className="space-y-1.5 px-1">
+            <a
+              href="https://www.notion.so/34feff09d942817dbfe2d3500f6839f2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-[11px] text-fg-soft hover:text-accent transition-colors"
+            >
+              <span className="serif-italic text-fg-faint">∙</span>{" "}
+              💎 닉 & 주디 사주 궁합 보고서
+            </a>
+            <a
+              href="https://www.notion.so/34feff09d942811599b1d680987c8f64"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-[11px] text-fg-soft hover:text-accent transition-colors"
+            >
+              <span className="serif-italic text-fg-faint">∙</span>{" "}
+              🔥 닉 사주 단독 분석
+            </a>
+            <a
+              href="https://www.notion.so/34feff09d9428115be0ffac94d8ceb76"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-[11px] text-fg-soft hover:text-accent transition-colors"
+            >
+              <span className="serif-italic text-fg-faint">∙</span>{" "}
+              🌙 주디 사주 단독 분석
+            </a>
+          </div>
+          <p className="serif-italic text-[10px] text-fg-faint pt-2 px-1">
+            만세력 · 명리학 고전(궁통보감, 적천수) 해석
           </p>
-        </Card>
+        </section>
       </main>
 
       <TabBar active="saju" />

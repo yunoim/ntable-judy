@@ -1,6 +1,17 @@
-// app/page.tsx — 홈 (Prisma 동적)
+// app/page.tsx — 홈 (editorial redesign)
 import Link from "next/link";
-import { Avatar, Card, Pill, PhotoSlot, Stars, TabBar } from "@/components/ui";
+import {
+  Avatar,
+  Card,
+  Eyebrow,
+  Hero,
+  Numeral,
+  PhotoSlot,
+  Rule,
+  SectionTitle,
+  Stars,
+  TabBar,
+} from "@/components/ui";
 import {
   getNextDate,
   getPastDates,
@@ -29,14 +40,14 @@ function nearestAnniversary(rows: AnniRow[]) {
   now.setHours(0, 0, 0, 0);
   let best: { row: AnniRow; days: number; nextDate: Date } | null = null;
   for (const a of rows) {
-    let target = new Date(a.date);
+    const target = new Date(a.date);
     target.setHours(0, 0, 0, 0);
     if (a.recurring) {
       target.setFullYear(now.getFullYear());
       if (target.getTime() < now.getTime())
         target.setFullYear(now.getFullYear() + 1);
     } else if (target.getTime() < now.getTime()) {
-      continue; // 지난 1회성 기념일은 스킵
+      continue;
     }
     const days = Math.round((target.getTime() - now.getTime()) / 86400000);
     if (!best || days < best.days) {
@@ -78,247 +89,296 @@ export default async function HomePage() {
     partner ??
     userStars.find((u) => u.role === "approved" && u.id !== fox?.id);
 
+  const today = new Date();
+  const issueLabel = today.toLocaleDateString("ko", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-20 bg-bg/95 backdrop-blur border-b border-fg/15 px-4 pt-3 pb-3 safe-top">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {bunny ? (
-              <Avatar
-                user={{ name: bunny.nickname, emoji: bunny.emoji ?? "🐰" }}
-                size="sm"
-                variant="warm"
-              />
-            ) : (
-              <Avatar user={{ name: "?", emoji: "🐰" }} size="sm" variant="warm" />
-            )}
-            {fox && (
-              <Avatar
-                user={{ name: fox.nickname, emoji: fox.emoji ?? "🦊" }}
-                size="sm"
-                variant="dark"
-              />
-            )}
-            <div className="ml-1">
-              <p className="font-display text-base">
-                {bunny?.nickname ?? "초대 대기"} & {fox?.nickname ?? "?"}
-              </p>
-              <p className="text-[11px] text-fg-faint">데이트 {totalDates}회</p>
-            </div>
+      {/* ─── Masthead ─────────────────────────── */}
+      <header className="px-5 pt-5 pb-4 safe-top">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="eyebrow">judy.ntable</p>
+            <p className="font-display text-[28px] leading-none mt-1.5">
+              <em className="italic">우리</em>의 기록
+            </p>
+            <p className="text-[11px] text-fg-faint mt-2 tracking-wider">
+              No. {String(totalDates).padStart(2, "0")} · {issueLabel}
+            </p>
           </div>
-          {me ? (
-            <div className="flex items-center gap-3">
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="text-fg-faint text-sm relative"
-                  aria-label="관리자 패널"
-                >
-                  ⚙
-                  {pendingCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
-                      {pendingCount}
-                    </span>
-                  )}
-                </Link>
-              )}
+          <div className="flex items-center gap-3 pt-1">
+            {isAdmin && (
               <Link
-                href="/settings/profile"
-                className="text-fg-faint text-sm"
-                aria-label="프로필"
+                href="/admin"
+                className="text-fg-faint text-sm relative"
+                aria-label="관리자 패널"
               >
-                👤
+                ⚙
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
-            </div>
-          ) : null}
+            )}
+            <Link
+              href="/settings/profile"
+              className="text-fg-faint text-sm"
+              aria-label="프로필"
+            >
+              👤
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-2 mt-2">
+
+        {/* couple line */}
+        <div className="mt-5 flex items-center gap-3">
           {bunny && (
-            <Pill>
-              {bunny.emoji ?? "🐰"} {bunny.avg} ★
-            </Pill>
+            <Avatar
+              user={{ name: bunny.nickname, emoji: bunny.emoji ?? "🐰" }}
+              size="md"
+              variant="warm"
+            />
           )}
           {fox && (
-            <Pill>
-              {fox.emoji ?? "🦊"} {fox.avg} ★
-            </Pill>
+            <Avatar
+              user={{ name: fox.nickname, emoji: fox.emoji ?? "🦊" }}
+              size="md"
+              variant="dark"
+            />
           )}
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-sm">
+              {bunny?.nickname ?? "초대 대기"}{" "}
+              <span className="text-fg-faint">×</span>{" "}
+              {fox?.nickname ?? "?"}
+            </p>
+            <p className="text-[10px] text-fg-faint mt-0.5">
+              {bunny ? `${bunny.emoji ?? "🐰"} ${bunny.avg}★` : ""}
+              {bunny && fox && (
+                <span className="mx-1.5 text-fg-faint/50">·</span>
+              )}
+              {fox ? `${fox.emoji ?? "🦊"} ${fox.avg}★` : ""}
+            </p>
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-3 space-y-4 pb-24">
+      <Rule variant="dot" className="mx-5" />
+
+      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+        {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
-          <Link href={`/dates/${next.id}`} className="block">
-            <Card variant="dark" className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <span className="text-[11px] tracking-wider uppercase text-accent-soft">
-                  다음 데이트
-                </span>
-                <span className="text-[11px] text-accent-soft">
-                  {new Date(next.scheduledAt).toLocaleDateString("ko", {
-                    weekday: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              <p className="font-display text-3xl text-bg">
-                D {dDay(new Date(next.scheduledAt)) > 0 ? "-" : "+"}{" "}
-                {Math.abs(dDay(new Date(next.scheduledAt)))}
-              </p>
-              <p className="text-sm text-accent-soft">{next.title}</p>
-              <div className="flex gap-2 pt-2">
-                <Pill className="!border-accent-soft !text-accent-soft">
-                  {next.plan.stops.length} stops
-                </Pill>
-                {next.estimatedCost ? (
-                  <Pill className="!border-accent-soft !text-accent-soft">
-                    ~ ₩{next.estimatedCost.toLocaleString()}
-                  </Pill>
-                ) : null}
-              </div>
-            </Card>
-          </Link>
+          <section className="space-y-3">
+            <Eyebrow>序 · 다음 데이트</Eyebrow>
+            <Link href={`/dates/${next.id}`} className="block">
+              <Hero
+                eyebrow={`#${String(next.number).padStart(2, "0")}`}
+                number={`D-${Math.max(0, dDay(new Date(next.scheduledAt)))}`}
+                caption={
+                  <>
+                    <span className="font-display text-bg text-base">
+                      {next.title}
+                    </span>
+                    <br />
+                    <span className="text-accent-soft">
+                      {new Date(next.scheduledAt).toLocaleDateString("ko", {
+                        month: "long",
+                        day: "numeric",
+                        weekday: "long",
+                      })}
+                      {next.startTime ? ` · ${next.startTime}` : ""}
+                      {next.area ? ` · ${next.area}` : ""}
+                    </span>
+                  </>
+                }
+                variant="dark"
+              />
+            </Link>
+          </section>
         ) : (
-          <Link href="/plan/new" className="block">
-            <Card className="!border-dashed !border-accent/50 space-y-1 text-center py-6">
-              <p className="text-[11px] tracking-wider uppercase text-fg-faint">
-                다음 데이트
+          <section className="space-y-3">
+            <Eyebrow>序 · 다음 데이트</Eyebrow>
+            <Link
+              href="/plan/new"
+              className="block editorial-card border-dashed !border-accent/50 px-5 py-7 text-center"
+            >
+              <p className="serif-italic text-fg-faint text-sm">unwritten</p>
+              <p className="font-display text-xl text-accent mt-2">
+                + 다음 데이트 등록
               </p>
-              <p className="font-display text-base text-accent">
-                + 다음 데이트 등록하기
-              </p>
-              <p className="text-[11px] text-fg-faint">
+              <p className="text-[11px] text-fg-faint mt-2">
                 계획을 짜고 D-day 시작
               </p>
-            </Card>
-          </Link>
-        )}
-
-        {dayNo > 0 && (
-          <Link
-            href="/us/saju"
-            className="block rounded-card bg-bg-warm/40 border border-fg/15 px-4 py-3 flex items-center gap-3"
-          >
-            <span className="text-xl shrink-0">🔥</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-display text-sm">
-                용광로 × 무쇠
-              </p>
-              <p className="text-[11px] text-fg-faint">
-                정화연경 · 丁火 × 庚金
-              </p>
-            </div>
-            <span className="font-display text-base text-accent shrink-0">
-              {dayNo}일
-            </span>
-          </Link>
-        )}
-
-        {upcomingAnni && (
-          <Link
-            href="/us"
-            className="block rounded-card bg-bg-warm/60 border border-accent/40 px-4 py-3 flex items-center gap-3"
-          >
-            <span className="text-2xl shrink-0">
-              {upcomingAnni.row.emoji ?? "📅"}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-display text-sm">{upcomingAnni.row.label}</p>
-              <p className="text-[11px] text-fg-faint">
-                {upcomingAnni.nextDate.toLocaleDateString("ko", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-            <span className="font-display text-base text-accent shrink-0">
-              {upcomingAnni.days === 0
-                ? "오늘 ★"
-                : `D-${upcomingAnni.days}`}
-            </span>
-          </Link>
-        )}
-
-        {upcomingMilestone && (() => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const days = Math.round(
-            (upcomingMilestone.date.getTime() - today.getTime()) / 86400000,
-          );
-          return (
-            <Link
-              href="/us"
-              className="block rounded-card bg-bg border border-fg/15 px-4 py-3 flex items-center gap-3"
-            >
-              <span className="text-2xl shrink-0">{upcomingMilestone.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-sm">
-                  {upcomingMilestone.label}
-                </p>
-                <p className="text-[11px] text-fg-faint">
-                  {upcomingMilestone.date.toLocaleDateString("ko", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-              <span className="font-display text-sm text-fg-soft shrink-0">
-                {days === 0 ? "오늘 ★" : `D-${days}`}
-              </span>
             </Link>
-          );
-        })()}
+          </section>
+        )}
 
-        <p className="text-[11px] tracking-widest uppercase text-fg-faint pt-2">
-          지난 데이트
-        </p>
+        {/* ─── 만남 N일 + 마일스톤 + 기념일 ─────────────── */}
+        {(dayNo > 0 || upcomingAnni || upcomingMilestone) && (
+          <section className="space-y-3">
+            <SectionTitle index="壹" title="우리 사이의 날" hint="counters" />
 
-        <ul className="space-y-3">
-          {past.map((d) => {
-            const avg = d.reviews.length
-              ? d.reviews.reduce((s, r) => s + r.stars, 0) / d.reviews.length
-              : 0;
-            return (
-              <li key={d.id}>
-                <Link href={`/dates/${d.id}`}>
-                  <Card className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-display text-lg">#{d.number}</span>
-                        <span className="font-display text-base truncate">
-                          {d.title}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-fg-faint mt-0.5">
-                        {d.area} ·{" "}
-                        {new Date(d.scheduledAt).toLocaleDateString("ko", {
-                          year: "numeric",
+            {dayNo > 0 && (
+              <Link
+                href="/us/saju"
+                className="block editorial-card-warm px-5 py-4"
+              >
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="eyebrow">용광로 × 무쇠</p>
+                    <Numeral
+                      value={dayNo}
+                      size="lg"
+                      className="text-fg mt-1"
+                    />
+                    <p className="serif-italic text-fg-faint text-sm -mt-1">
+                      번째 날
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-fg-faint pb-1">
+                    丁火 × 庚金 · 정화연경
+                  </p>
+                </div>
+              </Link>
+            )}
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {upcomingAnni && (
+                <Link
+                  href="/us"
+                  className="editorial-card px-4 py-3.5 flex flex-col gap-1"
+                >
+                  <span className="text-base">
+                    {upcomingAnni.row.emoji ?? "📅"}
+                  </span>
+                  <p className="font-display text-sm truncate">
+                    {upcomingAnni.row.label}
+                  </p>
+                  <p className="text-[10px] text-fg-faint">
+                    {upcomingAnni.nextDate.toLocaleDateString("ko", {
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <p className="text-accent font-display text-base mt-auto pt-1">
+                    {upcomingAnni.days === 0
+                      ? "오늘 ★"
+                      : `D-${upcomingAnni.days}`}
+                  </p>
+                </Link>
+              )}
+              {upcomingMilestone &&
+                (() => {
+                  const t = new Date();
+                  t.setHours(0, 0, 0, 0);
+                  const days = Math.round(
+                    (upcomingMilestone.date.getTime() - t.getTime()) / 86400000,
+                  );
+                  return (
+                    <Link
+                      href="/us"
+                      className="editorial-card px-4 py-3.5 flex flex-col gap-1"
+                    >
+                      <span className="text-base">{upcomingMilestone.emoji}</span>
+                      <p className="font-display text-sm truncate">
+                        {upcomingMilestone.label}
+                      </p>
+                      <p className="text-[10px] text-fg-faint">
+                        {upcomingMilestone.date.toLocaleDateString("ko", {
                           month: "long",
                           day: "numeric",
                         })}
                       </p>
-                      <div className="mt-1.5">
-                        <Stars n={avg} />
+                      <p className="text-fg-soft font-display text-base mt-auto pt-1">
+                        {days === 0 ? "오늘 ★" : `D-${days}`}
+                      </p>
+                    </Link>
+                  );
+                })()}
+            </div>
+          </section>
+        )}
+
+        {/* ─── 지난 데이트 ─────────────────────────── */}
+        {past.length > 0 && (
+          <section className="space-y-3">
+            <SectionTitle
+              index="貳"
+              title="지난 데이트"
+              hint={`${totalDates} entries`}
+            />
+            <ul className="space-y-3.5">
+              {past.map((d, idx) => {
+                const avg = d.reviews.length
+                  ? d.reviews.reduce((s, r) => s + r.stars, 0) /
+                    d.reviews.length
+                  : 0;
+                return (
+                  <li key={d.id}>
+                    <Link
+                      href={`/dates/${d.id}`}
+                      className="flex gap-4 group"
+                    >
+                      <PhotoSlot
+                        label="img"
+                        className="w-[68px] h-[68px] shrink-0"
+                      />
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <div className="flex items-baseline gap-2">
+                          <span className="serif-italic text-fg-faint text-xs">
+                            no.{String(d.number).padStart(2, "0")}
+                          </span>
+                          {d.status !== "done" && (
+                            <span className="text-[9px] tracking-wider uppercase text-fg-faint border border-fg/20 rounded-full px-1.5 py-0.5">
+                              {d.status === "planned" ? "지남" : d.status}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-display text-base mt-0.5 truncate group-hover:text-accent transition-colors">
+                          {d.title}
+                        </p>
+                        <p className="text-[11px] text-fg-faint mt-0.5">
+                          {new Date(d.scheduledAt).toLocaleDateString("ko", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                          {d.area ? ` · ${d.area}` : ""}
+                        </p>
+                        <div className="mt-auto pt-1.5">
+                          {avg > 0 ? (
+                            <Stars n={avg} />
+                          ) : (
+                            <span className="text-[10px] text-fg-faint serif-italic">
+                              아직 후기 없음
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <PhotoSlot label="img" className="w-14 h-14 shrink-0" />
-                  </Card>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                    </Link>
+                    {idx < past.length - 1 && (
+                      <div className="dot-rule mt-3.5" />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       </main>
 
       <Link
         href="/plan/new"
-        className="fixed bottom-20 right-4 z-30 bg-ink-card text-bg rounded-card px-4 py-3 text-sm font-semibold shadow-lg"
-        style={{ boxShadow: "0 4px 0 rgba(44,32,23,0.15)" }}
+        className="fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center shadow-lg font-display text-xl"
+        style={{ boxShadow: "0 4px 0 rgba(44,32,23,0.18)" }}
+        aria-label="데이트 계획 추가"
       >
-        + 데이트 계획
+        +
       </Link>
 
       <TabBar active="home" />
