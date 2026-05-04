@@ -314,7 +314,7 @@ export default async function SajuPage() {
         </Card>
       </main>
 
-      <TabBar active="us" />
+      <TabBar active="saju" />
     </div>
   );
 }

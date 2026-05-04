@@ -116,12 +116,17 @@ export function PhotoSlot({
   );
 }
 
-export function TabBar({ active }: { active: "home" | "plan" | "log" | "us" }) {
+export function TabBar({
+  active,
+}: {
+  active: "home" | "plan" | "log" | "us" | "saju";
+}) {
   const items: Array<{ id: typeof active; label: string; href: string }> = [
     { id: "home", label: "홈", href: "/" },
     { id: "plan", label: "계획", href: "/plan/new" },
     { id: "log", label: "기록", href: "/timeline" },
     { id: "us", label: "우리", href: "/us" },
+    { id: "saju", label: "사주", href: "/us/saju" },
   ];
   return (
     <nav className="sticky bottom-0 left-0 right-0 bg-bg/95 backdrop-blur border-t border-fg/15 safe-bottom">
