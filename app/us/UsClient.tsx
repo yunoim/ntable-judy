@@ -332,21 +332,7 @@ export default function UsClient({
         </section>
       )}
 
-      <main className="flex-1 px-4 py-4 pb-24 space-y-3">
-        <Link
-          href="/us/saju"
-          className="block rounded-card bg-ink-card text-bg px-4 py-3 flex items-center gap-3"
-        >
-          <span className="text-2xl shrink-0">🔥</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-display text-sm">사주 · 궁합</p>
-            <p className="text-[11px] text-accent-soft">
-              용광로(丁火) × 무쇠(庚金) — 정화연경
-            </p>
-          </div>
-          <span className="text-accent-soft text-xs">→</span>
-        </Link>
-
+      <main className="flex-1 px-4 py-4 pb-32 space-y-3">
         {milestones.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-[11px] tracking-widest uppercase text-fg-faint">
@@ -491,6 +477,21 @@ export default function UsClient({
           </ul>
         )}
       </main>
+
+      <Link
+        href="/us/saju"
+        className="fixed bottom-20 left-4 right-4 z-30 rounded-card bg-ink-card text-bg px-4 py-3 flex items-center gap-3 shadow-lg"
+        style={{ boxShadow: "0 4px 0 rgba(44,32,23,0.15)" }}
+      >
+        <span className="text-2xl shrink-0">🔥</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm">사주 · 궁합</p>
+          <p className="text-[11px] text-accent-soft">
+            용광로(丁火) × 무쇠(庚金) — 정화연경
+          </p>
+        </div>
+        <span className="text-accent-soft text-xs">→</span>
+      </Link>
 
       <TabBar active="us" />
     </div>
