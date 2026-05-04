@@ -1,5 +1,6 @@
 // app/api/dates/[id]/route.ts — PATCH (수정) / DELETE
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -102,6 +103,10 @@ export async function PATCH(
     ]);
   }
 
+  revalidatePath("/");
+  revalidatePath("/timeline");
+  revalidatePath(`/dates/${id}`);
+
   return NextResponse.json({ id, ok: true });
 }
 
@@ -126,5 +131,7 @@ export async function DELETE(
   }
 
   await prisma.date.delete({ where: { id } });
+  revalidatePath("/");
+  revalidatePath("/timeline");
   return NextResponse.json({ ok: true });
 }

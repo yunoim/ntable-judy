@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { COUPLE_START_KIND } from "@/lib/saju";
@@ -71,6 +72,8 @@ export async function PATCH(
     where: { id: numId },
     data,
   });
+  revalidatePath("/");
+  revalidatePath("/us");
   return NextResponse.json({ id: updated.id });
 }
 
@@ -103,5 +106,7 @@ export async function DELETE(
   }
 
   await prisma.anniversary.delete({ where: { id: numId } });
+  revalidatePath("/");
+  revalidatePath("/us");
   return NextResponse.json({ ok: true });
 }

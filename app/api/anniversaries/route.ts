@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { COUPLE_START_KIND } from "@/lib/saju";
@@ -50,5 +51,7 @@ export async function POST(req: Request) {
       kind,
     },
   });
+  revalidatePath("/");
+  revalidatePath("/us");
   return NextResponse.json({ id: created.id });
 }
