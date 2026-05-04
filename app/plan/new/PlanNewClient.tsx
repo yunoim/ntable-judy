@@ -1,9 +1,9 @@
-// app/plan/new/PlanNewClient.tsx — 자연어 → 3안 → 선택 → 편집 → 확정
+// app/plan/new/PlanNewClient.tsx — 자연어 → 코스 (단계별 3안 선택) → 확정
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { Eyebrow, Pill, Rule, TabBar } from "@/components/ui";
+import { Eyebrow, Pill, TabBar } from "@/components/ui";
 
 const QUICK_CHIPS = [
   "#성수동",
@@ -20,9 +20,7 @@ const PLACEHOLDER =
 
 const STOP_TYPES = ["카페", "식당", "전시", "산책", "와인바", "쇼핑", "기타"];
 
-type StopPreview = {
-  stepOrder: number;
-  time: string;
+type StopOption = {
   emoji: string;
   name: string;
   address: string;
@@ -30,20 +28,25 @@ type StopPreview = {
   description: string;
   mapQuery: string;
   estimatedCost: number;
-  reserved: boolean;
 };
 
-type Preview = {
+type StopSlot = {
+  stepOrder: number;
+  time: string;
+  label: string;
+  options: StopOption[];
+  selectedIdx: number;
+  manual?: boolean;
+};
+
+type Course = {
   title: string;
   subtitle: string;
   themeNote: string;
   area: string;
   weather: string;
-  stops: StopPreview[];
-  estimatedTotal: number;
+  stops: StopSlot[];
 };
-
-const VARIANT_LABELS = ["정석", "다른 무드", "의외성"];
 
 function defaultScheduledAt(): string {
   const d = new Date();
@@ -53,23 +56,33 @@ function defaultScheduledAt(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function blankStop(time = "18:00"): StopPreview {
+function blankSlot(time = "18:00"): StopSlot {
   return {
     stepOrder: 0,
     time,
-    emoji: "📍",
-    name: "",
-    address: "",
-    type: "기타",
-    description: "",
-    mapQuery: "",
-    estimatedCost: 0,
-    reserved: false,
+    label: "",
+    options: [
+      {
+        emoji: "📍",
+        name: "",
+        address: "",
+        type: "기타",
+        description: "",
+        mapQuery: "",
+        estimatedCost: 0,
+      },
+    ],
+    selectedIdx: 0,
+    manual: true,
   };
 }
 
-function recomputeTotal(stops: StopPreview[]): number {
-  return stops.reduce((s, x) => s + (x.estimatedCost || 0), 0);
+function pickedTotal(course: Course): number {
+  return course.stops.reduce(
+    (s, slot) =>
+      s + (slot.options[slot.selectedIdx]?.estimatedCost || 0),
+    0,
+  );
 }
 
 export default function PlanNewClient() {
@@ -78,11 +91,7 @@ export default function PlanNewClient() {
   const [scheduledAt, setScheduledAt] = useState(defaultScheduledAt());
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const [options, setOptions] = useState<Preview[] | null>(null);
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [editing, setEditing] = useState<Preview | null>(null);
-
+  const [course, setCourse] = useState<Course | null>(null);
   const [mockNotice, setMockNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,14 +115,33 @@ export default function PlanNewClient() {
         setError(data.error ?? `실패 (${res.status})`);
         return;
       }
-      const previews: Preview[] = (data.previews ?? []).slice(0, 3);
-      if (previews.length === 0) {
+      const raw = data.course;
+      if (!raw || !Array.isArray(raw.stops)) {
         setError("코스 생성 실패");
         return;
       }
-      setOptions(previews);
-      setSelectedIdx(null);
-      setEditing(null);
+      const normalized: Course = {
+        title: raw.title ?? "",
+        subtitle: raw.subtitle ?? "",
+        themeNote: raw.themeNote ?? "",
+        area: raw.area ?? "",
+        weather: raw.weather ?? "cloud",
+        stops: raw.stops.map(
+          (s: {
+            stepOrder?: number;
+            time?: string;
+            label?: string;
+            options?: StopOption[];
+          }, i: number) => ({
+            stepOrder: i + 1,
+            time: s.time ?? "00:00",
+            label: s.label ?? "",
+            options: (s.options ?? []).slice(0, 3),
+            selectedIdx: 0,
+          }),
+        ),
+      };
+      setCourse(normalized);
       if (data.mock) setMockNotice(data.message ?? "데모 모드");
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -122,99 +150,119 @@ export default function PlanNewClient() {
     }
   }
 
-  function pickOption(idx: number) {
-    if (!options) return;
-    setSelectedIdx(idx);
-    // mutable copy
-    const p = options[idx];
-    setEditing({
-      ...p,
-      stops: p.stops.map((s, i) => ({ ...s, stepOrder: i + 1 })),
-    });
-  }
-
-  function backToOptions() {
-    setSelectedIdx(null);
-    setEditing(null);
-  }
-
   function backToInput() {
-    setOptions(null);
-    setSelectedIdx(null);
-    setEditing(null);
+    setCourse(null);
     setMockNotice(null);
   }
 
-  function updateStop(idx: number, patch: Partial<StopPreview>) {
-    if (!editing) return;
-    const next = editing.stops.map((s, i) =>
+  function setSlotMeta(idx: number, patch: Partial<StopSlot>) {
+    if (!course) return;
+    const next = course.stops.map((s, i) =>
       i === idx ? { ...s, ...patch } : s,
     );
-    setEditing({ ...editing, stops: next, estimatedTotal: recomputeTotal(next) });
+    setCourse({ ...course, stops: next });
   }
 
-  function moveStop(idx: number, dir: -1 | 1) {
-    if (!editing) return;
-    const next = idx + dir;
-    if (next < 0 || next >= editing.stops.length) return;
-    const arr = [...editing.stops];
-    [arr[idx], arr[next]] = [arr[next], arr[idx]];
-    setEditing({
-      ...editing,
+  function setOption(idx: number, optIdx: number, patch: Partial<StopOption>) {
+    if (!course) return;
+    const next = course.stops.map((s, i) => {
+      if (i !== idx) return s;
+      return {
+        ...s,
+        options: s.options.map((o, j) => (j === optIdx ? { ...o, ...patch } : o)),
+      };
+    });
+    setCourse({ ...course, stops: next });
+  }
+
+  function pickOption(idx: number, optIdx: number) {
+    if (!course) return;
+    const next = course.stops.map((s, i) =>
+      i === idx ? { ...s, selectedIdx: optIdx } : s,
+    );
+    setCourse({ ...course, stops: next });
+  }
+
+  function moveSlot(idx: number, dir: -1 | 1) {
+    if (!course) return;
+    const target = idx + dir;
+    if (target < 0 || target >= course.stops.length) return;
+    const arr = [...course.stops];
+    [arr[idx], arr[target]] = [arr[target], arr[idx]];
+    setCourse({
+      ...course,
       stops: arr.map((s, i) => ({ ...s, stepOrder: i + 1 })),
     });
   }
 
-  function removeStop(idx: number) {
-    if (!editing) return;
-    const next = editing.stops
+  function removeSlot(idx: number) {
+    if (!course) return;
+    const next = course.stops
       .filter((_, i) => i !== idx)
       .map((s, i) => ({ ...s, stepOrder: i + 1 }));
-    setEditing({ ...editing, stops: next, estimatedTotal: recomputeTotal(next) });
+    setCourse({ ...course, stops: next });
   }
 
-  function addStop() {
-    if (!editing) return;
-    const last = editing.stops[editing.stops.length - 1];
+  function addSlot() {
+    if (!course) return;
+    const last = course.stops[course.stops.length - 1];
     const lastTime = last?.time ?? "18:00";
     const [h, m] = lastTime.split(":").map(Number);
     const newH = (h ?? 18) + 1;
-    const newTime = `${String(newH).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
-    const next = [...editing.stops, blankStop(newTime)].map((s, i) => ({
+    const time = `${String(newH).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
+    const next = [...course.stops, blankSlot(time)].map((s, i) => ({
       ...s,
       stepOrder: i + 1,
     }));
-    setEditing({ ...editing, stops: next, estimatedTotal: recomputeTotal(next) });
+    setCourse({ ...course, stops: next });
   }
 
   async function confirm() {
-    if (!editing) return;
-    if (editing.stops.length === 0) {
+    if (!course) return;
+    if (course.stops.length === 0) {
       setError("최소 1개 이상의 단계가 필요해요");
       return;
     }
-    if (editing.stops.some((s) => !s.name.trim())) {
+    if (
+      course.stops.some((s) => !s.options[s.selectedIdx]?.name?.trim())
+    ) {
       setError("이름이 비어있는 단계가 있어요");
       return;
     }
     setSaving(true);
     setError(null);
     try {
+      const stops = course.stops.map((s, i) => {
+        const o = s.options[s.selectedIdx];
+        return {
+          stepOrder: i + 1,
+          time: s.time,
+          emoji: o.emoji,
+          name: o.name,
+          address: o.address,
+          type: o.type,
+          description: o.description,
+          mapQuery: o.mapQuery || o.name,
+          estimatedCost: o.estimatedCost || 0,
+          reserved: false,
+        };
+      });
+      const total = pickedTotal(course);
       const res = await fetch("/api/dates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: editing.title,
-          subtitle: editing.subtitle,
-          area: editing.area,
-          themeNote: editing.themeNote,
-          weather: editing.weather,
+          title: course.title,
+          subtitle: course.subtitle,
+          area: course.area,
+          themeNote: course.themeNote,
+          weather: course.weather,
           scheduledAt: new Date(scheduledAt).toISOString(),
-          startTime: editing.stops[0]?.time,
-          endTime: editing.stops[editing.stops.length - 1]?.time,
-          estimatedTotal: editing.estimatedTotal,
+          startTime: stops[0]?.time,
+          endTime: stops[stops.length - 1]?.time,
+          estimatedTotal: total,
           aiInput: text,
-          stops: editing.stops,
+          stops,
         }),
       });
       const data = await res.json();
@@ -232,221 +280,9 @@ export default function PlanNewClient() {
 
   if (loading) return <PlanLoading />;
 
-  // ── Phase 3: 편집 모드 ─────────────────────────────────
-  if (editing && selectedIdx !== null) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between border-b border-fg/10">
-          <button
-            onClick={backToOptions}
-            className="text-xs text-fg-faint"
-          >
-            ← 다른 안 보기
-          </button>
-          <div className="text-center">
-            <Eyebrow>편집 · 안 {selectedIdx + 1}</Eyebrow>
-            <p className="font-display text-sm mt-0.5">{editing.title}</p>
-          </div>
-          <span className="w-16" />
-        </header>
-
-        <main className="flex-1 px-5 py-4 pb-32 space-y-4">
-          {/* 메타 */}
-          <section className="editorial-card-warm p-4 space-y-2">
-            <input
-              value={editing.title}
-              onChange={(e) =>
-                setEditing({ ...editing, title: e.target.value.slice(0, 30) })
-              }
-              placeholder="제목"
-              className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm font-display"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                value={editing.area}
-                onChange={(e) =>
-                  setEditing({ ...editing, area: e.target.value.slice(0, 20) })
-                }
-                placeholder="지역"
-                className="bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
-              />
-              <input
-                value={editing.subtitle}
-                onChange={(e) =>
-                  setEditing({
-                    ...editing,
-                    subtitle: e.target.value.slice(0, 40),
-                  })
-                }
-                placeholder="부제 / 무드"
-                className="bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
-              />
-            </div>
-            <textarea
-              value={editing.themeNote}
-              onChange={(e) =>
-                setEditing({
-                  ...editing,
-                  themeNote: e.target.value.slice(0, 200),
-                })
-              }
-              placeholder="테마 메모 (한 줄)"
-              rows={2}
-              className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm resize-none"
-            />
-          </section>
-
-          {/* 스탑 리스트 */}
-          <section>
-            <div className="flex items-baseline justify-between mb-2">
-              <Eyebrow>단계 · {editing.stops.length}</Eyebrow>
-              {editing.estimatedTotal > 0 && (
-                <span className="text-[11px] text-fg-soft">
-                  ~ ₩{editing.estimatedTotal.toLocaleString()}
-                </span>
-              )}
-            </div>
-            <ul className="space-y-2.5">
-              {editing.stops.map((s, idx) => (
-                <li
-                  key={idx}
-                  className="editorial-card p-3 space-y-2"
-                >
-                  <div className="flex items-baseline justify-between">
-                    <span className="serif-italic text-fg-faint text-xs">
-                      no.{String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => moveStop(idx, -1)}
-                        disabled={idx === 0}
-                        className="text-xs px-2 py-1 rounded border border-fg/20 disabled:opacity-30"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        onClick={() => moveStop(idx, 1)}
-                        disabled={idx === editing.stops.length - 1}
-                        className="text-xs px-2 py-1 rounded border border-fg/20 disabled:opacity-30"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        onClick={() => removeStop(idx)}
-                        className="text-xs px-2 py-1 rounded border border-rain/40 text-rain"
-                      >
-                        제거
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-[80px_60px_1fr] gap-2">
-                    <input
-                      placeholder="14:00"
-                      value={s.time}
-                      onChange={(e) => updateStop(idx, { time: e.target.value })}
-                      className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-                    />
-                    <input
-                      placeholder="🍵"
-                      value={s.emoji}
-                      onChange={(e) =>
-                        updateStop(idx, { emoji: e.target.value.slice(0, 4) })
-                      }
-                      className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm text-center"
-                    />
-                    <input
-                      placeholder="장소명"
-                      value={s.name}
-                      onChange={(e) => updateStop(idx, { name: e.target.value })}
-                      className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                  <input
-                    placeholder="주소"
-                    value={s.address}
-                    onChange={(e) =>
-                      updateStop(idx, { address: e.target.value })
-                    }
-                    className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-                  />
-                  <div className="grid grid-cols-[1fr_120px] gap-2">
-                    <select
-                      value={s.type}
-                      onChange={(e) => updateStop(idx, { type: e.target.value })}
-                      className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-                    >
-                      {STOP_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      placeholder="비용"
-                      value={s.estimatedCost}
-                      onChange={(e) =>
-                        updateStop(idx, {
-                          estimatedCost: Number(e.target.value) || 0,
-                        })
-                      }
-                      className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-                    />
-                  </div>
-                  <textarea
-                    placeholder="설명 (한 줄)"
-                    value={s.description}
-                    onChange={(e) =>
-                      updateStop(idx, { description: e.target.value })
-                    }
-                    rows={2}
-                    className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm resize-none"
-                  />
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={addStop}
-              className="w-full mt-3 border border-dashed border-fg/30 rounded-card py-3 text-sm text-fg-soft"
-            >
-              + 단계 추가
-            </button>
-          </section>
-        </main>
-
-        {error && (
-          <div className="fixed left-1/2 -translate-x-1/2 bottom-32 bg-rain/10 border border-rain/40 text-rain text-xs px-4 py-2 rounded-full">
-            {error}
-          </div>
-        )}
-
-        <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={backToOptions}
-              className="px-4 rounded-card border border-fg/30 text-sm"
-              disabled={saving}
-            >
-              ↻ 안 변경
-            </button>
-            <button
-              type="button"
-              onClick={confirm}
-              disabled={saving || editing.stops.length === 0}
-              className="flex-1 bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
-            >
-              {saving ? "저장 중..." : "이 코스로 확정 ✓"}
-            </button>
-          </div>
-        </div>
-        <TabBar active="plan" />
-      </div>
-    );
-  }
-
-  // ── Phase 2: 3안 선택 ─────────────────────────────────
-  if (options) {
+  // ── Phase 2: 코스 + 단계별 3안 선택 ─────────────────────
+  if (course) {
+    const total = pickedTotal(course);
     return (
       <div className="min-h-screen flex flex-col">
         <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between border-b border-fg/10">
@@ -454,9 +290,9 @@ export default function PlanNewClient() {
             ← 다시 입력
           </button>
           <div className="text-center">
-            <Eyebrow>안 선택 · {options.length}개</Eyebrow>
-            <p className="font-display text-base mt-0.5">
-              <em className="italic">셋 중 하나</em> 골라요
+            <Eyebrow>計 · 코스 편집</Eyebrow>
+            <p className="font-display text-base mt-0.5 truncate max-w-[200px]">
+              {course.title || "코스"}
             </p>
           </div>
           <span className="w-16" />
@@ -469,59 +305,101 @@ export default function PlanNewClient() {
         )}
 
         <main className="flex-1 px-5 py-4 pb-32 space-y-4">
-          {options.map((p, idx) => (
+          {/* 메타 */}
+          <section className="editorial-card-warm p-4 space-y-2">
+            <input
+              value={course.title}
+              onChange={(e) =>
+                setCourse({ ...course, title: e.target.value.slice(0, 30) })
+              }
+              placeholder="제목"
+              className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm font-display"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={course.area}
+                onChange={(e) =>
+                  setCourse({ ...course, area: e.target.value.slice(0, 20) })
+                }
+                placeholder="지역"
+                className="bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
+              />
+              <input
+                value={course.subtitle}
+                onChange={(e) =>
+                  setCourse({
+                    ...course,
+                    subtitle: e.target.value.slice(0, 40),
+                  })
+                }
+                placeholder="부제 / 무드"
+                className="bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
+              />
+            </div>
+            <textarea
+              value={course.themeNote}
+              onChange={(e) =>
+                setCourse({
+                  ...course,
+                  themeNote: e.target.value.slice(0, 200),
+                })
+              }
+              placeholder="테마 메모 (한 줄)"
+              rows={2}
+              className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm resize-none"
+            />
+          </section>
+
+          {/* 단계별 3안 */}
+          <section className="space-y-4">
+            <div className="flex items-baseline justify-between">
+              <Eyebrow>단계 · {course.stops.length}</Eyebrow>
+              {total > 0 && (
+                <span className="text-[11px] text-fg-soft">
+                  ~ ₩{total.toLocaleString()}
+                </span>
+              )}
+            </div>
+            {course.stops.map((slot, idx) => (
+              <SlotEditor
+                key={idx}
+                slot={slot}
+                index={idx}
+                lastIndex={course.stops.length - 1}
+                onMove={(dir) => moveSlot(idx, dir)}
+                onRemove={() => removeSlot(idx)}
+                onMeta={(patch) => setSlotMeta(idx, patch)}
+                onPick={(optIdx) => pickOption(idx, optIdx)}
+                onOptionEdit={(optIdx, patch) =>
+                  setOption(idx, optIdx, patch)
+                }
+              />
+            ))}
             <button
-              key={idx}
-              type="button"
-              onClick={() => pickOption(idx)}
-              className="block w-full text-left editorial-card p-5 hover:border-accent transition-colors"
+              onClick={addSlot}
+              className="w-full border border-dashed border-fg/30 rounded-card py-3 text-sm text-fg-soft"
             >
-              <div className="flex items-baseline justify-between mb-1.5">
-                <Eyebrow>안 {idx + 1} · {VARIANT_LABELS[idx] ?? ""}</Eyebrow>
-                {p.estimatedTotal > 0 && (
-                  <span className="text-[11px] text-fg-soft">
-                    ~ ₩{p.estimatedTotal.toLocaleString()}
-                  </span>
-                )}
-              </div>
-              <h2 className="font-display text-xl leading-tight">{p.title}</h2>
-              {p.subtitle && (
-                <p className="text-[11px] text-fg-faint mt-0.5">
-                  {p.subtitle}
-                </p>
-              )}
-              {p.themeNote && (
-                <p className="serif-italic text-fg-soft text-sm mt-2">
-                  &ldquo;{p.themeNote}&rdquo;
-                </p>
-              )}
-              <Rule variant="dot" className="my-3" />
-              <ol className="space-y-1.5">
-                {p.stops.map((s, i) => (
-                  <li
-                    key={i}
-                    className="flex items-baseline gap-2 text-[12px]"
-                  >
-                    <span className="font-display text-accent w-12 shrink-0">
-                      {s.time}
-                    </span>
-                    <span className="shrink-0">{s.emoji}</span>
-                    <span className="font-display truncate">{s.name}</span>
-                    {s.type && (
-                      <span className="text-[10px] text-fg-faint shrink-0">
-                        · {s.type}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ol>
-              <p className="text-[10px] text-accent mt-3 text-right">
-                고르고 편집 →
-              </p>
+              + 단계 추가 (직접 입력)
             </button>
-          ))}
+          </section>
         </main>
 
+        {error && (
+          <div className="fixed left-1/2 -translate-x-1/2 bottom-32 bg-rain/10 border border-rain/40 text-rain text-xs px-4 py-2 rounded-full">
+            {error}
+          </div>
+        )}
+
+        <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={saving || course.stops.length === 0}
+            className="w-full bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
+          >
+            {saving ? "저장 중..." : "이 코스로 확정 ✓"}
+          </button>
+        </div>
         <TabBar active="plan" />
       </div>
     );
@@ -552,7 +430,7 @@ export default function PlanNewClient() {
           자연어로 알려줘요.
           <br />
           <em className="font-display italic text-accent">
-            AI가 3안 짜드릴게요.
+            단계별 3안 짜드려요.
           </em>
         </h1>
 
@@ -611,11 +489,214 @@ export default function PlanNewClient() {
             disabled={!text.trim()}
             className="flex-1 bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
           >
-            ✨ 3안 만들기
+            ✨ 코스 만들기
           </button>
         </div>
       </div>
       <TabBar active="plan" />
+    </div>
+  );
+}
+
+// ── 단계 1개 + 3안 컴포넌트 ────────────────────────────────
+function SlotEditor({
+  slot,
+  index,
+  lastIndex,
+  onMove,
+  onRemove,
+  onMeta,
+  onPick,
+  onOptionEdit,
+}: {
+  slot: StopSlot;
+  index: number;
+  lastIndex: number;
+  onMove: (dir: -1 | 1) => void;
+  onRemove: () => void;
+  onMeta: (patch: Partial<StopSlot>) => void;
+  onPick: (optIdx: number) => void;
+  onOptionEdit: (optIdx: number, patch: Partial<StopOption>) => void;
+}) {
+  const isManual = slot.manual === true;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="serif-italic text-fg-faint text-xs">
+          no.{String(index + 1).padStart(2, "0")}
+        </span>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onMove(-1)}
+            disabled={index === 0}
+            className="text-xs px-2 py-1 rounded border border-fg/20 disabled:opacity-30"
+          >
+            ↑
+          </button>
+          <button
+            onClick={() => onMove(1)}
+            disabled={index === lastIndex}
+            className="text-xs px-2 py-1 rounded border border-fg/20 disabled:opacity-30"
+          >
+            ↓
+          </button>
+          <button
+            onClick={onRemove}
+            className="text-xs px-2 py-1 rounded border border-rain/40 text-rain"
+          >
+            제거
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[80px_1fr] gap-2">
+        <input
+          placeholder="14:00"
+          value={slot.time}
+          onChange={(e) => onMeta({ time: e.target.value })}
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm font-display text-accent text-center"
+        />
+        <input
+          placeholder="라벨 (예: 저녁식사)"
+          value={slot.label}
+          onChange={(e) => onMeta({ label: e.target.value.slice(0, 20) })}
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
+        />
+      </div>
+
+      {isManual ? (
+        <ManualOptionEditor
+          option={slot.options[0]}
+          onEdit={(patch) => onOptionEdit(0, patch)}
+        />
+      ) : (
+        <div className="space-y-2">
+          {slot.options.map((opt, optIdx) => {
+            const active = slot.selectedIdx === optIdx;
+            return (
+              <button
+                key={optIdx}
+                type="button"
+                onClick={() => onPick(optIdx)}
+                className={[
+                  "w-full text-left rounded-card border px-3.5 py-3 transition-colors",
+                  active
+                    ? "bg-bg-warm border-accent"
+                    : "bg-bg border-fg/15 hover:border-fg/30",
+                ].join(" ")}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex items-baseline gap-2 min-w-0">
+                    <span className="text-base shrink-0">{opt.emoji}</span>
+                    <span
+                      className={[
+                        "font-display text-sm truncate",
+                        active ? "" : "text-fg-soft",
+                      ].join(" ")}
+                    >
+                      {opt.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {opt.estimatedCost > 0 && (
+                      <span className="text-[10px] text-fg-faint">
+                        ₩{opt.estimatedCost.toLocaleString()}
+                      </span>
+                    )}
+                    <span
+                      className={[
+                        "w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center text-[8px]",
+                        active
+                          ? "bg-accent border-accent text-bg"
+                          : "border-fg/30",
+                      ].join(" ")}
+                    >
+                      {active ? "✓" : ""}
+                    </span>
+                  </div>
+                </div>
+                {active && opt.description && (
+                  <p className="text-[11px] text-fg-soft mt-1.5 italic leading-relaxed">
+                    {opt.description}
+                  </p>
+                )}
+                {active && opt.address && (
+                  <p className="text-[10px] text-fg-faint mt-1">
+                    📍 {opt.address}
+                  </p>
+                )}
+                {!active && opt.type && (
+                  <p className="text-[10px] text-fg-faint mt-0.5 ml-7">
+                    {opt.type}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ManualOptionEditor({
+  option,
+  onEdit,
+}: {
+  option: StopOption;
+  onEdit: (patch: Partial<StopOption>) => void;
+}) {
+  return (
+    <div className="rounded-card border border-fg/15 bg-bg-warm/40 p-3 space-y-2">
+      <div className="grid grid-cols-[60px_1fr] gap-2">
+        <input
+          placeholder="🍵"
+          value={option.emoji}
+          onChange={(e) => onEdit({ emoji: e.target.value.slice(0, 4) })}
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm text-center"
+        />
+        <input
+          placeholder="장소명"
+          value={option.name}
+          onChange={(e) => onEdit({ name: e.target.value })}
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
+        />
+      </div>
+      <input
+        placeholder="주소"
+        value={option.address}
+        onChange={(e) => onEdit({ address: e.target.value })}
+        className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
+      />
+      <div className="grid grid-cols-[1fr_120px] gap-2">
+        <select
+          value={option.type}
+          onChange={(e) => onEdit({ type: e.target.value })}
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
+        >
+          {STOP_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          placeholder="비용"
+          value={option.estimatedCost}
+          onChange={(e) =>
+            onEdit({ estimatedCost: Number(e.target.value) || 0 })
+          }
+          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
+        />
+      </div>
+      <textarea
+        placeholder="설명 (한 줄)"
+        value={option.description}
+        onChange={(e) => onEdit({ description: e.target.value })}
+        rows={2}
+        className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm resize-none"
+      />
     </div>
   );
 }
@@ -634,14 +715,14 @@ function PlanLoading() {
         </div>
       </div>
       <h1 className="font-display text-2xl leading-tight">
-        AI가 코스 3안을
+        AI가 단계별 3안을
         <br />
         <em className="not-italic italic text-accent">짜고 있어요...</em>
       </h1>
       <ul className="text-left text-sm text-fg-soft space-y-1.5 mt-6">
-        <li>✓ 정석 코스</li>
-        <li>✓ 다른 무드</li>
-        <li className="text-accent">· 의외성 카드 굴리는 중...</li>
+        <li>✓ 동선 효율 계산 중</li>
+        <li>✓ 단계별 후보 3개씩 고르는 중</li>
+        <li className="text-accent">· 마지막 와인 한 잔 자리 찾는 중...</li>
       </ul>
       <p className="text-[11px] text-fg-faint mt-6">평균 20초 정도 걸려요</p>
     </div>
