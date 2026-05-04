@@ -13,6 +13,7 @@ const SYSTEM_PROMPT = `너는 두 사람의 데이트 코스를 짜주는 큐레
   "themeNote": "string (한 줄, 따뜻하게)",
   "area": "string (대표 지역명)",
   "weather": "rain | sun | cloud | snow",
+  "scheduledAt": "ISO 8601 with KST offset, 예: '2026-05-10T14:00:00+09:00' — 사용자 자연어에 날짜·시간이 명시돼 있으면 그걸로. 없으면 null.",
   "stops": [
     {
       "stepOrder": 1,
@@ -44,7 +45,8 @@ const SYSTEM_PROMPT = `너는 두 사람의 데이트 코스를 짜주는 큐레
 - weather가 rain이면 실내 위주
 - 장소는 실제 검색 가능한 곳 (한국 기준)
 - description은 따뜻하고 구체적으로
-- 마지막 단계는 "이야기하기 좋은 곳" (와인바, 차분한 카페 등) 우선`;
+- 마지막 단계는 "이야기하기 좋은 곳" (와인바, 차분한 카페 등) 우선
+- scheduledAt: 자연어에 "이번 주 일요일 오후 2시", "5월 10일 저녁", "내일 오후 6시" 등 시간이 명시돼 있으면 그 시각으로 KST(+09:00). 명시 없으면 null로.`;
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -72,6 +74,13 @@ export async function POST(req: Request) {
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const todayKst = new Date().toLocaleDateString("ko", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    });
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 5000,
@@ -79,7 +88,11 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `요청: ${input}\n예정일: ${scheduledAt ?? "미정"}`,
+          content:
+            `오늘은 KST 기준 ${todayKst}.\n` +
+            `요청: ${input}\n` +
+            `사용자가 폼에서 입력한 예정일: ${scheduledAt ?? "미정"}\n` +
+            `요청 자연어에 날짜·시간이 명시돼 있으면 그걸 우선해 scheduledAt에 채워.`,
         },
       ],
     });

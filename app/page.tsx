@@ -333,11 +333,6 @@ export default async function HomePage() {
                           <span className="serif-italic text-fg-faint text-xs">
                             no.{String(d.number).padStart(2, "0")}
                           </span>
-                          {d.status !== "done" && (
-                            <span className="text-[9px] tracking-wider uppercase text-fg-faint border border-fg/20 rounded-full px-1.5 py-0.5">
-                              {d.status === "planned" ? "지남" : d.status}
-                            </span>
-                          )}
                         </div>
                         <p className="font-display text-base mt-0.5 truncate group-hover:text-accent transition-colors">
                           {d.title}

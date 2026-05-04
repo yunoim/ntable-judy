@@ -5,16 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eyebrow, Pill, TabBar } from "@/components/ui";
 
-const QUICK_CHIPS = [
-  "#성수동",
-  "#홍대",
-  "#실내",
-  "#한식",
-  "#₩10만↓",
-  "#차없이",
-  "#비올때",
-];
-
 const PLACEHOLDER =
   "이번 주 일요일 오후 2시부터 저녁까지, 성수동 근처에서. 비 올 수도 있어서 실내 위주로. 한식 좋아하고 분위기 있는 카페도 가고 싶어.";
 
@@ -49,9 +39,17 @@ type Course = {
 };
 
 function defaultScheduledAt(): string {
+  // 디폴트: 다음날 19:00
   const d = new Date();
-  d.setDate(d.getDate() + 7);
-  d.setHours(14, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  d.setHours(19, 0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function isoToLocalInput(iso: string): string | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -85,7 +83,11 @@ function pickedTotal(course: Course): number {
   );
 }
 
-export default function PlanNewClient() {
+export default function PlanNewClient({
+  chips = [],
+}: {
+  chips?: string[];
+}) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [scheduledAt, setScheduledAt] = useState(defaultScheduledAt());
@@ -142,6 +144,11 @@ export default function PlanNewClient() {
         ),
       };
       setCourse(normalized);
+      // 자연어에 날짜·시간 명시 시 폼의 예정일을 덮어씀
+      if (raw.scheduledAt) {
+        const local = isoToLocalInput(raw.scheduledAt);
+        if (local) setScheduledAt(local);
+      }
       if (data.mock) setMockNotice(data.message ?? "데모 모드");
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -458,18 +465,24 @@ export default function PlanNewClient() {
           />
         </div>
 
-        <div className="space-y-2">
-          <p className="text-[11px] tracking-widest uppercase text-fg-faint">
-            자주 쓰는 조건
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_CHIPS.map((c) => (
-              <button key={c} onClick={() => addChip(c)} aria-label={`${c} 추가`}>
-                <Pill>{c}</Pill>
-              </button>
-            ))}
+        {chips.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[11px] tracking-widest uppercase text-fg-faint">
+              자주 쓰는 조건
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {chips.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => addChip(c)}
+                  aria-label={`${c} 추가`}
+                >
+                  <Pill>{c}</Pill>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {error && <p className="text-xs text-rain px-1">{error}</p>}
       </main>
