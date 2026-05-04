@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import { Pill } from "@/components/ui";
+import { Pill, TabBar } from "@/components/ui";
 
 const QUICK_CHIPS = [
   "#성수동",
@@ -232,7 +232,7 @@ export default function PlanNewClient() {
           </div>
         )}
 
-        <div className="sticky bottom-0 bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 safe-bottom">
+        <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
           <div className="flex gap-2">
             <button
               type="button"
@@ -252,6 +252,7 @@ export default function PlanNewClient() {
             </button>
           </div>
         </div>
+        <TabBar active="plan" />
       </div>
     );
   }
@@ -321,7 +322,7 @@ export default function PlanNewClient() {
         )}
       </main>
 
-      <div className="sticky bottom-0 bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 safe-bottom">
+      <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
         <div className="flex gap-2">
           <button
             type="button"
@@ -340,6 +341,7 @@ export default function PlanNewClient() {
           </button>
         </div>
       </div>
+      <TabBar active="plan" />
     </div>
   );
 }
