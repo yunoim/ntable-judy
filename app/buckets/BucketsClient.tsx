@@ -32,6 +32,7 @@ export default function BucketsClient({
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +45,28 @@ export default function BucketsClient({
 
   const todo = buckets.filter((b) => !b.done);
   const done = buckets.filter((b) => b.done);
+  const formOpen = adding || editingId !== null;
+
+  function resetForm() {
+    setTitle("");
+    setEmoji("✨");
+    setDescription("");
+    setArea("");
+    setPriority(0);
+    setAdding(false);
+    setEditingId(null);
+  }
+
+  function startEdit(b: Bucket) {
+    setAdding(false);
+    setEditingId(b.id);
+    setTitle(b.title);
+    setEmoji(b.emoji ?? "✨");
+    setDescription(b.description ?? "");
+    setArea(b.area ?? "");
+    setPriority(b.priority);
+    setError(null);
+  }
 
   async function add() {
     if (!title.trim()) {
@@ -63,12 +86,35 @@ export default function BucketsClient({
         setError(data.error ?? "실패");
         return;
       }
-      setTitle("");
-      setEmoji("✨");
-      setDescription("");
-      setArea("");
-      setPriority(0);
-      setAdding(false);
+      resetForm();
+      startTransition(() => router.refresh());
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (editingId == null) return;
+    if (!title.trim()) {
+      setError("이름은 필수");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/buckets/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, emoji, description, area, priority }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "실패");
+        return;
+      }
+      resetForm();
       startTransition(() => router.refresh());
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -112,6 +158,7 @@ export default function BucketsClient({
         setError(data.error ?? "실패");
         return;
       }
+      if (editingId === id) resetForm();
       startTransition(() => router.refresh());
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -153,6 +200,9 @@ export default function BucketsClient({
             ].join(" ")}
           >
             {b.title}
+            {b.priority > 0 && !b.done && (
+              <span className="ml-1.5 text-accent text-xs align-middle">★</span>
+            )}
           </p>
           {(b.area || b.description) && (
             <p className="text-[11px] text-fg-faint mt-0.5">
@@ -186,13 +236,23 @@ export default function BucketsClient({
             </p>
           )}
           {canManage && (
-            <button
-              onClick={() => remove(b.id)}
-              disabled={busyId === b.id}
-              className="text-[10px] text-fg-faint underline mt-1.5"
-            >
-              삭제
-            </button>
+            <div className="flex gap-3 mt-1.5">
+              {!b.done && (
+                <button
+                  onClick={() => startEdit(b)}
+                  className="text-[10px] text-fg-faint underline"
+                >
+                  수정
+                </button>
+              )}
+              <button
+                onClick={() => remove(b.id)}
+                disabled={busyId === b.id}
+                className="text-[10px] text-fg-faint underline"
+              >
+                삭제
+              </button>
+            </div>
           )}
         </div>
       </li>
@@ -212,11 +272,14 @@ export default function BucketsClient({
           </p>
         </div>
         <button
-          onClick={() => setAdding((v) => !v)}
+          onClick={() => {
+            if (formOpen) resetForm();
+            else setAdding(true);
+          }}
           className="text-fg-faint text-base pt-1 w-8 text-right"
           aria-label="추가"
         >
-          {adding ? "✕" : "+"}
+          {formOpen ? "✕" : "+"}
         </button>
       </header>
 
@@ -228,9 +291,9 @@ export default function BucketsClient({
         </div>
       )}
 
-      {adding && (
+      {formOpen && (
         <section className="mx-5 mt-4 p-5 editorial-card-warm space-y-3">
-          <Eyebrow>new bucket</Eyebrow>
+          <Eyebrow>{editingId ? "수정" : "new bucket"}</Eyebrow>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value.slice(0, 60))}
@@ -258,7 +321,9 @@ export default function BucketsClient({
                 onClick={() => setEmoji(e)}
                 className={[
                   "w-9 h-9 rounded-card text-base flex items-center justify-center",
-                  emoji === e ? "bg-accent text-bg" : "bg-bg border border-fg/20",
+                  emoji === e
+                    ? "bg-accent text-bg"
+                    : "bg-bg border border-fg/20",
                 ].join(" ")}
               >
                 {e}
@@ -275,11 +340,15 @@ export default function BucketsClient({
           </label>
           <button
             type="button"
-            onClick={add}
+            onClick={editingId ? saveEdit : add}
             disabled={saving || !title.trim()}
             className="w-full bg-ink-card text-bg rounded-card py-2.5 text-sm font-semibold disabled:opacity-40"
           >
-            {saving ? "저장 중..." : "추가 ✓"}
+            {saving
+              ? "저장 중..."
+              : editingId
+                ? "수정 ✓"
+                : "추가 ✓"}
           </button>
         </section>
       )}
