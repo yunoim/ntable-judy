@@ -197,7 +197,7 @@ export default function CapsulesClient({
 
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
         <section className="space-y-3">
-          <SectionTitle index="壹" title="봉인된 캡슐" hint={`${sealed.length}`} />
+          <SectionTitle title="봉인된 캡슐" hint={`${sealed.length}개`} />
           {sealed.length === 0 ? (
             <div className="text-center pt-4 pb-4">
               <span className="text-4xl">📜</span>
@@ -232,11 +232,7 @@ export default function CapsulesClient({
                           c.canOpen ? "text-accent" : "text-fg-soft",
                         ].join(" ")}
                       >
-                        {c.canOpen
-                          ? "오늘 ★"
-                          : days === 0
-                            ? "오늘"
-                            : `D-${days}`}
+                        {c.canOpen || days === 0 ? "오늘" : `D-${days}`}
                       </span>
                     </div>
                     <p className="text-[11px] text-fg-faint mt-1">
@@ -273,7 +269,7 @@ export default function CapsulesClient({
 
         {opened.length > 0 && (
           <section className="space-y-3">
-            <SectionTitle index="貳" title="열린 편지" hint={`${opened.length}`} />
+            <SectionTitle title="열린 편지" hint={`${opened.length}개`} />
             <ul className="space-y-3">
               {opened.map((c) => {
                 const showBody = revealed[c.id] !== false;

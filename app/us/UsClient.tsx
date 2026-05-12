@@ -48,14 +48,14 @@ function distanceLabel(dateStr: string, recurring: boolean): {
   if (recurring) {
     const next = nextOccurrence(dateStr, true);
     const days = daysUntil(next);
-    if (days === 0) return { text: "오늘 ★", highlight: true, past: false };
+    if (days === 0) return { text: "오늘", highlight: true, past: false };
     if (days < 0)
       return { text: `D+${Math.abs(days)}`, highlight: false, past: true };
     return { text: `D-${days}`, highlight: days <= 30, past: false };
   } else {
     const days = daysUntil(new Date(dateStr));
     if (days > 0) return { text: `D-${days}`, highlight: days <= 30, past: false };
-    if (days === 0) return { text: "오늘 ★", highlight: true, past: false };
+    if (days === 0) return { text: "오늘", highlight: true, past: false };
     return { text: `D+${Math.abs(days)}`, highlight: false, past: true };
   }
 }
@@ -368,7 +368,7 @@ export default function UsClient({
         {/* ─── 마일스톤 ─────────────────────── */}
         {milestones.length > 0 && (
           <section className="space-y-3">
-            <SectionTitle index="壹" title="마일스톤" hint="자동 계산" />
+            <SectionTitle title="마일스톤" hint="자동 계산" />
             <div className="-mx-5 px-5 overflow-x-auto no-scrollbar">
               <ul className="flex gap-2.5 pb-1 min-w-max">
                 {milestones.map((m) => {
@@ -401,7 +401,7 @@ export default function UsClient({
                           today ? "text-accent" : "text-fg-soft",
                         ].join(" ")}
                       >
-                        {today ? "오늘 ★" : past ? `D+${Math.abs(days)}` : `D-${days}`}
+                        {today ? "오늘" : past ? `D+${Math.abs(days)}` : `D-${days}`}
                       </p>
                     </li>
                   );
@@ -414,9 +414,8 @@ export default function UsClient({
         {/* ─── 기념일 timeline ─────────────────── */}
         <section className="space-y-3">
           <SectionTitle
-            index="貳"
             title="기념일"
-            hint={`${sorted.length} entries`}
+            hint={`${sorted.length}개`}
           />
           {sorted.length === 0 ? (
             <div className="text-center pt-8 pb-4">

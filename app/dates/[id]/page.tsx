@@ -76,39 +76,30 @@ export default async function DateDetailPage({
       {canEdit && (
         <Link
           href={`/dates/${date.id}/edit`}
-          className="absolute top-3 right-3 z-20 text-[11px] text-fg-faint border border-fg/20 rounded-full px-2.5 py-1 bg-bg/80 backdrop-blur"
+          className="tap absolute top-3 right-3 z-20 text-[11px] text-fg-faint border border-fg/15 rounded-full px-3 py-1.5 bg-bg/85 backdrop-blur hover:text-fg hover:border-fg/30"
           aria-label="편집"
         >
-          ✏ 편집
+          편집
         </Link>
       )}
 
       <main className="relative z-10 px-5 pt-10 pb-24 w-full flex-1">
-        <header className="text-center mb-8">
+        <header className="text-center mb-8 rise-in">
           <span
-            className="inline-block text-[10px] tracking-[3px] uppercase border border-accent rounded-full px-3.5 py-1.5 mb-4"
-            style={{ color: "var(--fg-soft)" }}
+            className="inline-block text-[10.5px] tracking-[0.18em] border border-accent/60 rounded-full px-3.5 py-1.5 mb-4 text-fg-soft"
           >
-            {dateLabel} · {date.area}
+            {dateLabel}{date.area ? ` · ${date.area}` : ""}
           </span>
-          <h1 className="font-display text-4xl leading-tight">
-            우리의
-            <br />
-            <em className="not-italic font-display italic text-accent">
-              {ordinal(date.number)} 번째
-            </em>{" "}
-            날
+          <h1 className="font-display text-[34px] leading-tight">
+            <span className="font-display italic text-accent">{ordinal(date.number)}</span> 번째 데이트
           </h1>
           {date.subtitle && (
-            <p
-              className="text-xs tracking-widest uppercase mt-2.5"
-              style={{ color: "var(--fg-soft)" }}
-            >
+            <p className="text-[12px] tracking-wider mt-3 text-fg-soft">
               {date.subtitle}
             </p>
           )}
           {date.weather === "rain" && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-rain bg-rain/10 px-3.5 py-1 rounded-full mt-3.5">
+            <span className="inline-flex items-center gap-1.5 text-xs text-rain bg-rain/10 px-3 py-1 rounded-full mt-3.5">
               ☔ 비 오는 날
             </span>
           )}
@@ -120,9 +111,9 @@ export default async function DateDetailPage({
         </header>
 
         {date.themeNote && (
-          <section className="mb-8 p-5 rounded-card bg-bg-warm border border-accent/30">
-            <p className="text-[10px] tracking-[3px] uppercase text-accent mb-3">
-              ✦ 오늘의 테마
+          <section className="mb-8 p-5 rounded-card bg-bg-warm border border-accent/25 rise-in rise-in-1">
+            <p className="text-[10.5px] tracking-[0.2em] text-accent mb-3">
+              오늘의 테마
             </p>
             {history.length > 1 && (
               <p className="text-[11px] text-fg-faint mb-3 tracking-wider">

@@ -116,26 +116,75 @@ export function PhotoSlot({
   );
 }
 
-export function TabBar({
-  active,
-}: {
-  active: "home" | "plan" | "log" | "us" | "saju";
-}) {
-  const items: Array<{
-    id: typeof active;
-    label: string;
-    glyph: string;
-    href: string;
-  }> = [
-    { id: "home", label: "홈", glyph: "家", href: "/" },
-    { id: "plan", label: "계획", glyph: "計", href: "/plan/new" },
-    { id: "log", label: "기록", glyph: "錄", href: "/timeline" },
-    { id: "us", label: "우리", glyph: "倆", href: "/us" },
-    { id: "saju", label: "사주", glyph: "命", href: "/us/saju" },
+function TabIcon({ id, active }: { id: TabId; active: boolean }) {
+  const stroke = active ? "var(--accent)" : "currentColor";
+  const sw = 1.6;
+  const common = {
+    width: 22,
+    height: 22,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke,
+    strokeWidth: sw,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  switch (id) {
+    case "home":
+      return (
+        <svg {...common}>
+          <path d="M4 11.5 12 5l8 6.5" />
+          <path d="M6 10v9h12v-9" />
+        </svg>
+      );
+    case "plan":
+      return (
+        <svg {...common}>
+          <path d="M5 4h11l3 3v13H5z" />
+          <path d="M8.5 12h7M8.5 16h5" />
+        </svg>
+      );
+    case "log":
+      return (
+        <svg {...common}>
+          <rect x="4.5" y="5.5" width="15" height="14" rx="2" />
+          <path d="M8 3v4M16 3v4M4.5 10h15" />
+        </svg>
+      );
+    case "us":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="10" r="3" />
+          <circle cx="15.5" cy="10" r="3" />
+          <path d="M4 19c.6-2.8 2.6-4.2 5-4.2s4.4 1.4 5 4.2" />
+          <path d="M11.5 19c.6-2.8 2.6-4.2 5-4.2 1 0 1.9.25 2.6.7" />
+        </svg>
+      );
+    case "saju":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="7.5" />
+          <path d="M12 4.5v15M4.5 12h15" />
+          <path d="M7 7.5l10 9M17 7.5l-10 9" opacity="0.4" />
+        </svg>
+      );
+  }
+}
+
+type TabId = "home" | "plan" | "log" | "us" | "saju";
+
+export function TabBar({ active }: { active: TabId }) {
+  const items: Array<{ id: TabId; label: string; href: string }> = [
+    { id: "home", label: "홈", href: "/" },
+    { id: "plan", label: "계획", href: "/plan/new" },
+    { id: "log", label: "기록", href: "/timeline" },
+    { id: "us", label: "우리", href: "/us" },
+    { id: "saju", label: "사주", href: "/us/saju" },
   ];
   return (
-    <nav className="sticky bottom-0 left-0 right-0 bg-bg/95 backdrop-blur border-t border-fg/15 safe-bottom z-40">
-      <ul className="flex justify-around items-center px-2 pt-2.5 pb-1">
+    <nav className="sticky bottom-0 left-0 right-0 bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40">
+      <ul className="flex justify-around items-center px-2 pt-2 pb-1">
         {items.map((it) => {
           const isActive = active === it.id;
           return (
@@ -144,23 +193,22 @@ export function TabBar({
                 href={it.href}
                 prefetch={false}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-2 py-1",
+                  "tap flex flex-col items-center gap-1 px-2 py-1.5",
                   isActive ? "text-fg" : "text-fg-faint",
                 )}
               >
+                <TabIcon id={it.id} active={isActive} />
                 <span
                   className={cn(
-                    "font-display text-base leading-none",
-                    isActive ? "text-accent" : "",
+                    "text-[10.5px] tracking-wider",
+                    isActive ? "text-fg font-medium" : "text-fg-faint",
                   )}
-                  aria-hidden
                 >
-                  {it.glyph}
+                  {it.label}
                 </span>
-                <span className="text-[10px] tracking-wider">{it.label}</span>
                 <span
                   className={cn(
-                    "block w-1 h-1 rounded-full",
+                    "block w-1 h-1 rounded-full transition-colors",
                     isActive ? "bg-accent" : "bg-transparent",
                   )}
                 />
@@ -208,11 +256,11 @@ export function SectionTitle({
     <div className={cn("flex items-baseline justify-between pt-1", className)}>
       <div className="flex items-baseline gap-2">
         {index !== undefined && (
-          <span className="serif-italic text-fg-faint text-sm">
+          <span className="serif-italic text-fg-faint/70 text-[11px] tabular-nums">
             {typeof index === "number" ? String(index).padStart(2, "0") : index}
           </span>
         )}
-        <span className="font-display text-base text-fg">{title}</span>
+        <span className="font-display text-[17px] text-fg">{title}</span>
       </div>
       {hint && <span className="text-[10px] text-fg-faint">{hint}</span>}
     </div>

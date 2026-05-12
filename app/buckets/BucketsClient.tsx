@@ -355,7 +355,7 @@ export default function BucketsClient({
 
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
         <section className="space-y-3">
-          <SectionTitle index="壹" title="아직" hint={`${todo.length}`} />
+          <SectionTitle title="해보고 싶은 것" hint={`${todo.length}개`} />
           {todo.length === 0 ? (
             <div className="text-center pt-4 pb-4">
               <span className="text-4xl">🌱</span>
@@ -373,7 +373,7 @@ export default function BucketsClient({
 
         {done.length > 0 && (
           <section className="space-y-3">
-            <SectionTitle index="貳" title="이뤘다" hint={`${done.length}`} />
+            <SectionTitle title="해본 것" hint={`${done.length}개`} />
             <ul className="space-y-2.5">{done.map(renderItem)}</ul>
           </section>
         )}

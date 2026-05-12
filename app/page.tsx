@@ -2,12 +2,9 @@
 import Link from "next/link";
 import {
   Avatar,
-  Card,
   Eyebrow,
   Hero,
   Numeral,
-  PhotoSlot,
-  Rule,
   SectionTitle,
   Stars,
   TabBar,
@@ -89,93 +86,70 @@ export default async function HomePage() {
     partner ??
     userStars.find((u) => u.role === "approved" && u.id !== fox?.id);
 
-  const today = new Date();
-  const issueLabel = today.toLocaleDateString("ko", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <div className="min-h-screen flex flex-col">
-      {/* ─── Masthead ─────────────────────────── */}
-      <header className="px-5 pt-5 pb-4 safe-top">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="eyebrow">judy.ntable</p>
-            <p className="font-display text-[28px] leading-none mt-1.5">
-              <em className="italic">우리</em>의 기록
-            </p>
-            <p className="text-[11px] text-fg-faint mt-2 tracking-wider">
-              No. {String(totalDates).padStart(2, "0")} · {issueLabel}
-            </p>
-          </div>
-          <div className="flex items-center gap-3 pt-1">
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="text-fg-faint text-sm relative"
-                aria-label="관리자 패널"
-              >
-                ⚙
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-accent text-bg text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-display leading-none">
-                    {pendingCount}
-                  </span>
-                )}
-              </Link>
+      {/* ─── Masthead (compact) ───────────────── */}
+      <header className="px-5 pt-4 pb-3 safe-top flex items-center justify-between rise-in">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex -space-x-2">
+            {bunny && (
+              <Avatar
+                user={{ name: bunny.nickname, emoji: bunny.emoji ?? "🐰" }}
+                size="sm"
+                variant="warm"
+              />
             )}
-            <Link
-              href="/settings/profile"
-              className="text-fg-faint text-sm"
-              aria-label="프로필"
-            >
-              👤
-            </Link>
+            {fox && (
+              <Avatar
+                user={{ name: fox.nickname, emoji: fox.emoji ?? "🦊" }}
+                size="sm"
+                variant="dark"
+              />
+            )}
           </div>
+          <p className="font-display text-[15px] truncate">
+            {bunny?.nickname ?? "초대 대기"}
+            <span className="text-fg-faint mx-1.5">·</span>
+            {fox?.nickname ?? "?"}
+          </p>
         </div>
-
-        {/* couple line */}
-        <div className="mt-5 flex items-center gap-3">
-          {bunny && (
-            <Avatar
-              user={{ name: bunny.nickname, emoji: bunny.emoji ?? "🐰" }}
-              size="md"
-              variant="warm"
-            />
-          )}
-          {fox && (
-            <Avatar
-              user={{ name: fox.nickname, emoji: fox.emoji ?? "🦊" }}
-              size="md"
-              variant="dark"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-display text-sm">
-              {bunny?.nickname ?? "초대 대기"}{" "}
-              <span className="text-fg-faint">×</span>{" "}
-              {fox?.nickname ?? "?"}
-            </p>
-            <p className="text-[10px] text-fg-faint mt-0.5">
-              {bunny ? `${bunny.emoji ?? "🐰"} ${bunny.avg}★` : ""}
-              {bunny && fox && (
-                <span className="mx-1.5 text-fg-faint/50">·</span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="tap relative w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
+              aria-label="관리자 패널"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              {pendingCount > 0 && (
+                <span className="absolute top-1 right-1 bg-accent text-bg text-[9px] rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center leading-none">
+                  {pendingCount}
+                </span>
               )}
-              {fox ? `${fox.emoji ?? "🦊"} ${fox.avg}★` : ""}
-            </p>
-          </div>
+            </Link>
+          )}
+          <Link
+            href="/settings/profile"
+            className="tap w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
+            aria-label="프로필"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="9" r="3.5" />
+              <path d="M5 20c1-3.5 4-5 7-5s6 1.5 7 5" />
+            </svg>
+          </Link>
         </div>
       </header>
 
-      <Rule variant="dot" className="mx-5" />
-
-      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+      <main className="flex-1 px-5 pt-3 pb-28 space-y-7">
         {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
-          <section className="space-y-3">
-            <Eyebrow>序 · 다음 데이트</Eyebrow>
-            <Link href={`/dates/${next.id}`} className="block">
+          <section className="space-y-2.5 rise-in rise-in-1">
+            <Eyebrow>다음 데이트</Eyebrow>
+            <Link href={`/dates/${next.id}`} className="block tap lift rounded-[16px]">
               <Hero
                 eyebrow={`#${String(next.number).padStart(2, "0")}`}
                 number={`D-${Math.max(0, dDay(new Date(next.scheduledAt)))}`}
@@ -201,47 +175,47 @@ export default async function HomePage() {
             </Link>
           </section>
         ) : (
-          <section className="space-y-3">
-            <Eyebrow>序 · 다음 데이트</Eyebrow>
+          <section className="space-y-2.5 rise-in rise-in-1">
+            <Eyebrow>다음 데이트</Eyebrow>
             <Link
               href="/plan/new"
-              className="block editorial-card border-dashed !border-accent/50 px-5 py-7 text-center"
+              className="tap lift block editorial-card border-dashed !border-accent/50 px-5 py-7 text-center"
             >
-              <p className="serif-italic text-fg-faint text-sm">unwritten</p>
+              <p className="text-fg-faint text-[13px]">아직 비어 있어요</p>
               <p className="font-display text-xl text-accent mt-2">
-                + 다음 데이트 등록
+                + 다음 데이트 만들기
               </p>
               <p className="text-[11px] text-fg-faint mt-2">
-                계획을 짜고 D-day 시작
+                계획을 짜면 여기에 D-day가 떠요
               </p>
             </Link>
           </section>
         )}
 
-        {/* ─── 만남 N일 + 마일스톤 + 기념일 ─────────────── */}
+        {/* ─── 우리 사이 ─────────────────────────── */}
         {(dayNo > 0 || upcomingAnni || upcomingMilestone) && (
-          <section className="space-y-3">
-            <SectionTitle index="壹" title="우리 사이의 날" hint="counters" />
+          <section className="space-y-3 rise-in rise-in-2">
+            <SectionTitle title="우리 사이" />
 
             {dayNo > 0 && (
               <Link
                 href="/us/saju"
-                className="block editorial-card-warm px-5 py-4"
+                className="tap lift block editorial-card-warm px-5 py-4"
               >
                 <div className="flex items-end justify-between gap-3">
                   <div>
-                    <p className="eyebrow">용광로 × 무쇠</p>
-                    <Numeral
-                      value={dayNo}
-                      size="lg"
-                      className="text-fg mt-1"
-                    />
-                    <p className="serif-italic text-fg-faint text-sm -mt-1">
-                      번째 날
-                    </p>
+                    <p className="text-[11px] text-fg-faint">함께한 날</p>
+                    <div className="flex items-baseline gap-1.5 mt-0.5">
+                      <Numeral
+                        value={dayNo}
+                        size="lg"
+                        className="text-fg"
+                      />
+                      <span className="text-fg-soft text-sm">일</span>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-fg-faint pb-1">
-                    丁火 × 庚金 · 정화연경
+                  <p className="text-[10px] text-fg-faint pb-1.5 tracking-wider">
+                    사주 보기 →
                   </p>
                 </div>
               </Link>
@@ -251,7 +225,7 @@ export default async function HomePage() {
               {upcomingAnni && (
                 <Link
                   href="/us"
-                  className="editorial-card px-4 py-3.5 flex flex-col gap-1"
+                  className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
                 >
                   <span className="text-base">
                     {upcomingAnni.row.emoji ?? "📅"}
@@ -267,7 +241,7 @@ export default async function HomePage() {
                   </p>
                   <p className="text-accent font-display text-base mt-auto pt-1">
                     {upcomingAnni.days === 0
-                      ? "오늘 ★"
+                      ? "오늘"
                       : `D-${upcomingAnni.days}`}
                   </p>
                 </Link>
@@ -282,7 +256,7 @@ export default async function HomePage() {
                   return (
                     <Link
                       href="/us"
-                      className="editorial-card px-4 py-3.5 flex flex-col gap-1"
+                      className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
                     >
                       <span className="text-base">{upcomingMilestone.emoji}</span>
                       <p className="font-display text-sm truncate">
@@ -295,7 +269,7 @@ export default async function HomePage() {
                         })}
                       </p>
                       <p className="text-fg-soft font-display text-base mt-auto pt-1">
-                        {days === 0 ? "오늘 ★" : `D-${days}`}
+                        {days === 0 ? "오늘" : `D-${days}`}
                       </p>
                     </Link>
                   );
@@ -306,11 +280,10 @@ export default async function HomePage() {
 
         {/* ─── 지난 데이트 ─────────────────────────── */}
         {past.length > 0 && (
-          <section className="space-y-3">
+          <section className="space-y-3 rise-in rise-in-3">
             <SectionTitle
-              index="貳"
               title="지난 데이트"
-              hint={`${totalDates} entries`}
+              hint={`총 ${totalDates}회`}
             />
             <ul className="space-y-3.5">
               {past.map((d, idx) => {
@@ -318,23 +291,25 @@ export default async function HomePage() {
                   ? d.reviews.reduce((s, r) => s + r.stars, 0) /
                     d.reviews.length
                   : 0;
+                const fallback =
+                  d.weather === "rain" ? "☔" : null;
                 return (
                   <li key={d.id}>
                     <Link
                       href={`/dates/${d.id}`}
-                      className="flex gap-4 group"
+                      className="tap flex gap-4 group"
                     >
-                      <PhotoSlot
-                        label="img"
-                        className="w-[68px] h-[68px] shrink-0"
-                      />
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <div className="flex items-baseline gap-2">
-                          <span className="serif-italic text-fg-faint text-xs">
-                            no.{String(d.number).padStart(2, "0")}
+                      <div className="w-[68px] h-[68px] shrink-0 rounded-[14px] bg-bg-warm border border-fg/8 flex items-center justify-center overflow-hidden">
+                        {fallback ? (
+                          <span className="text-2xl">{fallback}</span>
+                        ) : (
+                          <span className="font-display text-[22px] text-fg-soft tabular-nums">
+                            {String(d.number).padStart(2, "0")}
                           </span>
-                        </div>
-                        <p className="font-display text-base mt-0.5 truncate group-hover:text-accent transition-colors">
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        <p className="font-display text-base truncate group-hover:text-accent transition-colors">
                           {d.title}
                         </p>
                         <p className="text-[11px] text-fg-faint mt-0.5">
@@ -349,8 +324,8 @@ export default async function HomePage() {
                           {avg > 0 ? (
                             <Stars n={avg} />
                           ) : (
-                            <span className="text-[10px] text-fg-faint serif-italic">
-                              아직 후기 없음
+                            <span className="text-[10px] text-fg-faint">
+                              후기 비어 있음
                             </span>
                           )}
                         </div>
@@ -369,8 +344,8 @@ export default async function HomePage() {
 
       <Link
         href="/plan/new"
-        className="fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center shadow-lg font-display text-xl"
-        style={{ boxShadow: "0 4px 0 rgba(44,32,23,0.18)" }}
+        className="tap fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center font-display text-2xl leading-none"
+        style={{ boxShadow: "0 6px 16px -6px rgba(44,32,23,0.35), 0 2px 0 rgba(44,32,23,0.1)" }}
         aria-label="데이트 계획 추가"
       >
         +
