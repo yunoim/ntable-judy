@@ -31,8 +31,11 @@ type Body = {
   estimatedCost?: number;
   estimatedTotal?: number;
   aiInput?: string;
+  status?: string;
   stops?: StopInput[];
 };
+
+const ALLOWED_STATUS = new Set(["planned", "done", "cancelled"]);
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -56,6 +59,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_scheduled_at" }, { status: 400 });
   }
 
+  // 과거 데이트로 입력 시 status="done" 허용 (옵션). 디폴트는 "planned".
+  // 프론트가 status 안 보내면 자동 추정: scheduledAt이 오늘 이전이면 done.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const requestedStatus = body.status && ALLOWED_STATUS.has(body.status)
+    ? body.status
+    : scheduledAt.getTime() < todayStart.getTime()
+      ? "done"
+      : "planned";
+
   const created = await prisma.date.create({
     data: {
       number: nextNumber,
@@ -65,7 +78,7 @@ export async function POST(req: Request) {
       scheduledAt,
       startTime: body.startTime || null,
       endTime: body.endTime || null,
-      status: "planned",
+      status: requestedStatus,
       themeNote: body.themeNote || null,
       weather: body.weather || null,
       historyLabel: body.historyLabel || body.area || null,
