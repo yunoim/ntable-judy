@@ -88,9 +88,16 @@ export default function PhotosSection({
   return (
     <section className="mt-8 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="eyebrow">圖 · 사진 {photos.length}</p>
-        <label className="text-[11px] text-accent underline cursor-pointer">
-          {uploading ? "올리는 중..." : "+ 추가"}
+        <p className="eyebrow">사진 {photos.length}장</p>
+        <label
+          className={[
+            "tap cursor-pointer rounded-full px-3.5 py-1.5 text-[12px] font-display border transition-colors",
+            uploading
+              ? "border-fg/20 text-fg-faint"
+              : "border-accent text-accent hover:bg-accent hover:text-bg",
+          ].join(" ")}
+        >
+          {uploading ? "올리는 중…" : "📷 사진 추가"}
           <input
             ref={inputRef}
             type="file"
@@ -108,16 +115,30 @@ export default function PhotosSection({
         </p>
       )}
       {photos.length === 0 ? (
-        <p className="text-[11px] text-fg-faint serif-italic px-1">
-          아직 사진이 없어요.
-        </p>
+        <label className="tap lift cursor-pointer block border border-dashed border-accent/40 rounded-card py-8 text-center hover:border-accent/70">
+          <p className="text-2xl">📷</p>
+          <p className="font-display text-base text-accent mt-2">
+            그날의 사진 올리기
+          </p>
+          <p className="text-[11px] text-fg-faint mt-1">
+            여러 장 한 번에 가능
+          </p>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={(e) => upload(e.target.files)}
+            className="hidden"
+          />
+        </label>
       ) : (
         <div className="grid grid-cols-3 gap-1.5">
           {photos.map((p) => (
             <button
               key={p.id}
               onClick={() => setLightbox(p)}
-              className="relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
+              className="tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

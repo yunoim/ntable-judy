@@ -183,7 +183,7 @@ export function TabBar({ active }: { active: TabId }) {
     { id: "saju", label: "사주", href: "/us/saju" },
   ];
   return (
-    <nav className="sticky bottom-0 left-0 right-0 bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40">
       <ul className="flex justify-around items-center px-2 pt-2 pb-1">
         {items.map((it) => {
           const isActive = active === it.id;

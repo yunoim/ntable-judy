@@ -22,10 +22,7 @@ html, body {
   font-family: var(--font-body), "Noto Serif KR", serif;
 }
 
-/* iOS Safari 100vh = 주소창 포함 viewport. visible 영역보다 김.
- * dvh(dynamic viewport height) 지원 브라우저(iOS 15+ / 모던 Chrome) 에서는
- * min-h-screen 을 100dvh 로 재해석해서 sticky bottom 요소(TabBar) 가 visible 끝에 잡히도록.
- * 콘텐츠가 짧은 페이지(/us, /us/saju)에서 TabBar 가 viewport 밖으로 내려가는 이슈 fix. */
+/* min-h-screen 에 dvh fallback (iOS Safari 주소창 보정) */
 @supports (min-height: 100dvh) {
   .min-h-screen {
     min-height: 100dvh;
