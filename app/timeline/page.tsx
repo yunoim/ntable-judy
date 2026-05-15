@@ -73,8 +73,19 @@ export default async function TimelinePage({
 
   const [dates, eventsRaw, admin, partner] = await Promise.all([
     getAllDates(),
+    // 다일 일정도 잡기: 시작이 월 끝 전 + (단일 = 시작이 월 시작 이후 / 다일 = 종료가 월 시작 이후)
     prisma.personalEvent.findMany({
-      where: { startsAt: { gte: monthStart, lt: monthEnd } },
+      where: {
+        AND: [
+          { startsAt: { lt: monthEnd } },
+          {
+            OR: [
+              { endsAt: null, startsAt: { gte: monthStart } },
+              { endsAt: { gte: monthStart } },
+            ],
+          },
+        ],
+      },
       orderBy: { startsAt: "asc" },
       include: { user: { select: { id: true, nickname: true, emoji: true } } },
     }),
@@ -97,11 +108,24 @@ export default async function TimelinePage({
   });
 
   const eventsByDay = new Map<number, typeof eventsRaw>();
+  const lastDay = new Date(year, month + 1, 0).getDate();
   for (const e of eventsRaw) {
-    const day = new Date(e.startsAt).getDate();
-    const arr = eventsByDay.get(day) ?? [];
-    arr.push(e);
-    eventsByDay.set(day, arr);
+    const start = new Date(e.startsAt);
+    const end = e.endsAt ? new Date(e.endsAt) : start;
+    // 이번 month 범위 안의 day 들에 모두 등록 (다일 일정 캘린더 띠 표시용)
+    const startDay =
+      start.getFullYear() === year && start.getMonth() === month
+        ? start.getDate()
+        : 1;
+    const endDay =
+      end.getFullYear() === year && end.getMonth() === month
+        ? end.getDate()
+        : lastDay;
+    for (let d = startDay; d <= endDay; d++) {
+      const arr = eventsByDay.get(d) ?? [];
+      arr.push(e);
+      eventsByDay.set(d, arr);
+    }
   }
 
   const isCurrentMonth =

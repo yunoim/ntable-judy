@@ -52,6 +52,11 @@ export default function EventsSection({
   );
   const [time, setTime] = useState("19:00");
   const [allDay, setAllDay] = useState(false);
+  const [multiDay, setMultiDay] = useState(false);
+  const [endDate, setEndDate] = useState(
+    initialDate ?? localInput(new Date()).slice(0, 10),
+  );
+  const [endTime, setEndTime] = useState("21:00");
   const [category, setCategory] = useState("");
   const [note, setNote] = useState("");
   const [ownerId, setOwnerId] = useState<string>(meId);
@@ -77,6 +82,9 @@ export default function EventsSection({
     setDate(initialDate ?? localInput(new Date()).slice(0, 10));
     setTime("19:00");
     setAllDay(false);
+    setMultiDay(false);
+    setEndDate(initialDate ?? localInput(new Date()).slice(0, 10));
+    setEndTime("21:00");
     setCategory("");
     setNote("");
     setOwnerId(meId);
@@ -92,6 +100,18 @@ export default function EventsSection({
     setDate(localInput(d).slice(0, 10));
     setTime(localInput(d).slice(11, 16));
     setAllDay(e.allDay);
+    if (e.endsAt) {
+      const ed = new Date(e.endsAt);
+      const startStr = localInput(d).slice(0, 10);
+      const endStr = localInput(ed).slice(0, 10);
+      setMultiDay(endStr !== startStr);
+      setEndDate(endStr);
+      setEndTime(localInput(ed).slice(11, 16));
+    } else {
+      setMultiDay(false);
+      setEndDate(localInput(d).slice(0, 10));
+      setEndTime("21:00");
+    }
     setCategory(e.category ?? "");
     setNote(e.note ?? "");
     setOwnerId(e.user.id);
@@ -103,6 +123,10 @@ export default function EventsSection({
       setError("제목·날짜는 필수");
       return;
     }
+    if (multiDay && endDate < date) {
+      setError("종료일이 시작일보다 빠를 수 없어요");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -111,9 +135,16 @@ export default function EventsSection({
       const startsAt = allDay
         ? `${date}T12:00:00.000Z`
         : new Date(`${date}T${time}:00`).toISOString();
+      let endsAtVal: string | null = null;
+      if (multiDay) {
+        endsAtVal = allDay
+          ? `${endDate}T12:00:00.000Z`
+          : new Date(`${endDate}T${endTime}:00`).toISOString();
+      }
       const payload: Record<string, unknown> = {
         title,
         startsAt,
+        endsAt: endsAtVal,
         allDay,
         category: category || null,
         note: note || null,
@@ -241,43 +272,95 @@ export default function EventsSection({
             placeholder="제목 (예: 회사 회식)"
             className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
           />
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="flex-1 bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
-            />
-            {!allDay && (
+          <div className="space-y-1.5">
+            <p className="eyebrow !text-[9px]">{multiDay ? "시작" : "날짜"}</p>
+            <div className="flex gap-2">
               <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  if (!multiDay || endDate < e.target.value) setEndDate(e.target.value);
+                }}
+                className="flex-1 bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
               />
-            )}
+              {!allDay && (
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+                />
+              )}
+            </div>
           </div>
-          <div className="grid grid-cols-2 rounded-card border border-fg/20 overflow-hidden text-xs">
-            <button
-              type="button"
-              onClick={() => setAllDay(false)}
-              className={[
-                "py-2 text-center transition-colors",
-                !allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
-              ].join(" ")}
-            >
-              ⏰ 시간 지정
-            </button>
-            <button
-              type="button"
-              onClick={() => setAllDay(true)}
-              className={[
-                "py-2 text-center transition-colors",
-                allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
-              ].join(" ")}
-            >
-              📅 하루 종일
-            </button>
+          {multiDay && (
+            <div className="space-y-1.5">
+              <p className="eyebrow !text-[9px]">종료</p>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={endDate}
+                  min={date}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1 bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+                />
+                {!allDay && (
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="bg-bg border border-fg/20 rounded-card px-3 py-2.5 text-sm focus:outline-none focus:border-accent"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 rounded-card border border-fg/20 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setAllDay(false)}
+                className={[
+                  "py-2 text-center transition-colors",
+                  !allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+                ].join(" ")}
+              >
+                ⏰ 시간
+              </button>
+              <button
+                type="button"
+                onClick={() => setAllDay(true)}
+                className={[
+                  "py-2 text-center transition-colors",
+                  allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+                ].join(" ")}
+              >
+                📅 하루
+              </button>
+            </div>
+            <div className="grid grid-cols-2 rounded-card border border-fg/20 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => setMultiDay(false)}
+                className={[
+                  "py-2 text-center transition-colors",
+                  !multiDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+                ].join(" ")}
+              >
+                당일
+              </button>
+              <button
+                type="button"
+                onClick={() => setMultiDay(true)}
+                className={[
+                  "py-2 text-center transition-colors",
+                  multiDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+                ].join(" ")}
+              >
+                여러 날
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.map((c) => (
@@ -322,6 +405,8 @@ export default function EventsSection({
         <ul className="space-y-2">
           {events.map((e) => {
             const start = new Date(e.startsAt);
+            const end = e.endsAt ? new Date(e.endsAt) : null;
+            const isMulti = end && end.toDateString() !== start.toDateString();
             const canManage = ["admin", "approved"].includes(meRole);
             return (
               <li
@@ -336,6 +421,11 @@ export default function EventsSection({
                     <span className="font-display text-sm truncate">
                       {e.title}
                     </span>
+                    {isMulti && (
+                      <span className="text-[9px] tracking-wider text-accent border border-accent/40 rounded-full px-1.5 py-0.5">
+                        {Math.round((end.getTime() - start.getTime()) / 86400000) + 1}일
+                      </span>
+                    )}
                     {e.category && (
                       <span className="text-[9px] tracking-wider uppercase text-fg-faint border border-fg/15 rounded-full px-1.5 py-0.5">
                         {e.category}
@@ -356,7 +446,23 @@ export default function EventsSection({
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                    {e.allDay && " · 하루"}
+                    {isMulti && (
+                      <>
+                        {" → "}
+                        {end.toLocaleDateString("ko", {
+                          month: "long",
+                          day: "numeric",
+                          weekday: "short",
+                        })}
+                        {!e.allDay &&
+                          " " +
+                            end.toLocaleTimeString("ko", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                      </>
+                    )}
+                    {!isMulti && e.allDay && " · 하루"}
                   </p>
                   {e.note && (
                     <p className="text-[11px] text-fg-soft mt-1 italic">
