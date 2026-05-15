@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export type EventRow = {
   id: number;
@@ -29,11 +29,13 @@ export default function EventsSection({
   meId,
   meRole,
   owners,
+  initialDate,
 }: {
   events: EventRow[];
   meId: string;
   meRole: string;
   owners: Owner[];
+  initialDate?: string;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -45,7 +47,9 @@ export default function EventsSection({
 
   // form state
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(localInput(new Date()).slice(0, 10));
+  const [date, setDate] = useState(
+    initialDate ?? localInput(new Date()).slice(0, 10),
+  );
   const [time, setTime] = useState("19:00");
   const [allDay, setAllDay] = useState(false);
   const [category, setCategory] = useState("");
@@ -53,10 +57,24 @@ export default function EventsSection({
   const [ownerId, setOwnerId] = useState<string>(meId);
 
   const formOpen = adding || editingId !== null;
+  const addAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  // initialDate 가 들어오고 #add-event 해시면 자동 열기 + 스크롤
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash === "#add-event" && initialDate && !formOpen) {
+      setAdding(true);
+      setDate(initialDate);
+      setTimeout(() => {
+        addAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 60);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDate]);
 
   function reset() {
     setTitle("");
-    setDate(localInput(new Date()).slice(0, 10));
+    setDate(initialDate ?? localInput(new Date()).slice(0, 10));
     setTime("19:00");
     setAllDay(false);
     setCategory("");
@@ -88,8 +106,10 @@ export default function EventsSection({
     setSaving(true);
     setError(null);
     try {
+      // allDay: UTC noon 으로 저장. 어느 timezone 서버에서도 같은 day 로 잡힘.
+      // (이전: T00:00:00 로컬 → UTC 변환 시 KST→UTC 가 9시간 이전 = 전날로 밀려나는 버그)
       const startsAt = allDay
-        ? new Date(`${date}T00:00:00`).toISOString()
+        ? `${date}T12:00:00.000Z`
         : new Date(`${date}T${time}:00`).toISOString();
       const payload: Record<string, unknown> = {
         title,
@@ -147,17 +167,23 @@ export default function EventsSection({
   }
 
   return (
-    <section className="px-5 pb-6 space-y-3">
+    <section className="px-5 pb-6 space-y-3 pt-5">
+      <div ref={addAnchorRef} id="add-event" className="scroll-mt-4" />
       <div className="flex items-center justify-between">
-        <p className="eyebrow">⌗ 개인 약속 · {events.length}</p>
+        <p className="eyebrow">개인 약속 · {events.length}개</p>
         <button
           onClick={() => {
             if (formOpen) reset();
             else setAdding(true);
           }}
-          className="text-sm text-accent"
+          className={[
+            "tap rounded-full px-3.5 py-1.5 text-[12px] font-display border transition-colors",
+            formOpen
+              ? "border-fg/20 text-fg-faint"
+              : "border-accent text-accent hover:bg-accent hover:text-bg",
+          ].join(" ")}
         >
-          {formOpen ? "✕" : "+ 추가"}
+          {formOpen ? "✕ 닫기" : "+ 약속 추가"}
         </button>
       </div>
       {error && (
@@ -231,14 +257,28 @@ export default function EventsSection({
               />
             )}
           </div>
-          <label className="flex items-center gap-2 text-xs text-fg-soft">
-            <input
-              type="checkbox"
-              checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
-            />
-            하루 종일
-          </label>
+          <div className="grid grid-cols-2 rounded-card border border-fg/20 overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setAllDay(false)}
+              className={[
+                "py-2 text-center transition-colors",
+                !allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+              ].join(" ")}
+            >
+              ⏰ 시간 지정
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllDay(true)}
+              className={[
+                "py-2 text-center transition-colors",
+                allDay ? "bg-ink-card text-bg" : "bg-bg text-fg-soft",
+              ].join(" ")}
+            >
+              📅 하루 종일
+            </button>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.map((c) => (
               <button

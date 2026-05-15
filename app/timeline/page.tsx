@@ -1,9 +1,8 @@
-// app/timeline/page.tsx — 캘린더 + 데이트 + 개인 약속
+// app/timeline/page.tsx — 캘린더 (month nav + 날짜 선택 패널) + 데이트 + 개인 약속
 import Link from "next/link";
 import { getAllDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
-import { dDay } from "@/lib/data";
-import { TabBar, Card, Eyebrow } from "@/components/ui";
+import { TabBar, Eyebrow } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
 
 export const dynamic = "force-dynamic";
@@ -21,15 +20,56 @@ function buildMonth(year: number, month: number) {
   return cells;
 }
 
-export default async function TimelinePage() {
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function parseYm(value: string | undefined, fallback: { y: number; m: number }) {
+  if (!value) return fallback;
+  const m = value.match(/^(\d{4})-(\d{1,2})$/);
+  if (!m) return fallback;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  if (mo < 0 || mo > 11) return fallback;
+  return { y, m: mo };
+}
+
+function parseDay(value: string | undefined, ym: { y: number; m: number }) {
+  if (!value) return null;
+  const m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  if (mo !== ym.m || y !== ym.y) return null; // 다른 달이면 무시
+  return d;
+}
+
+function ymStr(y: number, m: number) {
+  return `${y}-${pad(m + 1)}`;
+}
+
+function dayStr(y: number, m: number, d: number) {
+  return `${y}-${pad(m + 1)}-${pad(d)}`;
+}
+
+export default async function TimelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ym?: string; day?: string }>;
+}) {
   const me = await requireApproved();
+  const sp = await searchParams;
 
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const fallbackYm = { y: today.getFullYear(), m: today.getMonth() };
+  const { y: year, m: month } = parseYm(sp.ym, fallbackYm);
+  const selectedDay = parseDay(sp.day, { y: year, m: month });
 
-  const monthStart = new Date(year, month, 1);
-  const monthEnd = new Date(year, month + 1, 1);
+  // KST 사용자의 month 윈도우를 UTC로 명시. KST = UTC+9.
+  // KST 5/1 00:00 = UTC 4/30 15:00. allDay 이벤트는 UTC noon 저장이라 어차피 안에 들어옴.
+  const monthStart = new Date(Date.UTC(year, month, 1) - 9 * 60 * 60 * 1000);
+  const monthEnd = new Date(Date.UTC(year, month + 1, 1) - 9 * 60 * 60 * 1000);
 
   const [dates, eventsRaw, admin, partner] = await Promise.all([
     getAllDates(),
@@ -56,7 +96,6 @@ export default async function TimelinePage() {
     dateByDay.set(dt.getDate(), d);
   });
 
-  // day → events map
   const eventsByDay = new Map<number, typeof eventsRaw>();
   for (const e of eventsRaw) {
     const day = new Date(e.startsAt).getDate();
@@ -65,18 +104,8 @@ export default async function TimelinePage() {
     eventsByDay.set(day, arr);
   }
 
-  const todayDate =
-    dateByDay.get(today.getDate()) ??
-    dates.find(
-      (d) => new Date(d.scheduledAt).toDateString() === today.toDateString(),
-    );
-
-  const nextPlanned = dates
-    .filter((d) => d.status === "planned" && new Date(d.scheduledAt) > today)
-    .sort(
-      (a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-    )[0];
+  const isCurrentMonth =
+    today.getFullYear() === year && today.getMonth() === month;
 
   const events: EventRow[] = eventsRaw.map((e) => ({
     id: e.id,
@@ -90,23 +119,55 @@ export default async function TimelinePage() {
     user: e.user,
   }));
 
+  // 선택된 day 의 데이트·이벤트
+  const selectedDate = selectedDay ? dateByDay.get(selectedDay) ?? null : null;
+  const selectedEvents = selectedDay
+    ? eventsByDay.get(selectedDay) ?? []
+    : [];
+
+  // 월 이동 링크
+  const prev = month === 0
+    ? { y: year - 1, m: 11 }
+    : { y: year, m: month - 1 };
+  const next = month === 11
+    ? { y: year + 1, m: 0 }
+    : { y: year, m: month + 1 };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="px-5 pt-5 pb-3 safe-top">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-fg-faint serif-italic">
-            {year}.{String(month).padStart(2, "0")}
-          </span>
+          <Link
+            href={`/timeline?ym=${ymStr(prev.y, prev.m)}`}
+            className="tap w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
+            aria-label="이전 달"
+          >
+            ‹
+          </Link>
           <div className="text-center">
-            <Eyebrow>錄 · timeline</Eyebrow>
+            <Eyebrow>기록</Eyebrow>
             <p className="font-display text-xl mt-0.5">
               {year} <em className="italic text-accent">{month + 1}월</em>
             </p>
           </div>
-          <span className="text-xs text-fg-faint serif-italic">
-            {year}.{String(month + 2).padStart(2, "0")}
-          </span>
+          <Link
+            href={`/timeline?ym=${ymStr(next.y, next.m)}`}
+            className="tap w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
+            aria-label="다음 달"
+          >
+            ›
+          </Link>
         </div>
+        {!isCurrentMonth && (
+          <div className="text-center mt-1.5">
+            <Link
+              href="/timeline"
+              className="tap text-[11px] text-accent underline-offset-4 hover:underline"
+            >
+              오늘로
+            </Link>
+          </div>
+        )}
       </header>
 
       <section className="px-5 pt-3">
@@ -119,18 +180,29 @@ export default async function TimelinePage() {
         </div>
         <div className="grid grid-cols-7 gap-1.5">
           {cells.map((c, i) => {
-            const isToday = c.day === today.getDate();
+            const isToday =
+              isCurrentMonth && c.day === today.getDate();
+            const isSelected = selectedDay === c.day;
             const dRec = c.day ? dateByDay.get(c.day) : undefined;
             const planned = dRec?.status === "planned";
             const done = dRec?.status === "done";
             const dayEvents = c.day ? eventsByDay.get(c.day) ?? [] : [];
+
+            const cellHref = !c.day
+              ? "#"
+              : dRec
+                ? `/dates/${dRec.id}`
+                : `/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, c.day)}`;
+
             return (
               <Link
                 key={i}
-                href={dRec ? `/dates/${dRec.id}` : "#"}
+                href={cellHref}
+                scroll={!!c.day && !dRec}
                 className={[
-                  "aspect-square rounded-lg border flex flex-col items-center justify-center relative",
+                  "tap aspect-square rounded-lg border flex flex-col items-center justify-center relative",
                   isToday ? "border-accent border-2" : "border-fg/15",
+                  isSelected ? "bg-accent/10 border-accent" : "",
                   done ? "bg-bg-warm" : "",
                   planned ? "border-dashed" : "",
                   !c.day ? "opacity-0 pointer-events-none" : "",
@@ -196,61 +268,97 @@ export default async function TimelinePage() {
         </div>
       </section>
 
-      <section className="px-5 py-4 space-y-3">
-        {todayDate && (
-          <>
-            <Eyebrow>
-              {today.getMonth() + 1}월 {today.getDate()}일 · 오늘
-            </Eyebrow>
-            <Link href={`/dates/${todayDate.id}`}>
-              <Card variant="warm">
-                <p className="font-display text-base">
-                  D-Day · {todayDate.title}
-                </p>
-                <p className="text-[11px] text-fg-faint mt-1">
-                  {new Date(todayDate.scheduledAt).toLocaleTimeString("ko", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  · {todayDate.plan.stops.length} stops
-                </p>
-              </Card>
+      {/* 선택된 날짜 패널 */}
+      {selectedDay !== null && (
+        <section
+          id="day-panel"
+          className="mx-5 mt-4 editorial-card-warm p-4 space-y-3 rise-in"
+        >
+          <div className="flex items-center justify-between">
+            <p className="font-display text-base">
+              {month + 1}월 {selectedDay}일
+            </p>
+            <Link
+              href={`/timeline?ym=${ymStr(year, month)}`}
+              className="tap text-[11px] text-fg-faint"
+              aria-label="선택 해제"
+            >
+              ✕
             </Link>
-          </>
-        )}
+          </div>
 
-        {nextPlanned && nextPlanned.id !== todayDate?.id && (
-          <>
-            <Eyebrow>
-              다음 데이트 ·{" "}
-              {new Date(nextPlanned.scheduledAt).toLocaleDateString("ko", {
-                month: "long",
-                day: "numeric",
-              })}{" "}
-              (D-{Math.abs(dDay(new Date(nextPlanned.scheduledAt)))})
-            </Eyebrow>
-            <Link href={`/dates/${nextPlanned.id}`}>
-              <Card>
-                <p className="font-display text-sm">{nextPlanned.title}</p>
-                <p className="text-[11px] text-fg-faint mt-1">
-                  {nextPlanned.area} · {nextPlanned.plan.stops.length} stops
-                </p>
-              </Card>
-            </Link>
-          </>
-        )}
-
-        {!todayDate && !nextPlanned && (
-          <Link href="/plan/new">
-            <div className="rounded-card border border-dashed border-fg/30 p-4 text-center">
-              <p className="font-display text-sm text-fg-soft">+ 코스 짜기</p>
-              <p className="text-[11px] text-fg-faint mt-0.5">
-                아직 비어있는 주말
+          {selectedDate && (
+            <Link
+              href={`/dates/${selectedDate.id}`}
+              className="tap lift block bg-bg border border-accent/30 rounded-card px-3 py-2.5"
+            >
+              <p className="text-[10px] text-accent tracking-wider">
+                {selectedDate.status === "planned" ? "♡ 예정" : "♡ 다녀온"}
               </p>
-            </div>
-          </Link>
-        )}
-      </section>
+              <p className="font-display text-sm mt-0.5 truncate">
+                {selectedDate.title}
+              </p>
+              <p className="text-[10px] text-fg-faint mt-0.5">
+                {selectedDate.area} · {selectedDate.plan.stops.length} stops
+              </p>
+            </Link>
+          )}
+
+          {selectedEvents.length > 0 && (
+            <ul className="space-y-1.5">
+              {selectedEvents.map((e) => (
+                <li
+                  key={e.id}
+                  className="bg-bg border border-fg/10 rounded-card px-3 py-2 flex items-baseline gap-2"
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0 translate-y-1"
+                    style={{
+                      background:
+                        e.user.id === adminId
+                          ? "var(--accent)"
+                          : "var(--rain)",
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate">{e.title}</p>
+                    <p className="text-[10px] text-fg-faint">
+                      {e.user.nickname}
+                      {!e.allDay
+                        ? " · " +
+                          new Date(e.startsAt).toLocaleTimeString("ko", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : " · 하루"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {!selectedDate && (
+              <Link
+                href={`/plan/new?mode=direct&date=${dayStr(year, month, selectedDay)}`}
+                className="tap lift bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
+              >
+                + 데이트 기록
+              </Link>
+            )}
+            <Link
+              href={`/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, selectedDay)}#add-event`}
+              className={[
+                "tap lift border border-fg/20 rounded-card py-2.5 text-center text-[12px] font-display",
+                selectedDate ? "col-span-2" : "",
+              ].join(" ")}
+            >
+              + 약속 추가
+            </Link>
+          </div>
+        </section>
+      )}
 
       <EventsSection
         events={events}
@@ -264,6 +372,7 @@ export default async function TimelinePage() {
             ? [{ id: partner.id, nickname: partner.nickname, color: "rain" as const }]
             : []),
         ].filter((o, i, arr) => arr.findIndex((x) => x.id === o.id) === i)}
+        initialDate={selectedDay !== null ? dayStr(year, month, selectedDay) : undefined}
       />
 
       <div className="flex-1" />
