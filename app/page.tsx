@@ -165,6 +165,12 @@ export default async function HomePage() {
                         day: "numeric",
                         weekday: "long",
                       })}
+                      {next.scheduledEndAt &&
+                        " → " +
+                          new Date(next.scheduledEndAt).toLocaleDateString("ko", {
+                            month: "long",
+                            day: "numeric",
+                          })}
                       {next.startTime ? ` · ${next.startTime}` : ""}
                       {next.area ? ` · ${next.area}` : ""}
                     </span>

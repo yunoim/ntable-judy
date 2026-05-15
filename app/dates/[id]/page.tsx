@@ -59,11 +59,15 @@ export default async function DateDetailPage({
     .map((d) => d.historyLabel as string);
 
   const dt = new Date(date.scheduledAt);
-  const dateLabel = dt.toLocaleDateString("ko", {
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-  });
+  const dtEnd = date.scheduledEndAt ? new Date(date.scheduledEndAt) : null;
+  const isMultiDay = !!dtEnd && dtEnd.toDateString() !== dt.toDateString();
+  const dateLabel = isMultiDay
+    ? `${dt.toLocaleDateString("ko", { month: "long", day: "numeric" })} → ${dtEnd!.toLocaleDateString("ko", { month: "long", day: "numeric" })} (${Math.round((dtEnd!.getTime() - dt.getTime()) / 86400000) + 1}일)`
+    : dt.toLocaleDateString("ko", {
+        month: "long",
+        day: "numeric",
+        weekday: "long",
+      });
   const timeRange =
     date.startTime && date.endTime
       ? `${date.startTime} - ${date.endTime}`

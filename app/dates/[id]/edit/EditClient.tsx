@@ -54,6 +54,9 @@ export default function EditClient({
   const [subtitle, setSubtitle] = useState(date.subtitle ?? "");
   const [area, setArea] = useState(date.area);
   const [scheduledAt, setScheduledAt] = useState(toLocalInput(date.scheduledAt));
+  const [scheduledEndAt, setScheduledEndAt] = useState(
+    date.scheduledEndAt ? toLocalInput(date.scheduledEndAt) : "",
+  );
   const [themeNote, setThemeNote] = useState(date.themeNote ?? "");
   const [weather, setWeather] = useState(date.weather ?? "");
   const [historyLabel, setHistoryLabel] = useState(date.historyLabel ?? "");
@@ -109,6 +112,9 @@ export default function EditClient({
           subtitle: subtitle || null,
           area,
           scheduledAt: new Date(scheduledAt).toISOString(),
+          scheduledEndAt: scheduledEndAt
+            ? new Date(scheduledEndAt).toISOString()
+            : null,
           startTime: stops[0]?.time || null,
           endTime: stops[stops.length - 1]?.time || null,
           themeNote: themeNote || null,
@@ -214,13 +220,37 @@ export default function EditClient({
           </FieldGroup>
         </div>
 
-        <FieldGroup label="예정일시">
+        <FieldGroup label="시작일시">
           <input
             type="datetime-local"
             value={scheduledAt}
-            onChange={(e) => setScheduledAt(e.target.value)}
+            onChange={(e) => {
+              setScheduledAt(e.target.value);
+              if (scheduledEndAt && scheduledEndAt < e.target.value) {
+                setScheduledEndAt("");
+              }
+            }}
             className={inputCls}
           />
+        </FieldGroup>
+
+        <FieldGroup label="종료일시 (다일이면 입력 · 비우면 당일)">
+          <input
+            type="datetime-local"
+            value={scheduledEndAt}
+            min={scheduledAt}
+            onChange={(e) => setScheduledEndAt(e.target.value)}
+            className={inputCls}
+          />
+          {scheduledEndAt && (
+            <button
+              type="button"
+              onClick={() => setScheduledEndAt("")}
+              className="text-[10px] text-fg-faint hover:text-fg-soft mt-1"
+            >
+              ✕ 당일로 되돌리기
+            </button>
+          )}
         </FieldGroup>
 
         <div className="grid grid-cols-2 gap-3">

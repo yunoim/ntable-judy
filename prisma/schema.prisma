@@ -59,15 +59,16 @@ model Session {
 }
 
 model Date {
-  id            String   @id @default(cuid())
-  number        Int      @unique
-  title         String
-  subtitle      String?
-  area          String
-  scheduledAt   DateTime
-  startTime     String?
-  endTime       String?
-  status        String   @default("planned")
+  id              String    @id @default(cuid())
+  number          Int       @unique
+  title           String
+  subtitle        String?
+  area            String
+  scheduledAt     DateTime
+  scheduledEndAt  DateTime? // 다일 데이트(여행 등) 종료일. null이면 당일.
+  startTime       String?
+  endTime         String?
+  status          String    @default("planned")
   estimatedCost Int?
   summary       String?
   themeNote     String?

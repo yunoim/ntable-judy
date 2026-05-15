@@ -23,6 +23,7 @@ type Body = {
   subtitle?: string;
   area?: string;
   scheduledAt?: string;
+  scheduledEndAt?: string | null;
   startTime?: string;
   endTime?: string;
   themeNote?: string;
@@ -59,13 +60,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_scheduled_at" }, { status: 400 });
   }
 
+  let scheduledEndAt: Date | null = null;
+  if (body.scheduledEndAt) {
+    scheduledEndAt = new Date(body.scheduledEndAt);
+    if (Number.isNaN(scheduledEndAt.getTime())) {
+      return NextResponse.json({ error: "bad_scheduled_end_at" }, { status: 400 });
+    }
+    if (scheduledEndAt.getTime() < scheduledAt.getTime()) {
+      return NextResponse.json({ error: "end_before_start" }, { status: 400 });
+    }
+  }
+
   // 과거 데이트로 입력 시 status="done" 허용 (옵션). 디폴트는 "planned".
-  // 프론트가 status 안 보내면 자동 추정: scheduledAt이 오늘 이전이면 done.
+  // 프론트가 status 안 보내면 자동 추정: scheduledEndAt(있으면) 또는 scheduledAt이 오늘 이전이면 done.
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
+  const effectiveEnd = scheduledEndAt ?? scheduledAt;
   const requestedStatus = body.status && ALLOWED_STATUS.has(body.status)
     ? body.status
-    : scheduledAt.getTime() < todayStart.getTime()
+    : effectiveEnd.getTime() < todayStart.getTime()
       ? "done"
       : "planned";
 
@@ -76,6 +89,7 @@ export async function POST(req: Request) {
       subtitle: body.subtitle?.trim() || null,
       area: (body.area ?? "").trim() || "미정",
       scheduledAt,
+      scheduledEndAt,
       startTime: body.startTime || null,
       endTime: body.endTime || null,
       status: requestedStatus,

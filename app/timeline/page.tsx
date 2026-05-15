@@ -96,15 +96,36 @@ export default async function TimelinePage({
   const adminId = admin?.id ?? null;
   const cells = buildMonth(year, month);
 
+  // 다일 데이트도 잡기: 시작이 월 안 OR 종료가 월 안 OR 시작 이전~종료 이후로 월 전체 걸침
   const inMonth = dates.filter((d) => {
-    const dt = new Date(d.scheduledAt);
-    return dt.getFullYear() === year && dt.getMonth() === month;
+    const start = new Date(d.scheduledAt);
+    const end = d.scheduledEndAt ? new Date(d.scheduledEndAt) : start;
+    const startInMonth =
+      start.getFullYear() === year && start.getMonth() === month;
+    const endInMonth =
+      end.getFullYear() === year && end.getMonth() === month;
+    const spans =
+      start < new Date(year, month, 1) &&
+      end >= new Date(year, month + 1, 1);
+    return startInMonth || endInMonth || spans;
   });
 
   const dateByDay = new Map<number, (typeof dates)[number]>();
   inMonth.forEach((d) => {
-    const dt = new Date(d.scheduledAt);
-    dateByDay.set(dt.getDate(), d);
+    const start = new Date(d.scheduledAt);
+    const end = d.scheduledEndAt ? new Date(d.scheduledEndAt) : start;
+    const startDay =
+      start.getFullYear() === year && start.getMonth() === month
+        ? start.getDate()
+        : 1;
+    const endDay =
+      end.getFullYear() === year && end.getMonth() === month
+        ? end.getDate()
+        : new Date(year, month + 1, 0).getDate();
+    for (let d2 = startDay; d2 <= endDay; d2++) {
+      // 같은 날 여러 데이트가 있으면 첫 번째만 (희귀 케이스)
+      if (!dateByDay.has(d2)) dateByDay.set(d2, d);
+    }
   });
 
   const eventsByDay = new Map<number, typeof eventsRaw>();

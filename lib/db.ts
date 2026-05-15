@@ -44,10 +44,14 @@ function startOfTodayKstUtc(): Date {
 
 export async function getNextDate() {
   const startOfToday = startOfTodayKstUtc();
+  // 다일 데이트(여행 등): scheduledEndAt 가 오늘 이후면 "진행 중/예정" 으로 잡힘.
   const d = await prisma.date.findFirst({
     where: {
       status: "planned",
-      scheduledAt: { gte: startOfToday },
+      OR: [
+        { scheduledAt: { gte: startOfToday } },
+        { scheduledEndAt: { gte: startOfToday } },
+      ],
     },
     orderBy: { scheduledAt: "asc" },
     include: dateInclude,
@@ -57,10 +61,14 @@ export async function getNextDate() {
 
 export async function getPastDates(limit = 5) {
   const startOfToday = startOfTodayKstUtc();
+  // 다일 데이트: 종료가 오늘 이전(또는 단일이면서 시작이 오늘 이전) 만 "지난" 으로.
   const dates = await prisma.date.findMany({
     where: {
       status: { not: "cancelled" },
-      scheduledAt: { lt: startOfToday },
+      OR: [
+        { AND: [{ scheduledEndAt: null }, { scheduledAt: { lt: startOfToday } }] },
+        { scheduledEndAt: { lt: startOfToday } },
+      ],
     },
     orderBy: { scheduledAt: "desc" },
     take: limit,
@@ -120,6 +128,7 @@ export type AdaptedDate = {
   title: string;
   subtitle: string | null;
   scheduledAt: string;
+  scheduledEndAt: string | null;
   startTime: string | null;
   endTime: string | null;
   area: string;
@@ -158,6 +167,7 @@ function adaptDate(d: any): AdaptedDate {
     title: d.title,
     subtitle: d.subtitle,
     scheduledAt: d.scheduledAt.toISOString(),
+    scheduledEndAt: d.scheduledEndAt ? d.scheduledEndAt.toISOString() : null,
     startTime: d.startTime,
     endTime: d.endTime,
     area: d.area,

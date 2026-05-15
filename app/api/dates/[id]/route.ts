@@ -24,6 +24,7 @@ type Body = {
   subtitle?: string | null;
   area?: string;
   scheduledAt?: string;
+  scheduledEndAt?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   status?: "planned" | "done" | "cancelled";
@@ -65,6 +66,19 @@ export async function PATCH(
         { status: 400 },
       );
     data.scheduledAt = d;
+  }
+  if (body.scheduledEndAt !== undefined) {
+    if (body.scheduledEndAt === null || body.scheduledEndAt === "") {
+      data.scheduledEndAt = null;
+    } else {
+      const d = new Date(body.scheduledEndAt);
+      if (Number.isNaN(d.getTime()))
+        return NextResponse.json(
+          { error: "bad_scheduled_end_at" },
+          { status: 400 },
+        );
+      data.scheduledEndAt = d;
+    }
   }
   if (body.startTime !== undefined) data.startTime = body.startTime || null;
   if (body.endTime !== undefined) data.endTime = body.endTime || null;

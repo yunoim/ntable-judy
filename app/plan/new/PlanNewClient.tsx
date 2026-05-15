@@ -129,6 +129,7 @@ export default function PlanNewClient({
         ? pastScheduledAt()
         : defaultScheduledAt(),
   );
+  const [scheduledEndAt, setScheduledEndAt] = useState<string>(""); // 빈 문자열 = 당일
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
@@ -322,6 +323,9 @@ export default function PlanNewClient({
         themeNote: course.themeNote,
         weather: course.weather,
         scheduledAt: new Date(scheduledAt).toISOString(),
+        scheduledEndAt: scheduledEndAt
+          ? new Date(scheduledEndAt).toISOString()
+          : null,
         startTime: stops[0]?.time,
         endTime: stops[stops.length - 1]?.time,
         estimatedTotal: total,
@@ -419,12 +423,40 @@ export default function PlanNewClient({
             </div>
             <div className="space-y-1">
               <label className="text-[10px] tracking-widest text-fg-faint uppercase">
-                {mode === "past" ? "다녀온 날" : "예정일"}
+                {mode === "past" ? "다녀온 시작일" : "시작일시"}
               </label>
               <input
                 type="datetime-local"
                 value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
+                onChange={(e) => {
+                  setScheduledAt(e.target.value);
+                  // 종료가 시작보다 이전이면 클리어
+                  if (scheduledEndAt && scheduledEndAt < e.target.value) {
+                    setScheduledEndAt("");
+                  }
+                }}
+                className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] tracking-widest text-fg-faint uppercase flex items-center justify-between">
+                <span>종료일시 (여행 등 다일)</span>
+                {scheduledEndAt && (
+                  <button
+                    type="button"
+                    onClick={() => setScheduledEndAt("")}
+                    className="text-[10px] text-fg-faint normal-case tracking-normal hover:text-fg-soft"
+                  >
+                    당일로
+                  </button>
+                )}
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledEndAt}
+                min={scheduledAt}
+                onChange={(e) => setScheduledEndAt(e.target.value)}
+                placeholder="비우면 당일"
                 className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
               />
             </div>
