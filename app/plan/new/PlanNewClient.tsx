@@ -135,14 +135,19 @@ export default function PlanNewClient({
   const [mockNotice, setMockNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 직접/과거 모드는 마운트 시 빈 코스로 Phase 2 즉시 진입
+  // URL ?mode 가 바뀔 때마다 state 동기화 (Phase 1 안 미니 링크 soft-nav 케이스).
+  // 직접/과거 모드는 빈 코스로 Phase 2 즉시 진입.
   useEffect(() => {
-    if ((mode === "direct" || mode === "past") && !course) {
+    const newMode =
+      (sp.get("mode") as "ai" | "direct" | "past" | null) ?? "ai";
+    if (newMode !== mode) {
+      setMode(newMode);
+    }
+    if ((newMode === "direct" || newMode === "past") && !course) {
       setCourse(emptyCourse());
     }
-    // mode 변경 추적 안 함: 이건 첫 진입 시 한 번만
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sp]);
 
   function addChip(chip: string) {
     setText((t) => (t ? `${t} ${chip}` : chip));
