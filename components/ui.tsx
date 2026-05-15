@@ -177,7 +177,7 @@ type TabId = "home" | "plan" | "log" | "us" | "saju";
 export function TabBar({ active }: { active: TabId }) {
   const items: Array<{ id: TabId; label: string; href: string }> = [
     { id: "home", label: "홈", href: "/" },
-    { id: "plan", label: "계획", href: "/plan/new" },
+    { id: "plan", label: "AI계획", href: "/plan/new" },
     { id: "log", label: "기록", href: "/timeline" },
     { id: "us", label: "우리", href: "/us" },
     { id: "saju", label: "사주", href: "/us/saju" },
