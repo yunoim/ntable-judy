@@ -1,7 +1,7 @@
-// app/plan/new/PlanNewClient.tsx — 자연어 → 코스 (단계별 3안 선택) → 확정
+// app/plan/new/PlanNewClient.tsx — 자연어 AI 또는 직접 입력 → 코스 → 확정
 "use client";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Eyebrow, Pill, TabBar } from "@/components/ui";
 
@@ -47,6 +47,34 @@ function defaultScheduledAt(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function pastScheduledAt(): string {
+  // 과거 모드 디폴트: 오늘 19:00 (사용자가 날짜만 바꾸면 됨)
+  const d = new Date();
+  d.setHours(19, 0, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function dateOnlyToLocal(dateStr: string, hour = 19): string {
+  // YYYY-MM-DD → 그날 19:00 로컬 input
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return defaultScheduledAt();
+  const dt = new Date(y, m - 1, d, hour, 0, 0);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
+
+function emptyCourse(): Course {
+  return {
+    title: "",
+    subtitle: "",
+    themeNote: "",
+    area: "",
+    weather: "",
+    stops: [{ ...blankSlot("19:00"), stepOrder: 1 }],
+  };
+}
+
 function isoToLocalInput(iso: string): string | null {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
@@ -89,13 +117,32 @@ export default function PlanNewClient({
   chips?: string[];
 }) {
   const router = useRouter();
+  const sp = useSearchParams();
+  const initialMode = (sp.get("mode") as "ai" | "direct" | "past" | null) ?? "ai";
+  const initialDate = sp.get("date"); // YYYY-MM-DD
+  const [mode, setMode] = useState<"ai" | "direct" | "past">(initialMode);
   const [text, setText] = useState("");
-  const [scheduledAt, setScheduledAt] = useState(defaultScheduledAt());
+  const [scheduledAt, setScheduledAt] = useState(() =>
+    initialDate
+      ? dateOnlyToLocal(initialDate)
+      : initialMode === "past"
+        ? pastScheduledAt()
+        : defaultScheduledAt(),
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
   const [mockNotice, setMockNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 직접/과거 모드는 마운트 시 빈 코스로 Phase 2 즉시 진입
+  useEffect(() => {
+    if ((mode === "direct" || mode === "past") && !course) {
+      setCourse(emptyCourse());
+    }
+    // mode 변경 추적 안 함: 이건 첫 진입 시 한 번만
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function addChip(chip: string) {
     setText((t) => (t ? `${t} ${chip}` : chip));
@@ -226,14 +273,19 @@ export default function PlanNewClient({
 
   async function confirm() {
     if (!course) return;
-    if (course.stops.length === 0) {
+    if (!course.title.trim()) {
+      setError("제목을 입력해주세요");
+      return;
+    }
+    // 과거 모드는 stops 비어있어도 OK (한 줄 기억으로 등록)
+    if (mode !== "past" && course.stops.length === 0) {
       setError("최소 1개 이상의 단계가 필요해요");
       return;
     }
     if (
       course.stops.some((s) => !s.options[s.selectedIdx]?.name?.trim())
     ) {
-      setError("이름이 비어있는 단계가 있어요");
+      setError("이름이 비어있는 단계가 있어요. 채우거나 제거해주세요");
       return;
     }
     setSaving(true);
@@ -255,22 +307,31 @@ export default function PlanNewClient({
         };
       });
       const total = pickedTotal(course);
+      // 과거 모드: 명시적으로 status="done", aiInput 비움.
+      // 직접 모드: status 백엔드가 scheduledAt 보고 자동 추정, aiInput 비움.
+      // AI 모드: status 자동, aiInput 보존.
+      const payload: Record<string, unknown> = {
+        title: course.title,
+        subtitle: course.subtitle,
+        area: course.area,
+        themeNote: course.themeNote,
+        weather: course.weather,
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        startTime: stops[0]?.time,
+        endTime: stops[stops.length - 1]?.time,
+        estimatedTotal: total,
+        stops,
+      };
+      if (mode === "ai") {
+        payload.aiInput = text;
+      }
+      if (mode === "past") {
+        payload.status = "done";
+      }
       const res = await fetch("/api/dates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: course.title,
-          subtitle: course.subtitle,
-          area: course.area,
-          themeNote: course.themeNote,
-          weather: course.weather,
-          scheduledAt: new Date(scheduledAt).toISOString(),
-          startTime: stops[0]?.time,
-          endTime: stops[stops.length - 1]?.time,
-          estimatedTotal: total,
-          aiInput: text,
-          stops,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -287,19 +348,27 @@ export default function PlanNewClient({
 
   if (loading) return <PlanLoading />;
 
-  // ── Phase 2: 코스 + 단계별 3안 선택 ─────────────────────
+  // ── Phase 2: 코스 + (AI 면 단계별 3안 선택) ─────────────────────
   if (course) {
     const total = pickedTotal(course);
+    const phaseLabel =
+      mode === "past" ? "과거 데이트 기록" : mode === "direct" ? "직접 입력" : "코스 편집";
     return (
       <div className="min-h-screen flex flex-col">
         <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between border-b border-fg/10">
-          <button onClick={backToInput} className="text-xs text-fg-faint">
-            ← 다시 입력
-          </button>
+          {mode === "ai" ? (
+            <button onClick={backToInput} className="tap text-xs text-fg-faint">
+              ← 다시 입력
+            </button>
+          ) : (
+            <Link href="/" className="tap text-xs text-fg-faint">
+              ← 홈
+            </Link>
+          )}
           <div className="text-center">
-            <Eyebrow>計 · 코스 편집</Eyebrow>
+            <Eyebrow>{phaseLabel}</Eyebrow>
             <p className="font-display text-base mt-0.5 truncate max-w-[200px]">
-              {course.title || "코스"}
+              {course.title || (mode === "past" ? "다녀온 데이트" : "새 데이트")}
             </p>
           </div>
           <span className="w-16" />
@@ -319,7 +388,7 @@ export default function PlanNewClient({
               onChange={(e) =>
                 setCourse({ ...course, title: e.target.value.slice(0, 30) })
               }
-              placeholder="제목"
+              placeholder={mode === "past" ? "그 날의 제목 (예: 성수 산책)" : "제목"}
               className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm font-display"
             />
             <div className="grid grid-cols-2 gap-2">
@@ -343,6 +412,17 @@ export default function PlanNewClient({
                 className="bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-[10px] tracking-widest text-fg-faint uppercase">
+                {mode === "past" ? "다녀온 날" : "예정일"}
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+              />
+            </div>
             <textarea
               value={course.themeNote}
               onChange={(e) =>
@@ -351,7 +431,7 @@ export default function PlanNewClient({
                   themeNote: e.target.value.slice(0, 200),
                 })
               }
-              placeholder="테마 메모 (한 줄)"
+              placeholder={mode === "past" ? "그날 메모 (한 줄)" : "테마 메모 (한 줄)"}
               rows={2}
               className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm resize-none"
             />
@@ -440,6 +520,21 @@ export default function PlanNewClient({
             단계별 3안 짜드려요.
           </em>
         </h1>
+
+        <div className="flex gap-2 -mt-1">
+          <Link
+            href="/plan/new?mode=direct"
+            className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
+          >
+            ✏️ 직접 입력
+          </Link>
+          <Link
+            href="/plan/new?mode=past"
+            className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
+          >
+            📓 다녀온 데이트 기록
+          </Link>
+        </div>
 
         <div className="relative">
           <textarea

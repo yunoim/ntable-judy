@@ -177,18 +177,29 @@ export default async function HomePage() {
         ) : (
           <section className="space-y-2.5 rise-in rise-in-1">
             <Eyebrow>다음 데이트</Eyebrow>
-            <Link
-              href="/plan/new"
-              className="tap lift block editorial-card border-dashed !border-accent/50 px-5 py-7 text-center"
-            >
+            <div className="editorial-card border-dashed !border-accent/40 px-5 py-6 text-center space-y-3">
               <p className="text-fg-faint text-[13px]">아직 비어 있어요</p>
-              <p className="font-display text-xl text-accent mt-2">
-                + 다음 데이트 만들기
-              </p>
-              <p className="text-[11px] text-fg-faint mt-2">
-                계획을 짜면 여기에 D-day가 떠요
-              </p>
-            </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/plan/new"
+                  className="tap lift bg-ink-card text-bg rounded-card py-3 font-display text-[13px]"
+                >
+                  ✨ AI로 짜기
+                </Link>
+                <Link
+                  href="/plan/new?mode=direct"
+                  className="tap lift border border-fg/20 rounded-card py-3 font-display text-[13px]"
+                >
+                  ✏️ 직접 입력
+                </Link>
+              </div>
+              <Link
+                href="/plan/new?mode=past"
+                className="tap inline-block text-[11px] text-fg-faint hover:text-fg-soft hover:underline underline-offset-4"
+              >
+                📓 다녀온 데이트 기록하기
+              </Link>
+            </div>
           </section>
         )}
 
@@ -338,6 +349,12 @@ export default async function HomePage() {
                 );
               })}
             </ul>
+            <Link
+              href="/plan/new?mode=past"
+              className="tap block text-center text-[11px] text-fg-faint hover:text-fg-soft py-2 mt-1"
+            >
+              + 다녀온 데이트 기록하기
+            </Link>
           </section>
         )}
       </main>

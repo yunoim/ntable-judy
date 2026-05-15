@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { requireApproved } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import PlanNewClient from "./PlanNewClient";
@@ -64,5 +65,9 @@ async function buildSuggestedChips(): Promise<string[]> {
 export default async function NewPlanPage() {
   await requireApproved();
   const chips = await buildSuggestedChips();
-  return <PlanNewClient chips={chips} />;
+  return (
+    <Suspense fallback={null}>
+      <PlanNewClient chips={chips} />
+    </Suspense>
+  );
 }
