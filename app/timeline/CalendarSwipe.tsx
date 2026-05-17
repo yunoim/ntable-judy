@@ -18,19 +18,37 @@ export default function CalendarSwipe({
   const router = useRouter();
   const sp = useSearchParams();
   const ym = sp.get("ym");
+  const nav = sp.get("nav"); // 'next' | 'prev' | null — 진입 애니메이션 방향
   const startX = useRef(0);
   const startY = useRef(0);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
 
-  // 라우팅 끝나서 ym 이 바뀌면 exiting/dragX 리셋 — 안 그러면 새 달 페이지에서도
-  // 셀이 translateX(-100%) 남아서 검은 화면.
+  // 라우팅 끝나서 ym 이 바뀌면 exiting/dragX 리셋.
   useEffect(() => {
     setExiting(null);
     setDragX(0);
     setDragging(false);
   }, [ym]);
+
+  // 진입 애니메이션이 끝나면 nav 파라미터 제거 (새로고침 시 재생 안 되게).
+  useEffect(() => {
+    if (!nav) return;
+    const t = setTimeout(() => {
+      const url = ym ? `/timeline?ym=${ym}` : "/timeline";
+      router.replace(url, { scroll: false });
+    }, 280);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav]);
+
+  const entryClass =
+    !exiting && nav === "next"
+      ? "animate-slide-in-right"
+      : !exiting && nav === "prev"
+        ? "animate-slide-in-left"
+        : "";
 
   function reset() {
     setDragging(false);
@@ -69,10 +87,16 @@ export default function CalendarSwipe({
         // 임계점 통과 → 끝까지 슬라이드 아웃 + 라우팅.
         if (dx < 0) {
           setExiting("left");
-          setTimeout(() => router.push(nextHref), 220);
+          setTimeout(
+            () => router.push(`${nextHref}&nav=next`, { scroll: false }),
+            220,
+          );
         } else {
           setExiting("right");
-          setTimeout(() => router.push(prevHref), 220);
+          setTimeout(
+            () => router.push(`${prevHref}&nav=prev`, { scroll: false }),
+            220,
+          );
         }
       }}
       style={{
@@ -87,6 +111,7 @@ export default function CalendarSwipe({
           : "transform 220ms ease-out, opacity 220ms ease-out",
         willChange: "transform",
       }}
+      className={entryClass}
     >
       {children}
     </div>
