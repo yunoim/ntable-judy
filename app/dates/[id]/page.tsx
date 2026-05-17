@@ -53,7 +53,13 @@ export default async function DateDetailPage({
     prisma.user.findMany({
       where: { role: { in: ["admin", "approved"] } },
       orderBy: { createdAt: "asc" },
-      select: { id: true, nickname: true, role: true, partner: true },
+      select: {
+        id: true,
+        nickname: true,
+        emoji: true,
+        role: true,
+        partner: true,
+      },
     }),
   ]);
   const fox = couple.find((u) => u.role === "admin") ?? couple[0];
@@ -62,6 +68,8 @@ export default async function DateDetailPage({
     couple.find((u) => u.role === "approved" && u.id !== fox?.id);
   const coupleLabel =
     fox && bunny ? `${fox.nickname}과 ${bunny.nickname}의` : "둘의";
+  const foxEmoji = fox?.emoji ?? "🦊";
+  const bunnyEmoji = bunny?.emoji ?? "🐰";
   if (!date) notFound();
   const canEdit = ["admin", "approved"].includes(me.role);
   const history = all
@@ -351,7 +359,9 @@ export default async function DateDetailPage({
         />
 
         <footer className="text-center mt-11">
-          <div className="text-2xl tracking-widest mb-2.5">🦊 🌧️ 🐰</div>
+          <div className="text-2xl tracking-widest mb-2.5">
+            {foxEmoji} {bunnyEmoji}
+          </div>
           <p
             className="text-xs italic tracking-wider"
             style={{ color: "var(--fg-soft)" }}
