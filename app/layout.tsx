@@ -35,8 +35,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" className={`${dmSerif.variable} ${notoSerif.variable}`}>
-      <body className="bg-bg text-fg font-body antialiased min-h-screen">
-        <div className="mx-auto max-w-[390px] min-h-screen relative">
+      <body className="bg-bg text-fg font-body antialiased min-h-screen overflow-x-hidden">
+        <div className="mx-auto max-w-[390px] min-h-screen relative overflow-x-hidden">
           {children}
         </div>
       </body>

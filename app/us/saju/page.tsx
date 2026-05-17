@@ -211,7 +211,7 @@ export default async function SajuPage() {
       {/* Masthead */}
       <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
         <Link href="/us" className="text-xs text-fg-faint pt-1">
-          ← 우리
+          ← 기념일
         </Link>
         <div className="text-center">
           <Eyebrow>命 · 사주 궁합</Eyebrow>

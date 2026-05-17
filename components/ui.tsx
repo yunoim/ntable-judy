@@ -1,6 +1,7 @@
 // components/ui.tsx — shared UI primitives
 "use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
 export function Pill({
@@ -174,16 +175,49 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
 
 type TabId = "home" | "plan" | "log" | "us" | "saju";
 
+// 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
+// 상단 근처 (스크롤 100px 미만) 에서는 항상 노출.
+function useHideOnScroll() {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const dy = y - lastY;
+        if (y < 100) setHidden(false);
+        else if (dy > 6) setHidden(true);
+        else if (dy < -6) setHidden(false);
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return hidden;
+}
+
 export function TabBar({ active }: { active: TabId }) {
   const items: Array<{ id: TabId; label: string; href: string }> = [
     { id: "home", label: "홈", href: "/" },
     { id: "plan", label: "AI계획", href: "/plan/new" },
-    { id: "log", label: "기록", href: "/timeline" },
-    { id: "us", label: "우리", href: "/us" },
+    { id: "log", label: "일정", href: "/timeline" },
+    { id: "us", label: "기념일", href: "/us" },
     { id: "saju", label: "사주", href: "/us/saju" },
   ];
+  const hidden = useHideOnScroll();
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40">
+    <nav
+      className={cn(
+        "fixed bottom-0 left-1/2 w-full max-w-[390px] bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40",
+        "transition-transform duration-200 ease-out will-change-transform",
+        hidden ? "-translate-x-1/2 translate-y-full" : "-translate-x-1/2 translate-y-0",
+      )}
+    >
       <ul className="flex justify-around items-center px-2 pt-2 pb-1">
         {items.map((it) => {
           const isActive = active === it.id;
