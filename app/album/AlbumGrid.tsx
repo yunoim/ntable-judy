@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 export type AlbumPhoto = {
   id: number;
@@ -29,10 +29,21 @@ export default function AlbumGrid({
   const [lightbox, setLightbox] = useState<AlbumPhoto | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // 라이트박스 닫히거나 사진 바뀌면 삭제 확인 리셋
+  useEffect(() => {
+    setConfirmDelete(false);
+  }, [lightbox?.id]);
+  // 3초 후 자동 취소
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const t = setTimeout(() => setConfirmDelete(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmDelete]);
 
   async function remove(id: number) {
     if (busy) return;
-    if (!confirm("사진을 삭제할까요?")) return;
     setBusy(true);
     setError(null);
     try {
@@ -114,16 +125,30 @@ export default function AlbumGrid({
             >
               #{lightbox.dateNumber} {lightbox.dateTitle} →
             </Link>
-            <div className="flex gap-2 mt-1">
-              {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
-                <button
-                  onClick={() => remove(lightbox.id)}
-                  disabled={busy}
-                  className="tap text-xs text-rain border border-rain/60 rounded-full px-4 py-1.5"
-                >
-                  삭제
-                </button>
-              )}
+            <div className="flex justify-between items-center w-full max-w-xs mt-1 gap-6">
+              <div className="flex-1 flex justify-start">
+                {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
+                  <button
+                    onClick={() => {
+                      if (!confirmDelete) {
+                        setConfirmDelete(true);
+                        return;
+                      }
+                      setConfirmDelete(false);
+                      remove(lightbox.id);
+                    }}
+                    disabled={busy}
+                    className={[
+                      "tap text-xs rounded-full px-4 py-1.5 border transition-colors",
+                      confirmDelete
+                        ? "bg-rain text-bg border-rain"
+                        : "text-rain border-rain/60",
+                    ].join(" ")}
+                  >
+                    {confirmDelete ? "정말 삭제 ✓" : "삭제"}
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setLightbox(null)}
                 className="tap text-xs text-bg border border-bg/60 rounded-full px-4 py-1.5"
