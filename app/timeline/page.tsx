@@ -6,6 +6,7 @@ import { TabBar, SectionTitle } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
 import MonthPicker from "./MonthPicker";
 import TimelineActions from "./TimelineActions";
+import CalendarSwipe from "./CalendarSwipe";
 import PastDatesList, { type PastItem } from "../PastDatesList";
 
 export const dynamic = "force-dynamic";
@@ -227,6 +228,10 @@ export default async function TimelinePage({
       </header>
 
       <section className="px-5 pt-3">
+        <CalendarSwipe
+          prevHref={`/timeline?ym=${ymStr(prev.y, prev.m)}`}
+          nextHref={`/timeline?ym=${ymStr(next.y, next.m)}`}
+        >
         <div className="grid grid-cols-7 gap-1.5 mb-1">
           {KO_WEEK.map((d) => (
             <div key={d} className="text-[10px] text-fg-faint text-center">
@@ -241,7 +246,6 @@ export default async function TimelinePage({
             const isSelected = selectedDay === c.day;
             const dRec = c.day ? dateByDay.get(c.day) : undefined;
             const planned = dRec?.status === "planned";
-            const done = dRec?.status === "done";
             const dayEvents = c.day ? eventsByDay.get(c.day) ?? [] : [];
 
             const cellHref = !c.day
@@ -257,7 +261,6 @@ export default async function TimelinePage({
                   "tap aspect-square rounded-lg border flex items-center justify-center relative overflow-hidden",
                   isToday ? "border-accent border-2" : "border-fg/15",
                   isSelected ? "bg-accent/10 border-accent" : "",
-                  done ? "bg-bg-warm" : "",
                   !c.day ? "opacity-0 pointer-events-none" : "",
                 ].join(" ")}
               >
@@ -306,6 +309,7 @@ export default async function TimelinePage({
             );
           })}
         </div>
+        </CalendarSwipe>
         <div className="flex items-center gap-4 mt-3 text-[11px] text-fg-soft">
           <span className="flex items-center gap-1.5">
             <span className="text-accent text-base leading-none">♡</span>
