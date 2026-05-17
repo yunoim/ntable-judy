@@ -1,8 +1,7 @@
 // app/album/page.tsx — 모든 데이트 사진 한 화면 (월별 그룹)
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
-import { TabBar, Eyebrow } from "@/components/ui";
+import { TabBar } from "@/components/ui";
 import AlbumGrid, { type AlbumPhoto } from "./AlbumGrid";
 
 export const dynamic = "force-dynamic";
@@ -56,18 +55,7 @@ export default async function AlbumPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between">
-        <Link href="/" className="text-xs text-fg-faint">
-          ← 홈
-        </Link>
-        <div className="text-center">
-          <Eyebrow>album</Eyebrow>
-          <p className="font-display text-base mt-0.5">사진첩</p>
-        </div>
-        <span className="w-12" />
-      </header>
-
-      <main className="flex-1 px-5 pt-2 pb-28 space-y-7">
+      <main className="flex-1 px-5 pt-6 safe-top pb-28 space-y-7">
         {photos.length === 0 ? (
           <div className="text-center pt-16 pb-8 space-y-3">
             <p className="text-5xl">📷</p>

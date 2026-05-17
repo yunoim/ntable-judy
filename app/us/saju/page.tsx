@@ -208,23 +208,7 @@ export default async function SajuPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Masthead */}
-      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
-        <Link href="/us" className="text-xs text-fg-faint pt-1">
-          ← 기념일
-        </Link>
-        <div className="text-center">
-          <Eyebrow>사주 궁합</Eyebrow>
-          <p className="font-display text-2xl mt-1">
-            <em className="italic">정화연경</em>
-          </p>
-        </div>
-        <span className="w-8" />
-      </header>
-
-      <Rule variant="dot" className="mx-5" />
-
-      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+      <main className="flex-1 px-5 pt-6 safe-top pb-28 space-y-7">
         {/* Hero — 용광로 × 무쇠 */}
         <section className="editorial-card-dark px-5 pt-6 pb-7 relative overflow-hidden">
           <Eyebrow className="!text-accent-soft">용광로 × 무쇠</Eyebrow>

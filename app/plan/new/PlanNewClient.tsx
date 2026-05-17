@@ -618,16 +618,7 @@ export default function PlanNewClient({
     : PLACEHOLDER;
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between">
-        <Link href="/" className="text-xs text-fg-faint">
-          ← 홈
-        </Link>
-        <div className="text-center">
-          <Eyebrow>{isPast ? "회상" : "plan"}</Eyebrow>
-          <p className="font-display text-base mt-0.5">
-            {isPast ? "다녀온 데이트" : "새 데이트"}
-          </p>
-        </div>
+      <header className="px-5 pt-5 pb-2 safe-top flex justify-end">
         <button
           onClick={() => setText("")}
           className="text-xs text-fg-faint w-12 text-right"

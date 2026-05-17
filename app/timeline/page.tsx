@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { getAllDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
-import { TabBar, Eyebrow } from "@/components/ui";
+import { TabBar } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
 
 export const dynamic = "force-dynamic";
@@ -190,8 +190,7 @@ export default async function TimelinePage({
             ‹
           </Link>
           <div className="text-center">
-            <Eyebrow>일정</Eyebrow>
-            <p className="font-display text-xl mt-0.5">
+            <p className="font-display text-xl">
               {year} <em className="italic text-accent">{month + 1}월</em>
             </p>
           </div>

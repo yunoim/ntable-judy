@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Eyebrow, Rule, SectionTitle, TabBar } from "@/components/ui";
+import { Eyebrow, SectionTitle, TabBar } from "@/components/ui";
 
 type Anniversary = {
   id: number;
@@ -213,17 +213,7 @@ export default function UsClient({
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Masthead */}
-      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
-        <Link href="/" className="text-xs text-fg-faint pt-1">
-          ← 홈
-        </Link>
-        <div className="text-center">
-          <Eyebrow>our days</Eyebrow>
-          <p className="font-display text-2xl mt-1">
-            우리의 <em className="italic">날들</em>
-          </p>
-        </div>
+      <header className="px-5 pt-5 pb-2 safe-top flex justify-end">
         <button
           onClick={() => {
             if (formOpen) {
@@ -233,14 +223,12 @@ export default function UsClient({
               setAdding(true);
             }
           }}
-          className="text-fg-faint text-base pt-1 w-8 text-right"
+          className="text-fg-faint text-base w-8 text-right"
           aria-label="추가"
         >
           {formOpen ? "✕" : "+"}
         </button>
       </header>
-
-      <Rule variant="dot" className="mx-5" />
 
       {error && (
         <div className="mx-5 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
