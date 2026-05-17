@@ -134,16 +134,28 @@ async function callClaude(
   };
 }
 
+const EMPTY: FortuneBody = {
+  fox: "운세를 불러오지 못했어요.",
+  bunny: "운세를 불러오지 못했어요.",
+  combined: "운세를 불러오지 못했어요.",
+};
+
 export async function getOrGenerateFortune(
   kind: "daily" | "weekly",
   periodKey: string,
   foxName: string,
   bunnyName: string,
 ): Promise<FortuneBody> {
-  const existing = await prisma.sajuFortune.findUnique({
-    where: { kind_periodKey: { kind, periodKey } },
-  });
-  if (existing) return existing.body as FortuneBody;
+  // DB 캐시 read. SajuFortune 테이블이 아직 적용 전이면 여기서 throw 하므로 try-catch.
+  try {
+    const existing = await prisma.sajuFortune.findUnique({
+      where: { kind_periodKey: { kind, periodKey } },
+    });
+    if (existing) return existing.body as FortuneBody;
+  } catch (e) {
+    console.error("[saju-fortune] cache read failed", e);
+    return EMPTY;
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return {
@@ -153,15 +165,21 @@ export async function getOrGenerateFortune(
     };
   }
 
-  const body = await callClaude(kind, periodKey, foxName, bunnyName);
+  let body: FortuneBody;
+  try {
+    body = await callClaude(kind, periodKey, foxName, bunnyName);
+  } catch (e) {
+    console.error("[saju-fortune] claude call failed", e);
+    return EMPTY;
+  }
 
-  // 동시 호출 시 unique 충돌 가능 — 그 경우 다른 요청이 이미 저장했다는 뜻이라 무시.
+  // 동시 호출 시 unique 충돌 가능 — 다른 요청이 먼저 저장했다는 뜻이라 무시.
   try {
     await prisma.sajuFortune.create({
       data: { kind, periodKey, body: body as unknown as object },
     });
   } catch {
-    // ignore (race)
+    // ignore (race or schema mismatch)
   }
 
   return body;
