@@ -33,10 +33,15 @@ const SINGLE: Record<string, string> = {
 };
 
 export function annotateHanja(text: string): string {
-  // 1+ 연속 한자, 단 앞에 `(` 없고 뒤에 `(한글` 없을 때만.
+  // 최대 한자 run 찾기. lookbehind 로 직전이 `(` 또는 한자면 skip
+  // (괄호 안이거나 한자 run 의 중간).
+  // 뒤에 `(한글` 이 오면 이미 역순 표기이므로 callback 안에서 skip.
+  // (lookahead 를 regex 에 두면 greedy+backtrack 으로 부분 매치되는 버그.)
   return text.replace(
-    /(?<!\()[一-鿿]+(?!\s*\([가-힣])/g,
-    (run) => {
+    /(?<![\(一-鿿])[一-鿿]+/g,
+    (run, offset: number) => {
+      const after = text.slice(offset + run.length);
+      if (/^\s*\([가-힣]/.test(after)) return run; // 이미 한자(한글)
       const compound = COMPOUND[run];
       if (compound) return `${compound}(${run})`;
       const reading = Array.from(run)
