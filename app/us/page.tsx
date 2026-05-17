@@ -9,10 +9,14 @@ export const dynamic = "force-dynamic";
 export default async function UsPage() {
   const me = await requireApproved();
 
-  const anniversaries = await prisma.anniversary.findMany({
-    orderBy: { date: "asc" },
-    include: { createdBy: { select: { id: true, nickname: true } } },
-  });
+  const [anniversaries, bucketCount, capsuleCount] = await Promise.all([
+    prisma.anniversary.findMany({
+      orderBy: { date: "asc" },
+      include: { createdBy: { select: { id: true, nickname: true } } },
+    }),
+    prisma.bucket.count(),
+    prisma.timeCapsule.count(),
+  ]);
 
   const coupleStart = anniversaries.find((a) => a.kind === COUPLE_START_KIND);
   const milestones = coupleStart
@@ -38,6 +42,8 @@ export default async function UsPage() {
         createdBy: a.createdBy,
       }))}
       milestones={milestones}
+      bucketCount={bucketCount}
+      capsuleCount={capsuleCount}
     />
   );
 }

@@ -4,6 +4,7 @@ import { getAllDates, getPastDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar, SectionTitle } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
+import MonthPicker from "./MonthPicker";
 import PastDatesList, { type PastItem } from "../PastDatesList";
 
 export const dynamic = "force-dynamic";
@@ -203,11 +204,7 @@ export default async function TimelinePage({
           >
             ‹
           </Link>
-          <div className="text-center">
-            <p className="font-display text-xl">
-              {year} <em className="italic text-accent">{month + 1}월</em>
-            </p>
-          </div>
+          <MonthPicker year={year} month={month} />
           <Link
             href={`/timeline?ym=${ymStr(next.y, next.m)}`}
             className="tap w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
@@ -438,7 +435,7 @@ export default async function TimelinePage({
       />
 
       {pastItems.length > 0 && (
-        <section className="px-5 pb-6 space-y-3">
+        <section className="px-5 pt-6 pb-6 mt-4 space-y-3 border-t border-fg/10">
           <SectionTitle
             title="지난 데이트"
             hint={`총 ${pastItems.length}회`}

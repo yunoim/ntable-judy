@@ -628,15 +628,7 @@ export default function PlanNewClient({
     : PLACEHOLDER;
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-2 safe-top flex justify-end">
-        <button
-          onClick={() => setText("")}
-          className="text-xs text-fg-faint w-12 text-right"
-          aria-label="초기화"
-        >
-          ⌫
-        </button>
-      </header>
+      <div className="safe-top" />
 
       <main className="flex-1 px-5 space-y-4 pb-32">
         <h1 className="font-display text-2xl leading-snug pt-3">

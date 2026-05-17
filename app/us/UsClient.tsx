@@ -69,11 +69,15 @@ export default function UsClient({
   meRole,
   anniversaries,
   milestones,
+  bucketCount,
+  capsuleCount,
 }: {
   meId: string;
   meRole: string;
   anniversaries: Anniversary[];
   milestones: Milestone[];
+  bucketCount: number;
+  capsuleCount: number;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -211,24 +215,18 @@ export default function UsClient({
 
   const formOpen = adding || editingId !== null;
 
+  const toggleAdd = () => {
+    if (formOpen) {
+      resetForm();
+      setAdding(false);
+    } else {
+      setAdding(true);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-2 safe-top flex justify-end">
-        <button
-          onClick={() => {
-            if (formOpen) {
-              resetForm();
-              setAdding(false);
-            } else {
-              setAdding(true);
-            }
-          }}
-          className="text-fg-faint text-base w-8 text-right"
-          aria-label="추가"
-        >
-          {formOpen ? "✕" : "+"}
-        </button>
-      </header>
+      <div className="safe-top" />
 
       {error && (
         <div className="mx-5 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
@@ -401,10 +399,25 @@ export default function UsClient({
 
         {/* ─── 기념일 timeline ─────────────────── */}
         <section className="space-y-3">
-          <SectionTitle
-            title="기념일"
-            hint={`${sorted.length}개`}
-          />
+          <div className="flex items-baseline justify-between gap-2 pt-1">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-[17px] text-fg">기념일</span>
+              <span className="text-[10px] text-fg-faint">
+                {sorted.length}개
+              </span>
+            </div>
+            <button
+              onClick={toggleAdd}
+              className={[
+                "tap rounded-full px-3 py-1 text-[12px] font-display border transition-colors",
+                formOpen
+                  ? "border-fg/20 text-fg-faint"
+                  : "border-accent text-accent hover:bg-accent hover:text-bg",
+              ].join(" ")}
+            >
+              {formOpen ? "✕ 닫기" : "+ 추가"}
+            </button>
+          </div>
           {sorted.length === 0 ? (
             <div className="text-center pt-8 pb-4">
               <span className="text-4xl">📅</span>
@@ -412,7 +425,7 @@ export default function UsClient({
                 아직 등록된 <em className="italic text-accent">날</em>이 없어요
               </p>
               <p className="text-[11px] text-fg-faint mt-2">
-                + 버튼으로 첫 기념일 추가
+                위 + 버튼으로 첫 기념일 추가
               </p>
             </div>
           ) : (
@@ -527,6 +540,35 @@ export default function UsClient({
               })}
             </ul>
           )}
+        </section>
+
+        {/* ─── 둘만의 기록 ─────────────────── */}
+        <section className="space-y-3 pt-3 border-t border-fg/10">
+          <SectionTitle title="둘만의 기록" hint="bucket · capsule" />
+          <div className="grid grid-cols-2 gap-2.5">
+            <Link
+              href="/buckets"
+              className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
+            >
+              <span className="text-base">🪣</span>
+              <p className="font-display text-sm">버킷리스트</p>
+              <p className="text-[10px] text-fg-faint">{bucketCount}개</p>
+              <p className="text-[10px] text-fg-faint mt-auto pt-1">
+                같이 하고 싶은 것
+              </p>
+            </Link>
+            <Link
+              href="/capsules"
+              className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
+            >
+              <span className="text-base">📦</span>
+              <p className="font-display text-sm">타임캡슐</p>
+              <p className="text-[10px] text-fg-faint">{capsuleCount}개</p>
+              <p className="text-[10px] text-fg-faint mt-auto pt-1">
+                미래에 열어볼 편지
+              </p>
+            </Link>
+          </div>
         </section>
       </main>
 
