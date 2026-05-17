@@ -23,12 +23,15 @@ export interface BlobStorage {
 }
 
 function readEnv() {
+  // Railway 등에서 값 끝에 줄바꿈/공백이 섞여 들어오면 SignatureDoesNotMatch
+  // 같은 미묘한 에러가 나므로 trim 한다.
+  const trim = (v: string | undefined) => v?.trim() || undefined;
   return {
-    accountId: process.env.R2_ACCOUNT_ID,
-    accessKeyId: process.env.R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-    bucket: process.env.R2_BUCKET_NAME,
-    publicUrl: process.env.R2_PUBLIC_URL,
+    accountId: trim(process.env.R2_ACCOUNT_ID),
+    accessKeyId: trim(process.env.R2_ACCESS_KEY_ID),
+    secretAccessKey: trim(process.env.R2_SECRET_ACCESS_KEY),
+    bucket: trim(process.env.R2_BUCKET_NAME),
+    publicUrl: trim(process.env.R2_PUBLIC_URL),
   };
 }
 
