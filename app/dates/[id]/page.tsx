@@ -205,6 +205,54 @@ export default async function DateDetailPage({
                       </a>
                     )}
                   </div>
+                  {stop.alternatives.length > 0 && (
+                    <details className="mt-3 group">
+                      <summary className="text-[11px] text-fg-faint cursor-pointer list-none flex items-center gap-1 hover:text-fg-soft">
+                        <span className="group-open:rotate-90 transition-transform">
+                          ▸
+                        </span>
+                        다른 후보 {stop.alternatives.length}개
+                      </summary>
+                      <ul className="mt-2 space-y-2">
+                        {stop.alternatives.map((alt, i) => (
+                          <li
+                            key={i}
+                            className="rounded-card border border-fg/10 bg-bg/40 px-3 py-2"
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <p className="text-sm">
+                                <span className="mr-1">{alt.emoji ?? "📍"}</span>
+                                {alt.name}
+                              </p>
+                              {alt.estimatedCost > 0 && (
+                                <span className="text-[10px] text-fg-faint">
+                                  ₩{alt.estimatedCost.toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            {alt.address && (
+                              <p className="text-[10px] text-fg-faint mt-1">
+                                📍 {alt.address}
+                              </p>
+                            )}
+                            {alt.description && (
+                              <p className="text-[11px] text-fg-soft mt-1 italic leading-relaxed">
+                                {alt.description}
+                              </p>
+                            )}
+                            <a
+                              href={`https://map.naver.com/p/search/${encodeURIComponent(alt.mapQuery || alt.name)}`}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="inline-block mt-1.5 text-[10px] text-fg-faint underline"
+                            >
+                              네이버 지도 →
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                 </div>
               </li>
             ))}

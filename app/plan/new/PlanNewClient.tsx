@@ -8,7 +8,6 @@ import { Eyebrow, Pill, TabBar } from "@/components/ui";
 const PLACEHOLDER =
   "이번 주 일요일 오후 2시부터 저녁까지, 성수동 근처에서. 비 올 수도 있어서 실내 위주로. 한식 좋아하고 분위기 있는 카페도 가고 싶어.";
 
-const STOP_TYPES = ["카페", "식당", "전시", "산책", "와인바", "쇼핑", "기타"];
 
 type StopOption = {
   emoji: string;
@@ -365,33 +364,44 @@ export default function PlanNewClient({
       setError("제목을 입력해주세요");
       return;
     }
-    // 과거 모드는 stops 비어있어도 OK (한 줄 기억으로 등록)
-    if (mode !== "past" && course.stops.length === 0) {
-      setError("최소 1개 이상의 단계가 필요해요");
-      return;
-    }
-    if (
-      course.stops.some((s) => !s.options[s.selectedIdx]?.name?.trim())
-    ) {
-      setError("이름이 비어있는 단계가 있어요. 채우거나 제거해주세요");
-      return;
-    }
     setSaving(true);
     setError(null);
     try {
-      const stops = course.stops.map((s, i) => {
+      // 장소(stops) 는 선택. 이름/라벨 둘 다 비어 있으면 의미 없는 빈 슬롯이라 제외.
+      const meaningful = course.stops.filter((s) => {
         const o = s.options[s.selectedIdx];
+        return (o?.name?.trim() || "") !== "" || (s.label?.trim() || "") !== "";
+      });
+      const stops = meaningful.map((s, i) => {
+        const o = s.options[s.selectedIdx];
+        const name = o.name?.trim() || s.label?.trim() || "(이름 없음)";
+        // AI 모드: 미선택 후보 2개를 alternatives 로 보존 (당일 변경 참고용).
+        const alternatives =
+          mode === "ai" && s.options.length > 1
+            ? s.options
+                .filter((_, idx) => idx !== s.selectedIdx)
+                .map((alt) => ({
+                  emoji: alt.emoji || "📍",
+                  name: alt.name,
+                  address: alt.address || null,
+                  type: alt.type || null,
+                  description: alt.description || null,
+                  mapQuery: alt.mapQuery || alt.name,
+                  estimatedCost: alt.estimatedCost || 0,
+                }))
+            : null;
         return {
           stepOrder: i + 1,
           time: s.time,
-          emoji: o.emoji,
-          name: o.name,
+          emoji: o.emoji || "📍",
+          name,
           address: o.address,
           type: o.type,
           description: o.description,
-          mapQuery: o.mapQuery || o.name,
+          mapQuery: o.mapQuery || name,
           estimatedCost: o.estimatedCost || 0,
           reserved: false,
+          alternatives,
         };
       });
       const total = pickedTotal(course);
@@ -600,7 +610,7 @@ export default function PlanNewClient({
           <button
             type="button"
             onClick={confirm}
-            disabled={saving || course.stops.length === 0}
+            disabled={saving || !course.title.trim()}
             className="w-full bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
           >
             {saving ? "저장 중..." : "이 코스로 확정 ✓"}
@@ -886,58 +896,15 @@ function ManualOptionEditor({
   option: StopOption;
   onEdit: (patch: Partial<StopOption>) => void;
 }) {
+  // 직접/수동 입력은 빠른 캡처용. 장소명 한 줄만 노출.
+  // 주소/타입/비용/설명/이모지 같은 디테일은 데이트 상세에서 편집 가능.
   return (
-    <div className="rounded-card border border-fg/15 bg-bg-warm/40 p-3 space-y-2">
-      <div className="grid grid-cols-[60px_1fr] gap-2">
-        <input
-          placeholder="🍵"
-          value={option.emoji}
-          onChange={(e) => onEdit({ emoji: e.target.value.slice(0, 4) })}
-          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm text-center"
-        />
-        <input
-          placeholder="장소명"
-          value={option.name}
-          onChange={(e) => onEdit({ name: e.target.value })}
-          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-        />
-      </div>
-      <input
-        placeholder="주소"
-        value={option.address}
-        onChange={(e) => onEdit({ address: e.target.value })}
-        className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-      />
-      <div className="grid grid-cols-[1fr_120px] gap-2">
-        <select
-          value={option.type}
-          onChange={(e) => onEdit({ type: e.target.value })}
-          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-        >
-          {STOP_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          placeholder="비용"
-          value={option.estimatedCost}
-          onChange={(e) =>
-            onEdit({ estimatedCost: Number(e.target.value) || 0 })
-          }
-          className="bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm"
-        />
-      </div>
-      <textarea
-        placeholder="설명 (한 줄)"
-        value={option.description}
-        onChange={(e) => onEdit({ description: e.target.value })}
-        rows={2}
-        className="w-full bg-bg border border-fg/15 rounded-card px-2 py-1.5 text-sm resize-none"
-      />
-    </div>
+    <input
+      placeholder="장소명 (선택)"
+      value={option.name}
+      onChange={(e) => onEdit({ name: e.target.value })}
+      className="w-full bg-bg border border-fg/15 rounded-card px-3 py-2 text-sm"
+    />
   );
 }
 

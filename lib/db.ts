@@ -116,6 +116,16 @@ export async function avgStarsByUserId(userId: string) {
   return Math.round(avg * 10) / 10;
 }
 
+export type StopAlt = {
+  emoji: string | null;
+  name: string;
+  address: string | null;
+  type: string | null;
+  description: string | null;
+  mapQuery: string;
+  estimatedCost: number;
+};
+
 export type AdaptedStop = {
   time: string;
   emoji: string | null;
@@ -128,6 +138,7 @@ export type AdaptedStop = {
   naverMapUrl: string | null;
   reservationUrl: string | null;
   reserved: boolean;
+  alternatives: StopAlt[];
 };
 
 export type AdaptedReview = {
@@ -173,6 +184,17 @@ function adaptDate(d: any): AdaptedDate {
     naverMapUrl: s.naverMapUrl,
     reservationUrl: s.reservationUrl,
     reserved: s.reserved,
+    alternatives: Array.isArray(s.alternatives)
+      ? (s.alternatives as any[]).map((a) => ({
+          emoji: a?.emoji ?? null,
+          name: String(a?.name ?? ""),
+          address: a?.address ?? null,
+          type: a?.type ?? null,
+          description: a?.description ?? null,
+          mapQuery: String(a?.mapQuery ?? a?.name ?? ""),
+          estimatedCost: Number(a?.estimatedCost ?? 0) || 0,
+        }))
+      : [],
   }));
   const computedTotal = d.stops.reduce(
     (sum: number, st: any) => sum + (st.cost ?? 0),

@@ -3,6 +3,16 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma, renumberDates } from "@/lib/db";
 
+type StopAlternative = {
+  emoji?: string | null;
+  name: string;
+  address?: string | null;
+  type?: string | null;
+  description?: string | null;
+  mapQuery?: string | null;
+  estimatedCost?: number;
+};
+
 type StopInput = {
   time: string;
   emoji?: string | null;
@@ -16,6 +26,7 @@ type StopInput = {
   cost?: number;
   reservationUrl?: string | null;
   reserved?: boolean;
+  alternatives?: StopAlternative[] | null;
 };
 
 type Body = {
@@ -115,6 +126,10 @@ export async function POST(req: Request) {
           cost: s.estimatedCost ?? s.cost ?? 0,
           reservationUrl: s.reservationUrl ?? null,
           reserved: s.reserved ?? false,
+          alternatives:
+            s.alternatives && s.alternatives.length > 0
+              ? (s.alternatives as unknown as object)
+              : undefined,
         })),
       },
     },

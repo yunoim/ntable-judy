@@ -109,6 +109,9 @@ model Stop {
   cost           Int     @default(0)
   reservationUrl String?
   reserved       Boolean @default(false)
+  // AI 모드에서 사용자가 고른 옵션 외 미선택 후보 2개. 당일 변경 참고용.
+  // [{ emoji, name, address, type, description, mapQuery, estimatedCost }]
+  alternatives   Json?
 
   date Date @relation(fields: [dateId], references: [id], onDelete: Cascade)
 
