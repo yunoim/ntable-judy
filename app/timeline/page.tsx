@@ -5,6 +5,7 @@ import { requireApproved } from "@/lib/auth";
 import { TabBar, SectionTitle } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
 import MonthPicker from "./MonthPicker";
+import TimelineActions from "./TimelineActions";
 import PastDatesList, { type PastItem } from "../PastDatesList";
 
 export const dynamic = "force-dynamic";
@@ -391,47 +392,6 @@ export default async function TimelinePage({
             </ul>
           )}
 
-          <div className="space-y-2 pt-1">
-            {!selectedDate && (() => {
-              const dayDate = new Date(year, month, selectedDay);
-              const todayStart = new Date(today);
-              todayStart.setHours(0, 0, 0, 0);
-              const isPastDay = dayDate.getTime() < todayStart.getTime();
-              const dayStrV = dayStr(year, month, selectedDay);
-              if (isPastDay) {
-                return (
-                  <Link
-                    href={`/plan/new?mode=past&date=${dayStrV}`}
-                    className="tap lift block bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
-                  >
-                    📓 다녀온 데이트 기록
-                  </Link>
-                );
-              }
-              return (
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href={`/plan/new?mode=ai&date=${dayStrV}`}
-                    className="tap lift bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
-                  >
-                    ✨ AI로 짜기
-                  </Link>
-                  <Link
-                    href={`/plan/new?mode=direct&date=${dayStrV}`}
-                    className="tap lift border border-fg/30 rounded-card py-2.5 text-center text-[12px] font-display"
-                  >
-                    ✏️ 직접 입력
-                  </Link>
-                </div>
-              );
-            })()}
-            <Link
-              href={`/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, selectedDay)}#add-event`}
-              className="tap lift block border border-fg/20 rounded-card py-2.5 text-center text-[12px] font-display"
-            >
-              + 개인 일정 등록
-            </Link>
-          </div>
         </section>
       )}
 
@@ -460,6 +420,12 @@ export default async function TimelinePage({
       )}
 
       <div className="flex-1" />
+      <TimelineActions
+        selectedDayStr={
+          selectedDay !== null ? dayStr(year, month, selectedDay) : null
+        }
+        ymStr={ymStr(year, month)}
+      />
       <TabBar active="log" />
     </div>
   );

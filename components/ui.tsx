@@ -230,10 +230,9 @@ function useHideOnScroll() {
   return hidden;
 }
 
-export function TabBar({ active }: { active: TabId }) {
+export function TabBar({ active }: { active?: TabId }) {
   const items: Array<{ id: TabId; label: string; href: string }> = [
     { id: "home", label: "홈", href: "/" },
-    { id: "plan", label: "AI계획", href: "/plan/new" },
     { id: "log", label: "일정", href: "/timeline" },
     { id: "us", label: "기념일", href: "/us" },
     { id: "album", label: "사진첩", href: "/album" },

@@ -616,7 +616,7 @@ export default function PlanNewClient({
             {saving ? "저장 중..." : "이 코스로 확정 ✓"}
           </button>
         </div>
-        <TabBar active="plan" />
+        <TabBar />
       </div>
     );
   }
@@ -681,7 +681,7 @@ export default function PlanNewClient({
         </button>
       </main>
 
-      <TabBar active="plan" />
+      <TabBar />
     </div>
   );
 }
