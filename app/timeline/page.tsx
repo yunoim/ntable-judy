@@ -246,6 +246,15 @@ export default async function TimelinePage({
             const dRec = c.day ? dateByDay.get(c.day) : undefined;
             const planned = dRec?.status === "planned";
             const dayEvents = c.day ? eventsByDay.get(c.day) ?? [] : [];
+            // 지나간 날짜는 디밍 (오늘 포함은 아님, 오늘 자정 기준 < today 만).
+            const isPastDay = (() => {
+              if (!c.day) return false;
+              const cellDate = new Date(year, month, c.day);
+              cellDate.setHours(0, 0, 0, 0);
+              const t = new Date(today);
+              t.setHours(0, 0, 0, 0);
+              return cellDate.getTime() < t.getTime();
+            })();
 
             const cellHref = !c.day
               ? "#"
@@ -260,6 +269,7 @@ export default async function TimelinePage({
                   "tap aspect-square rounded-lg border flex items-center justify-center relative overflow-hidden",
                   isToday ? "border-accent border-2" : "border-fg/15",
                   isSelected ? "bg-accent/10 border-accent" : "",
+                  isPastDay ? "opacity-50" : "",
                   !c.day ? "opacity-0 pointer-events-none" : "",
                 ].join(" ")}
               >
