@@ -27,13 +27,11 @@ type Owner = { id: string; nickname: string; color: "accent" | "rain" };
 export default function EventsSection({
   events,
   meId,
-  meRole,
   owners,
   initialDate,
 }: {
   events: EventRow[];
   meId: string;
-  meRole: string;
   owners: Owner[];
   initialDate?: string;
 }) {
@@ -41,7 +39,6 @@ export default function EventsSection({
   const [, startTransition] = useTransition();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -90,32 +87,6 @@ export default function EventsSection({
     setOwnerId(meId);
     setEditingId(null);
     setAdding(false);
-  }
-
-  function startEdit(e: EventRow) {
-    setAdding(false);
-    setEditingId(e.id);
-    setTitle(e.title);
-    const d = new Date(e.startsAt);
-    setDate(localInput(d).slice(0, 10));
-    setTime(localInput(d).slice(11, 16));
-    setAllDay(e.allDay);
-    if (e.endsAt) {
-      const ed = new Date(e.endsAt);
-      const startStr = localInput(d).slice(0, 10);
-      const endStr = localInput(ed).slice(0, 10);
-      setMultiDay(endStr !== startStr);
-      setEndDate(endStr);
-      setEndTime(localInput(ed).slice(11, 16));
-    } else {
-      setMultiDay(false);
-      setEndDate(localInput(d).slice(0, 10));
-      setEndTime("21:00");
-    }
-    setCategory(e.category ?? "");
-    setNote(e.note ?? "");
-    setOwnerId(e.user.id);
-    setError(null);
   }
 
   async function save() {
@@ -173,27 +144,6 @@ export default function EventsSection({
       setError(e?.message ?? "네트워크 오류");
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function remove(id: number) {
-    if (busyId) return;
-    if (!confirm("삭제할까요?")) return;
-    setBusyId(id);
-    try {
-      const res = await fetch(`/api/personal-events/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "실패");
-        return;
-      }
-      startTransition(() => router.refresh());
-    } catch (e: any) {
-      setError(e?.message ?? "네트워크 오류");
-    } finally {
-      setBusyId(null);
     }
   }
 
@@ -397,101 +347,6 @@ export default function EventsSection({
         </div>
       )}
 
-      {events.length === 0 ? (
-        <p className="text-[11px] text-fg-faint serif-italic px-1 py-3">
-          아직 등록된 일정이 없어요.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {events.map((e) => {
-            const start = new Date(e.startsAt);
-            const end = e.endsAt ? new Date(e.endsAt) : null;
-            const isMulti = end && end.toDateString() !== start.toDateString();
-            const canManage = ["admin", "approved"].includes(meRole);
-            return (
-              <li
-                key={e.id}
-                className="editorial-card px-4 py-3 flex items-start gap-3"
-              >
-                <span className="text-base shrink-0 leading-tight pt-0.5">
-                  {e.emoji ?? e.user.emoji ?? "·"}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display text-sm truncate">
-                      {e.title}
-                    </span>
-                    {isMulti && (
-                      <span className="text-[9px] tracking-wider text-accent border border-accent/40 rounded-full px-1.5 py-0.5">
-                        {Math.round((end.getTime() - start.getTime()) / 86400000) + 1}일
-                      </span>
-                    )}
-                    {e.category && (
-                      <span className="text-[9px] tracking-wider uppercase text-fg-faint border border-fg/15 rounded-full px-1.5 py-0.5">
-                        {e.category}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-fg-faint mt-0.5">
-                    <span className="serif-italic">{e.user.nickname}</span>
-                    <span className="mx-1.5 text-fg-faint/50">·</span>
-                    {start.toLocaleDateString("ko", {
-                      month: "long",
-                      day: "numeric",
-                      weekday: "short",
-                    })}
-                    {!e.allDay &&
-                      " · " +
-                        start.toLocaleTimeString("ko", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                    {isMulti && (
-                      <>
-                        {" → "}
-                        {end.toLocaleDateString("ko", {
-                          month: "long",
-                          day: "numeric",
-                          weekday: "short",
-                        })}
-                        {!e.allDay &&
-                          " " +
-                            end.toLocaleTimeString("ko", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                      </>
-                    )}
-                    {!isMulti && e.allDay && " · 하루"}
-                  </p>
-                  {e.note && (
-                    <p className="text-[11px] text-fg-soft mt-1 italic">
-                      {e.note}
-                    </p>
-                  )}
-                  {canManage && (
-                    <div className="flex gap-2.5 mt-1.5">
-                      <button
-                        onClick={() => startEdit(e)}
-                        className="text-[10px] text-fg-faint underline"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => remove(e.id)}
-                        disabled={busyId === e.id}
-                        className="text-[10px] text-fg-faint underline"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </section>
   );
 }

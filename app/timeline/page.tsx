@@ -408,7 +408,6 @@ export default async function TimelinePage({
       <EventsSection
         events={events}
         meId={me.id}
-        meRole={me.role}
         owners={[
           ...(admin
             ? [{ id: admin.id, nickname: admin.nickname, color: "accent" as const }]
