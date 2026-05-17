@@ -170,10 +170,18 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
           <path d="M7 7.5l10 9M17 7.5l-10 9" opacity="0.4" />
         </svg>
       );
+    case "album":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+          <circle cx="9" cy="10.5" r="1.5" />
+          <path d="M4 17l4.8-4.8 3 3 3.5-3.5L20 16.5" />
+        </svg>
+      );
   }
 }
 
-type TabId = "home" | "plan" | "log" | "us" | "saju";
+type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
 
 // 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
 // 상단 근처 (스크롤 100px 미만) 에서는 항상 노출.
@@ -207,6 +215,7 @@ export function TabBar({ active }: { active: TabId }) {
     { id: "plan", label: "AI계획", href: "/plan/new" },
     { id: "log", label: "일정", href: "/timeline" },
     { id: "us", label: "기념일", href: "/us" },
+    { id: "album", label: "사진첩", href: "/album" },
     { id: "saju", label: "사주", href: "/us/saju" },
   ];
   const hidden = useHideOnScroll();
