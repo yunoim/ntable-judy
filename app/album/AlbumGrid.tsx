@@ -97,8 +97,8 @@ export default function AlbumGrid({
             <img
               src={lightbox.url}
               alt={lightbox.caption ?? lightbox.dateTitle}
-              className="max-w-full max-h-full object-contain rounded-card"
-              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-full object-contain rounded-card cursor-pointer"
+              onClick={() => setLightbox(null)}
             />
           </div>
           <div
