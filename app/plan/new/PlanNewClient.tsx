@@ -630,8 +630,8 @@ export default function PlanNewClient({
     <div className="min-h-screen flex flex-col">
       <div className="safe-top" />
 
-      <main className="flex-1 px-5 space-y-4 pb-32">
-        <h1 className="font-display text-2xl leading-snug pt-3">
+      <main className="px-5 pt-3 pb-24 space-y-3">
+        <h1 className="font-display text-xl leading-snug">
           {isPast ? "그날 뭐 했는지" : "자연어로 알려줘요."}
           <br />
           <em className="font-display italic text-accent">
@@ -644,7 +644,7 @@ export default function PlanNewClient({
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, 500))}
             placeholder={placeholder}
-            className="w-full min-h-[180px] bg-bg-warm/50 border border-fg/20 rounded-card p-4 text-sm leading-relaxed resize-none focus:outline-none focus:border-accent placeholder:text-fg-faint placeholder:italic"
+            className="w-full min-h-[140px] bg-bg-warm/50 border border-fg/20 rounded-card p-4 text-sm leading-relaxed resize-none focus:outline-none focus:border-accent placeholder:text-fg-faint placeholder:italic"
           />
           <span className="absolute bottom-3 right-3 font-display text-sm text-accent">
             {text.length} / 500
@@ -652,7 +652,7 @@ export default function PlanNewClient({
         </div>
 
         {!isPast && chips.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <p className="text-[11px] tracking-widest uppercase text-fg-faint">
               자주 쓰는 조건
             </p>
@@ -671,9 +671,7 @@ export default function PlanNewClient({
         )}
 
         {error && <p className="text-xs text-rain px-1">{error}</p>}
-      </main>
 
-      <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
         <button
           onClick={isPast ? parsePast : generate}
           disabled={!text.trim()}
@@ -681,7 +679,8 @@ export default function PlanNewClient({
         >
           {isPast ? "✨ 정리하기" : "✨ 코스 만들기"}
         </button>
-      </div>
+      </main>
+
       <TabBar active="plan" />
     </div>
   );

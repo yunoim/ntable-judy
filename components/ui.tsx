@@ -402,9 +402,9 @@ export function Hero({
   const captionColor =
     variant === "dark" ? "text-accent-soft" : "text-fg-soft";
   const inner = (
-    <div className={cn(skin, "px-5 pt-5 pb-6 relative overflow-hidden")}>
+    <div className={cn(skin, "px-5 pt-4 pb-5 relative overflow-hidden")}>
       {eyebrow && (
-        <div className={cn("eyebrow", eyebrowColor, "mb-3")}>{eyebrow}</div>
+        <div className={cn("eyebrow", eyebrowColor, "mb-2")}>{eyebrow}</div>
       )}
       <div className="flex items-end justify-between gap-4">
         <div className="flex items-baseline gap-2 min-w-0">

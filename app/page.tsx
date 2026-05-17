@@ -83,7 +83,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ─── Masthead (compact) ───────────────── */}
-      <header className="px-5 pt-4 pb-3 safe-top flex items-center justify-between rise-in">
+      <header className="px-5 pt-3 pb-2 safe-top flex items-center justify-between rise-in">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex -space-x-2">
             {bunny && (
@@ -138,7 +138,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="flex-1 px-5 pt-3 pb-28 space-y-7">
+      <main className="flex-1 px-5 pt-2 pb-24 space-y-5">
         {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
           <section className="space-y-2.5 rise-in rise-in-1">
