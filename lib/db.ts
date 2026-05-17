@@ -35,6 +35,27 @@ export async function getAllDates() {
   return dates.map(adaptDate);
 }
 
+// Re-derive `Date.number` so it reflects chronological order of `scheduledAt`
+// (with `createdAt` as tiebreaker). Two-step temp-negate avoids colliding with
+// the `@unique` constraint while values are being shuffled.
+export async function renumberDates() {
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`
+      WITH ordered AS (
+        SELECT id, ROW_NUMBER() OVER (
+          ORDER BY "scheduledAt" ASC, "createdAt" ASC
+        ) AS new_num
+        FROM "judy"."Date"
+      )
+      UPDATE "judy"."Date" d
+      SET number = -ordered.new_num
+      FROM ordered
+      WHERE d.id = ordered.id
+    `;
+    await tx.$executeRaw`UPDATE "judy"."Date" SET number = -number WHERE number < 0`;
+  });
+}
+
 function startOfTodayKstUtc(): Date {
   // 서버 TZ에 무관하게 KST 자정 기준의 UTC 인스턴트를 반환.
   const now = new Date();

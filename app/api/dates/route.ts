@@ -1,7 +1,7 @@
 // app/api/dates/route.ts — 데이트 생성 (수동 또는 AI 확정)
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { prisma, renumberDates } from "@/lib/db";
 
 type StopInput = {
   time: string;
@@ -50,8 +50,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "title_required" }, { status: 400 });
   }
 
+  // Temporary number to satisfy the @unique constraint; renumberDates() below
+  // re-derives the final value from chronological order.
   const last = await prisma.date.aggregate({ _max: { number: true } });
-  const nextNumber = (last._max.number ?? 0) + 1;
+  const tempNumber = (last._max.number ?? 0) + 1;
 
   const scheduledAt = body.scheduledAt
     ? new Date(body.scheduledAt)
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
 
   const created = await prisma.date.create({
     data: {
-      number: nextNumber,
+      number: tempNumber,
       title: body.title.trim(),
       subtitle: body.subtitle?.trim() || null,
       area: (body.area ?? "").trim() || "미정",
@@ -118,5 +120,15 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ id: created.id, number: created.number });
+  await renumberDates();
+
+  const final = await prisma.date.findUnique({
+    where: { id: created.id },
+    select: { number: true },
+  });
+
+  return NextResponse.json({
+    id: created.id,
+    number: final?.number ?? created.number,
+  });
 }

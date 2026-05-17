@@ -51,34 +51,42 @@ export async function POST(
           : "jpg";
   const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const { url, key } = await storage.put({
-    path,
-    data: buffer,
-    contentType: file.type,
-  });
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { url, key } = await storage.put({
+      path,
+      data: buffer,
+      contentType: file.type,
+    });
 
-  const created = await prisma.datePhoto.create({
-    data: {
-      dateId: id,
-      url,
-      key,
-      caption,
-      uploadedById: user.id,
-    },
-    include: {
-      uploadedBy: { select: { id: true, nickname: true, emoji: true } },
-    },
-  });
+    const created = await prisma.datePhoto.create({
+      data: {
+        dateId: id,
+        url,
+        key,
+        caption,
+        uploadedById: user.id,
+      },
+      include: {
+        uploadedBy: { select: { id: true, nickname: true, emoji: true } },
+      },
+    });
 
-  revalidatePath(`/dates/${id}`);
-  return NextResponse.json({
-    id: created.id,
-    url: created.url,
-    caption: created.caption,
-    width: created.width,
-    height: created.height,
-    uploadedBy: created.uploadedBy,
-    createdAt: created.createdAt.toISOString(),
-  });
+    revalidatePath(`/dates/${id}`);
+    return NextResponse.json({
+      id: created.id,
+      url: created.url,
+      caption: created.caption,
+      width: created.width,
+      height: created.height,
+      uploadedBy: created.uploadedBy,
+      createdAt: created.createdAt.toISOString(),
+    });
+  } catch (e: any) {
+    console.error("photo upload failed", e);
+    return NextResponse.json(
+      { error: "upload_failed", detail: e?.message ?? String(e) },
+      { status: 500 },
+    );
+  }
 }

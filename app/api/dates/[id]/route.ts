@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { prisma, renumberDates } from "@/lib/db";
 
 type StopInput = {
   time?: string;
@@ -94,6 +94,10 @@ export async function PATCH(
 
   await prisma.date.update({ where: { id }, data });
 
+  if (data.scheduledAt !== undefined) {
+    await renumberDates();
+  }
+
   if (Array.isArray(body.stops)) {
     await prisma.$transaction([
       prisma.stop.deleteMany({ where: { dateId: id } }),
@@ -145,6 +149,7 @@ export async function DELETE(
   }
 
   await prisma.date.delete({ where: { id } });
+  await renumberDates();
   revalidatePath("/");
   revalidatePath("/timeline");
   return NextResponse.json({ ok: true });

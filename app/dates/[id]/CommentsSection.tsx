@@ -41,9 +41,9 @@ export default function CommentsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: text }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "실패");
+        setError(data.error ?? `실패 (${res.status})`);
         return;
       }
       setComments((cs) => [...cs, data]);
@@ -82,9 +82,9 @@ export default function CommentsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: text }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "실패");
+        setError(data.error ?? `실패 (${res.status})`);
         return;
       }
       setComments((cs) =>

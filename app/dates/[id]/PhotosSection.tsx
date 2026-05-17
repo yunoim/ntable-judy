@@ -44,7 +44,7 @@ export default function PhotosSection({
           method: "POST",
           body: fd,
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           setError(
             data.error === "storage_not_configured"
@@ -53,7 +53,7 @@ export default function PhotosSection({
                 ? "파일이 너무 커요 (8MB 이하)"
                 : data.error === "bad_mime"
                   ? "이미지 파일만 가능"
-                  : data.error ?? "업로드 실패",
+                  : data.error ?? `업로드 실패 (${res.status})`,
           );
           break;
         }
