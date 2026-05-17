@@ -84,8 +84,13 @@ export async function POST(
     });
   } catch (e: any) {
     console.error("photo upload failed", e);
+    const name = e?.name ?? e?.Code ?? null;
+    const msg = e?.message ?? String(e);
     return NextResponse.json(
-      { error: "upload_failed", detail: e?.message ?? String(e) },
+      {
+        error: "upload_failed",
+        detail: name ? `${name}: ${msg}` : msg,
+      },
       { status: 500 },
     );
   }

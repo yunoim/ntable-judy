@@ -53,7 +53,9 @@ export default function PhotosSection({
                 ? "파일이 너무 커요 (8MB 이하)"
                 : data.error === "bad_mime"
                   ? "이미지 파일만 가능"
-                  : data.error ?? `업로드 실패 (${res.status})`,
+                  : data.error === "upload_failed"
+                    ? `업로드 실패: ${data.detail ?? "원인 불명"}`
+                    : data.error ?? `업로드 실패 (${res.status})`,
           );
           break;
         }
