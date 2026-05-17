@@ -639,31 +639,6 @@ export default function PlanNewClient({
           </em>
         </h1>
 
-        <div className="flex gap-2 -mt-1">
-          {!isPast && (
-            <Link
-              href="/plan/new?mode=past"
-              className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
-            >
-              📓 다녀온 데이트 기록
-            </Link>
-          )}
-          {isPast && (
-            <Link
-              href="/plan/new?mode=ai"
-              className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
-            >
-              ✨ 미래 데이트 코스
-            </Link>
-          )}
-          <Link
-            href={`/plan/new?mode=direct${initialDate ? `&date=${initialDate}` : ""}`}
-            className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
-          >
-            ✏️ 직접 입력
-          </Link>
-        </div>
-
         <div className="relative">
           <textarea
             value={text}
