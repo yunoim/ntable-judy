@@ -22,7 +22,7 @@ export default async function AlbumPage() {
   const me = await requireApproved();
 
   const photos = await prisma.datePhoto.findMany({
-    orderBy: [{ createdAt: "desc" }],
+    orderBy: [{ date: { scheduledAt: "desc" } }, { createdAt: "desc" }],
     include: {
       date: {
         select: { id: true, title: true, scheduledAt: true, number: true },
