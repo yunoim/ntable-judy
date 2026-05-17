@@ -35,7 +35,7 @@ export default async function DateDetailPage({
 }) {
   const me = await requireApproved();
   const { id } = await params;
-  const [date, all, comments, photos] = await Promise.all([
+  const [date, all, comments, photos, couple] = await Promise.all([
     getDateById(id),
     getAllDates(),
     prisma.dateComment.findMany({
@@ -50,7 +50,18 @@ export default async function DateDetailPage({
         uploadedBy: { select: { id: true, nickname: true, emoji: true } },
       },
     }),
+    prisma.user.findMany({
+      where: { role: { in: ["admin", "approved"] } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, nickname: true, role: true, partner: true },
+    }),
   ]);
+  const fox = couple.find((u) => u.role === "admin") ?? couple[0];
+  const bunny =
+    couple.find((u) => u.partner && u.id !== fox?.id) ??
+    couple.find((u) => u.role === "approved" && u.id !== fox?.id);
+  const coupleLabel =
+    fox && bunny ? `${fox.nickname}과 ${bunny.nickname}의` : "둘의";
   if (!date) notFound();
   const canEdit = ["admin", "approved"].includes(me.role);
   const history = all
@@ -345,7 +356,7 @@ export default async function DateDetailPage({
             className="text-xs italic tracking-wider"
             style={{ color: "var(--fg-soft)" }}
           >
-            용광로와 무쇠의 {ordinal(date.number)} 번째 날
+            {coupleLabel} {ordinal(date.number)} 번째 날
           </p>
         </footer>
       </main>
