@@ -184,27 +184,41 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
 type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
 
 // 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
-// 상단 근처 (스크롤 100px 미만) 에서는 항상 노출.
+// 상단 근처 (scrollY < 80) 에서는 항상 노출.
 function useHideOnScroll() {
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
-    let lastY = window.scrollY;
+    // 다양한 브라우저/레이아웃에서 scroll 위치를 안정적으로 잡기 위해 여러 소스를 시도.
+    const readY = () =>
+      window.scrollY ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
+    let lastY = readY();
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const y = window.scrollY;
+        const y = readY();
         const dy = y - lastY;
-        if (y < 100) setHidden(false);
-        else if (dy > 6) setHidden(true);
-        else if (dy < -6) setHidden(false);
+        if (y < 80) setHidden(false);
+        else if (dy > 3) setHidden(true);
+        else if (dy < -3) setHidden(false);
         lastY = y;
         ticking = false;
       });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    // 일부 페이지 (특히 inner wrapper 가 스크롤 되는 경우) 대비, document 캡처도.
+    document.addEventListener("scroll", onScroll, {
+      passive: true,
+      capture: true,
+    });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll, { capture: true });
+    };
   }, []);
   return hidden;
 }

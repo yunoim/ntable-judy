@@ -6,9 +6,9 @@ import {
   Hero,
   Numeral,
   SectionTitle,
-  Stars,
   TabBar,
 } from "@/components/ui";
+import PastDatesList from "./PastDatesList";
 import {
   getNextDate,
   getPastDates,
@@ -299,59 +299,20 @@ export default async function HomePage() {
               title="지난 데이트"
               hint={`총 ${past.length}회`}
             />
-            <ul className="space-y-3.5">
-              {past.map((d, idx) => {
-                const avg = d.reviews.length
+            <PastDatesList
+              items={past.map((d) => ({
+                id: d.id,
+                number: d.number,
+                title: d.title,
+                scheduledAt: new Date(d.scheduledAt).toISOString(),
+                area: d.area ?? null,
+                weather: d.weather ?? null,
+                avgStars: d.reviews.length
                   ? d.reviews.reduce((s, r) => s + r.stars, 0) /
                     d.reviews.length
-                  : 0;
-                const fallback =
-                  d.weather === "rain" ? "☔" : null;
-                return (
-                  <li key={d.id}>
-                    <Link
-                      href={`/dates/${d.id}`}
-                      className="tap flex gap-4 group"
-                    >
-                      <div className="w-[68px] h-[68px] shrink-0 rounded-[14px] bg-bg-warm border border-fg/8 flex items-center justify-center overflow-hidden">
-                        {fallback ? (
-                          <span className="text-2xl">{fallback}</span>
-                        ) : (
-                          <span className="font-display text-[22px] text-fg-soft tabular-nums">
-                            {String(d.number).padStart(2, "0")}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <p className="font-display text-base truncate group-hover:text-accent transition-colors">
-                          {d.title}
-                        </p>
-                        <p className="text-[11px] text-fg-faint mt-0.5">
-                          {new Date(d.scheduledAt).toLocaleDateString("ko", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                          {d.area ? ` · ${d.area}` : ""}
-                        </p>
-                        <div className="mt-auto pt-1.5">
-                          {avg > 0 ? (
-                            <Stars n={avg} />
-                          ) : (
-                            <span className="text-[10px] text-fg-faint">
-                              후기 비어 있음
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                    {idx < past.length - 1 && (
-                      <div className="dot-rule mt-3.5" />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                  : 0,
+              }))}
+            />
             <Link
               href="/plan/new?mode=past"
               className="tap block text-center text-[11px] text-fg-faint hover:text-fg-soft py-2 mt-1"
