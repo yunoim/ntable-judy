@@ -630,7 +630,7 @@ export default function PlanNewClient({
     <div className="min-h-screen flex flex-col">
       <div className="safe-top" />
 
-      <main className="px-5 pt-3 pb-24 space-y-3">
+      <main className="px-5 pt-3 pb-28 space-y-3">
         <h1 className="font-display text-xl leading-snug">
           {isPast ? "그날 뭐 했는지" : "자연어로 알려줘요."}
           <br />

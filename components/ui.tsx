@@ -184,16 +184,23 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
 type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
 
 // 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
-// 상단 근처 (scrollY < 80) 에서는 항상 노출.
+// 단 상단 근처 (scrollY < 80) 와 페이지 끝 (bottom 도달) 에서는 항상 노출 —
+// 끝까지 내렸을 때도 TabBar 가 보여야 하므로.
 function useHideOnScroll() {
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
-    // 다양한 브라우저/레이아웃에서 scroll 위치를 안정적으로 잡기 위해 여러 소스를 시도.
     const readY = () =>
       window.scrollY ||
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
+    const readDocH = () =>
+      Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+      );
+    const readViewportH = () =>
+      window.innerHeight || document.documentElement.clientHeight;
     let lastY = readY();
     let ticking = false;
     const onScroll = () => {
@@ -202,7 +209,8 @@ function useHideOnScroll() {
       requestAnimationFrame(() => {
         const y = readY();
         const dy = y - lastY;
-        if (y < 80) setHidden(false);
+        const atBottom = y + readViewportH() >= readDocH() - 8;
+        if (y < 80 || atBottom) setHidden(false);
         else if (dy > 3) setHidden(true);
         else if (dy < -3) setHidden(false);
         lastY = y;
@@ -210,7 +218,6 @@ function useHideOnScroll() {
       });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    // 일부 페이지 (특히 inner wrapper 가 스크롤 되는 경우) 대비, document 캡처도.
     document.addEventListener("scroll", onScroll, {
       passive: true,
       capture: true,

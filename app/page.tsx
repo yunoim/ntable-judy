@@ -138,7 +138,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="flex-1 px-5 pt-2 pb-24 space-y-5">
+      <main className="flex-1 px-5 pt-2 pb-28 space-y-5">
         {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
           <section className="space-y-2.5 rise-in rise-in-1">

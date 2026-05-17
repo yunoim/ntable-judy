@@ -87,7 +87,7 @@ export default async function DateDetailPage({
         </Link>
       )}
 
-      <main className="relative z-10 px-5 pt-10 pb-24 w-full flex-1">
+      <main className="relative z-10 px-5 pt-10 pb-28 w-full flex-1">
         <header className="text-center mb-8 rise-in">
           <span
             className="inline-block text-[10.5px] tracking-[0.18em] border border-accent/60 rounded-full px-3.5 py-1.5 mb-4 text-fg-soft"
