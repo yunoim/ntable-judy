@@ -253,23 +253,15 @@ export default async function HomePage() {
         {(dayNo > 0 || upcomingAnni || upcomingMilestone) && (
           <section className="space-y-2 rise-in rise-in-2">
             {dayNo > 0 && (
-              <Link
-                href="/us/saju"
-                className="tap lift block editorial-card-warm px-4 py-2.5"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[11px] text-fg-faint">함께한 날</span>
-                    <span className="font-display text-lg text-fg leading-none">
-                      {dayNo}
-                    </span>
-                    <span className="text-fg-soft text-xs">일</span>
-                  </div>
-                  <p className="text-[10px] text-fg-faint tracking-wider">
-                    사주 보기 →
-                  </p>
+              <div className="editorial-card-warm px-4 py-2.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[11px] text-fg-faint">함께한 날</span>
+                  <span className="font-display text-lg text-fg leading-none">
+                    {dayNo}
+                  </span>
+                  <span className="text-fg-soft text-xs">일</span>
                 </div>
-              </Link>
+              </div>
             )}
 
             {(() => {
