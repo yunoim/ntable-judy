@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 // 캘린더 swipe 제스처 wrapper — 좌우 스와이프 시 다음/이전 달로 이동.
+// 손가락 따라 실시간으로 캘린더가 따라가다가 임계점 넘으면 슬라이드 아웃 +
+// router.push. 임계점 미달이면 spring back.
 export default function CalendarSwipe({
   prevHref,
   nextHref,
@@ -16,21 +18,64 @@ export default function CalendarSwipe({
   const router = useRouter();
   const startX = useRef(0);
   const startY = useRef(0);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [exiting, setExiting] = useState<"left" | "right" | null>(null);
+
+  function reset() {
+    setDragging(false);
+    setDragX(0);
+  }
 
   return (
     <div
       onTouchStart={(e) => {
+        if (exiting) return;
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
+        setDragging(true);
+      }}
+      onTouchMove={(e) => {
+        if (!dragging || exiting) return;
+        const dx = e.touches[0].clientX - startX.current;
+        const dy = e.touches[0].clientY - startY.current;
+        // 수직이 더 크면 세로 스크롤로 보고 드래그 취소.
+        if (Math.abs(dy) > Math.abs(dx) * 1.2) {
+          reset();
+          return;
+        }
+        // 손가락 따라가는 트랙. 저항 살짝 (0.85).
+        setDragX(dx * 0.85);
       }}
       onTouchEnd={(e) => {
+        if (!dragging || exiting) {
+          reset();
+          return;
+        }
         const dx = e.changedTouches[0].clientX - startX.current;
         const dy = e.changedTouches[0].clientY - startY.current;
-        // 수평이 수직보다 분명히 크고 임계값 넘을 때만 (세로 스크롤 방해 X).
-        if (Math.abs(dx) < 50) return;
-        if (Math.abs(dy) > Math.abs(dx)) return;
-        if (dx < 0) router.push(nextHref);
-        else router.push(prevHref);
+        reset();
+        if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+        // 임계점 통과 → 끝까지 슬라이드 아웃 + 라우팅.
+        if (dx < 0) {
+          setExiting("left");
+          setTimeout(() => router.push(nextHref), 220);
+        } else {
+          setExiting("right");
+          setTimeout(() => router.push(prevHref), 220);
+        }
+      }}
+      style={{
+        transform: exiting
+          ? exiting === "left"
+            ? "translateX(-100%)"
+            : "translateX(100%)"
+          : `translateX(${dragX}px)`,
+        opacity: exiting ? 0 : 1,
+        transition: dragging
+          ? "none"
+          : "transform 220ms ease-out, opacity 220ms ease-out",
+        willChange: "transform",
       }}
     >
       {children}
