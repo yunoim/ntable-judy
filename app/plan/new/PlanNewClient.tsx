@@ -674,23 +674,13 @@ export default function PlanNewClient({
       </main>
 
       <div className="sticky bottom-[72px] bg-bg/95 backdrop-blur border-t border-fg/15 px-4 py-3 z-30">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="w-12 h-12 rounded-card border border-fg/20 text-lg shrink-0"
-            aria-label="음성 입력 (v2)"
-            disabled
-          >
-            🎙
-          </button>
-          <button
-            onClick={isPast ? parsePast : generate}
-            disabled={!text.trim()}
-            className="flex-1 bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
-          >
-            {isPast ? "✨ 정리하기" : "✨ 코스 만들기"}
-          </button>
-        </div>
+        <button
+          onClick={isPast ? parsePast : generate}
+          disabled={!text.trim()}
+          className="w-full bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
+        >
+          {isPast ? "✨ 정리하기" : "✨ 코스 만들기"}
+        </button>
       </div>
       <TabBar active="plan" />
     </div>
