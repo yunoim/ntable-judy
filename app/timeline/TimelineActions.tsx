@@ -2,85 +2,166 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
-// timeline 우측 하단 FAB. 누르면 4가지 액션 sheet.
-// dayStr 가 있으면 그 날짜로 prefill. 없으면 오늘.
+// 캘린더 날짜 클릭 시 자동으로 뜨는 액션 시트.
+// 그 날의 기존 데이트/이벤트 + 4가지 등록 액션 표시.
+// 닫기는 URL 에서 day 제거.
+
+export type DayDateSummary = {
+  id: string;
+  number: number;
+  title: string;
+  area: string;
+  status: string;
+  stops: number;
+};
+
+export type DayEventSummary = {
+  id: number;
+  title: string;
+  allDay: boolean;
+  startsAt: string;
+  userId: string;
+  userNickname: string;
+};
+
 export default function TimelineActions({
   selectedDayStr,
   ymStr,
+  monthLabel,
+  weekdayLabel,
+  isPastDay,
+  isToday,
+  adminId,
+  existingDate,
+  existingEvents,
 }: {
   selectedDayStr: string | null;
   ymStr: string;
+  monthLabel: string;
+  weekdayLabel: string;
+  isPastDay: boolean;
+  isToday: boolean;
+  adminId: string | null;
+  existingDate: DayDateSummary | null;
+  existingEvents: DayEventSummary[];
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  const targetDay = selectedDayStr ?? todayStr;
-  const isPast = new Date(targetDay).getTime() < (() => {
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    return t.getTime();
-  })();
+  const open = selectedDayStr !== null;
 
   function close() {
-    setOpen(false);
+    router.push(`/timeline?ym=${ymStr}`);
   }
+
+  if (!open || !selectedDayStr) return null;
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="tap fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center font-display text-2xl leading-none"
+      <div
+        className="fixed inset-0 z-30 bg-fg/60"
+        onClick={close}
+      />
+      <div
+        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up z-30"
         style={{
-          boxShadow:
-            "0 6px 16px -6px rgba(44,32,23,0.35), 0 2px 0 rgba(44,32,23,0.1)",
+          bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+          maxHeight:
+            "calc(100vh - 72px - env(safe-area-inset-bottom, 0px) - 16px)",
         }}
-        aria-label="새 일정 추가"
+        onClick={(e) => e.stopPropagation()}
       >
-        +
-      </button>
-
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-30 bg-fg/60"
+        <div className="sticky top-0 z-10 bg-bg/95 backdrop-blur px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between">
+          <div>
+            <p className="font-display text-base">
+              {monthLabel}
+              {weekdayLabel && (
+                <span className="text-[11px] text-fg-faint ml-1.5">
+                  {weekdayLabel}
+                </span>
+              )}
+              {isToday && (
+                <span className="ml-2 text-[10px] text-accent font-medium">
+                  오늘
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
             onClick={close}
-          />
-          <div
-            className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-hidden animate-slide-up z-30"
-            style={{
-              bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-            }}
-            onClick={(e) => e.stopPropagation()}
+            aria-label="닫기"
+            className="text-fg-faint text-sm"
           >
-            <div className="px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between">
-              <div>
-                <p className="font-display text-base">새 일정 추가</p>
-                <p className="text-[10px] text-fg-faint mt-0.5">
-                  {targetDay}{" "}
-                  {selectedDayStr ? "선택된 날짜" : "오늘 (날짜 미선택)"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={close}
-                aria-label="닫기"
-                className="text-fg-faint text-sm"
-              >
-                ✕
-              </button>
+            ✕
+          </button>
+        </div>
+
+        <div className="px-5 py-3 space-y-3">
+          {(existingDate || existingEvents.length > 0) && (
+            <div className="space-y-2">
+              {existingDate && (
+                <Link
+                  href={`/dates/${existingDate.id}`}
+                  onClick={close}
+                  className="tap lift block bg-bg border border-accent/30 rounded-card px-3 py-2.5"
+                >
+                  <p className="text-[10px] text-accent tracking-wider">
+                    {existingDate.status === "planned" ? "♡ 예정" : "♡ 다녀온"}
+                    {" · #"}
+                    {String(existingDate.number).padStart(2, "0")}
+                  </p>
+                  <p className="font-display text-sm mt-0.5 truncate">
+                    {existingDate.title}
+                  </p>
+                  <p className="text-[10px] text-fg-faint mt-0.5">
+                    {existingDate.area} · {existingDate.stops} stops
+                  </p>
+                </Link>
+              )}
+              {existingEvents.length > 0 && (
+                <ul className="space-y-1.5">
+                  {existingEvents.map((e) => (
+                    <li
+                      key={e.id}
+                      className="bg-bg border border-fg/10 rounded-card px-3 py-2 flex items-baseline gap-2"
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0 translate-y-1"
+                        style={{
+                          background:
+                            e.userId === adminId
+                              ? "var(--accent)"
+                              : "var(--rain)",
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{e.title}</p>
+                        <p className="text-[10px] text-fg-faint">
+                          {e.userNickname}
+                          {!e.allDay
+                            ? " · " +
+                              new Date(e.startsAt).toLocaleTimeString("ko", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : " · 하루"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <ul className="divide-y divide-fg/8">
-              {!isPast && (
+          )}
+
+          <div className="border-t border-fg/8 pt-3">
+            <p className="eyebrow mb-2">새로 등록</p>
+            <ul className="divide-y divide-fg/8 border border-fg/10 rounded-card overflow-hidden">
+              {!isPastDay && (
                 <li>
                   <Link
-                    href={`/plan/new?mode=ai&date=${targetDay}`}
-                    className="tap flex items-center gap-3 px-5 py-3.5 hover:bg-bg-warm"
-                    onClick={close}
+                    href={`/plan/new?mode=ai&date=${selectedDayStr}`}
+                    className="tap flex items-center gap-3 px-4 py-3 hover:bg-bg-warm"
                   >
                     <span className="text-lg">✨</span>
                     <div className="flex-1 min-w-0">
@@ -92,12 +173,11 @@ export default function TimelineActions({
                   </Link>
                 </li>
               )}
-              {!isPast && (
+              {!isPastDay && (
                 <li>
                   <Link
-                    href={`/plan/new?mode=direct&date=${targetDay}`}
-                    className="tap flex items-center gap-3 px-5 py-3.5 hover:bg-bg-warm"
-                    onClick={close}
+                    href={`/plan/new?mode=direct&date=${selectedDayStr}`}
+                    className="tap flex items-center gap-3 px-4 py-3 hover:bg-bg-warm"
                   >
                     <span className="text-lg">✏️</span>
                     <div className="flex-1 min-w-0">
@@ -109,12 +189,11 @@ export default function TimelineActions({
                   </Link>
                 </li>
               )}
-              {isPast && (
+              {isPastDay && (
                 <li>
                   <Link
-                    href={`/plan/new?mode=past&date=${targetDay}`}
-                    className="tap flex items-center gap-3 px-5 py-3.5 hover:bg-bg-warm"
-                    onClick={close}
+                    href={`/plan/new?mode=past&date=${selectedDayStr}`}
+                    className="tap flex items-center gap-3 px-4 py-3 hover:bg-bg-warm"
                   >
                     <span className="text-lg">📓</span>
                     <div className="flex-1 min-w-0">
@@ -132,12 +211,11 @@ export default function TimelineActions({
                 <button
                   type="button"
                   onClick={() => {
-                    close();
                     router.push(
-                      `/timeline?ym=${ymStr}&day=${targetDay}#add-event`,
+                      `/timeline?ym=${ymStr}&day=${selectedDayStr}#add-event`,
                     );
                   }}
-                  className="tap w-full text-left flex items-center gap-3 px-5 py-3.5 hover:bg-bg-warm"
+                  className="tap w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-bg-warm"
                 >
                   <span className="text-lg">📌</span>
                   <div className="flex-1 min-w-0">
@@ -150,8 +228,8 @@ export default function TimelineActions({
               </li>
             </ul>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </>
   );
 }

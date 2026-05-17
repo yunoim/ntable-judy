@@ -322,79 +322,6 @@ export default async function TimelinePage({
         </div>
       </section>
 
-      {/* 선택된 날짜 패널 */}
-      {selectedDay !== null && (
-        <section
-          id="day-panel"
-          className="mx-5 mt-4 editorial-card-warm p-4 space-y-3 rise-in"
-        >
-          <div className="flex items-center justify-between">
-            <p className="font-display text-base">
-              {month + 1}월 {selectedDay}일
-            </p>
-            <Link
-              href={`/timeline?ym=${ymStr(year, month)}`}
-              className="tap text-[11px] text-fg-faint"
-              aria-label="선택 해제"
-            >
-              ✕
-            </Link>
-          </div>
-
-          {selectedDate && (
-            <Link
-              href={`/dates/${selectedDate.id}`}
-              className="tap lift block bg-bg border border-accent/30 rounded-card px-3 py-2.5"
-            >
-              <p className="text-[10px] text-accent tracking-wider">
-                {selectedDate.status === "planned" ? "♡ 예정" : "♡ 다녀온"}
-              </p>
-              <p className="font-display text-sm mt-0.5 truncate">
-                {selectedDate.title}
-              </p>
-              <p className="text-[10px] text-fg-faint mt-0.5">
-                {selectedDate.area} · {selectedDate.plan.stops.length} stops
-              </p>
-            </Link>
-          )}
-
-          {selectedEvents.length > 0 && (
-            <ul className="space-y-1.5">
-              {selectedEvents.map((e) => (
-                <li
-                  key={e.id}
-                  className="bg-bg border border-fg/10 rounded-card px-3 py-2 flex items-baseline gap-2"
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0 translate-y-1"
-                    style={{
-                      background:
-                        e.user.id === adminId
-                          ? "var(--accent)"
-                          : "var(--rain)",
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{e.title}</p>
-                    <p className="text-[10px] text-fg-faint">
-                      {e.user.nickname}
-                      {!e.allDay
-                        ? " · " +
-                          new Date(e.startsAt).toLocaleTimeString("ko", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : " · 하루"}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-        </section>
-      )}
-
       <EventsSection
         events={events}
         meId={me.id}
@@ -425,6 +352,46 @@ export default async function TimelinePage({
           selectedDay !== null ? dayStr(year, month, selectedDay) : null
         }
         ymStr={ymStr(year, month)}
+        monthLabel={selectedDay !== null ? `${month + 1}월 ${selectedDay}일` : ""}
+        weekdayLabel={
+          selectedDay !== null
+            ? KO_WEEK[new Date(year, month, selectedDay).getDay()] + "요일"
+            : ""
+        }
+        isPastDay={(() => {
+          if (selectedDay === null) return false;
+          const d = new Date(year, month, selectedDay);
+          const t = new Date(today);
+          t.setHours(0, 0, 0, 0);
+          return d.getTime() < t.getTime();
+        })()}
+        isToday={
+          selectedDay !== null &&
+          today.getFullYear() === year &&
+          today.getMonth() === month &&
+          today.getDate() === selectedDay
+        }
+        adminId={adminId}
+        existingDate={
+          selectedDate
+            ? {
+                id: selectedDate.id,
+                number: selectedDate.number,
+                title: selectedDate.title,
+                area: selectedDate.area,
+                status: selectedDate.status,
+                stops: selectedDate.plan.stops.length,
+              }
+            : null
+        }
+        existingEvents={selectedEvents.map((e) => ({
+          id: e.id,
+          title: e.title,
+          allDay: e.allDay,
+          startsAt: e.startsAt.toISOString(),
+          userId: e.user.id,
+          userNickname: e.user.nickname,
+        }))}
       />
       <TabBar active="log" />
     </div>
