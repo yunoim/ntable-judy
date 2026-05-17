@@ -223,7 +223,6 @@ export default function CapsulesClient({
                       c.canOpen ? "!border-accent" : "",
                     ].join(" ")}
                   >
-                    <span className="corner-mark">No.{c.id}</span>
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="font-display text-base truncate">
                         {c.title}
@@ -280,7 +279,6 @@ export default function CapsulesClient({
                     key={c.id}
                     className="editorial-card relative px-5 py-4 space-y-3"
                   >
-                    <span className="corner-mark">No.{c.id}</span>
                     <header>
                       <p className="font-display text-base">{c.title}</p>
                       <p className="text-[10px] text-fg-faint mt-0.5">

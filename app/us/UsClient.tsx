@@ -540,12 +540,20 @@ export default function UsClient({
       </main>
 
       {sheet && (
-        <div
-          className="fixed inset-0 z-50 bg-fg/60 flex items-end justify-center"
-          onClick={() => setSheet(null)}
-        >
+        <>
+          {/* backdrop — TabBar 영역은 비워서 (bottom: 0 대신 calc) 하단바 클릭 가능하도록 */}
           <div
-            className="bg-bg w-full max-w-[390px] rounded-t-card max-h-[85vh] overflow-y-auto animate-slide-up"
+            className="fixed inset-0 z-30 bg-fg/60"
+            onClick={() => setSheet(null)}
+          />
+          {/* sheet — TabBar 위에 안 들이가도록 bottom 을 TabBar 높이만큼 띄움 */}
+          <div
+            className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up z-30"
+            style={{
+              bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+              maxHeight:
+                "calc(85vh - 72px - env(safe-area-inset-bottom, 0px))",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 bg-bg/95 backdrop-blur px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between">
@@ -577,7 +585,7 @@ export default function UsClient({
               />
             )}
           </div>
-        </div>
+        </>
       )}
 
       <TabBar active="us" />
