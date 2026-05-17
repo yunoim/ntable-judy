@@ -235,15 +235,13 @@ export default async function TimelinePage({
 
             const cellHref = !c.day
               ? "#"
-              : dRec
-                ? `/dates/${dRec.id}`
-                : `/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, c.day)}`;
+              : `/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, c.day)}`;
 
             return (
               <Link
                 key={i}
                 href={cellHref}
-                scroll={!!c.day && !dRec}
+                scroll={!!c.day}
                 className={[
                   "tap aspect-square rounded-lg border flex flex-col items-center justify-center relative",
                   isToday ? "border-accent border-2" : "border-fg/15",
@@ -384,14 +382,21 @@ export default async function TimelinePage({
           )}
 
           <div className="grid grid-cols-2 gap-2 pt-1">
-            {!selectedDate && (
-              <Link
-                href={`/plan/new?mode=direct&date=${dayStr(year, month, selectedDay)}`}
-                className="tap lift bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
-              >
-                + 데이트 일정 등록
-              </Link>
-            )}
+            {!selectedDate && (() => {
+              const dayDate = new Date(year, month, selectedDay);
+              const todayStart = new Date(today);
+              todayStart.setHours(0, 0, 0, 0);
+              const isPastDay = dayDate.getTime() < todayStart.getTime();
+              const dateMode = isPastDay ? "past" : "direct";
+              return (
+                <Link
+                  href={`/plan/new?mode=${dateMode}&date=${dayStr(year, month, selectedDay)}`}
+                  className="tap lift bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
+                >
+                  + 데이트 일정 등록
+                </Link>
+              );
+            })()}
             <Link
               href={`/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, selectedDay)}#add-event`}
               className={[

@@ -137,14 +137,16 @@ export default function PlanNewClient({
   const [error, setError] = useState<string | null>(null);
 
   // URL ?mode 가 바뀔 때마다 state 동기화 (Phase 1 안 미니 링크 soft-nav 케이스).
-  // 직접/과거 모드는 빈 코스로 Phase 2 즉시 진입.
+  // - direct 모드: 빈 코스로 Phase 2 즉시 진입
+  // - past 모드: 자연어 한 줄 입력 Phase 1 에 머무름 (parse 후 Phase 2)
+  // - ai 모드: 자연어 입력 Phase 1
   useEffect(() => {
     const newMode =
       (sp.get("mode") as "ai" | "direct" | "past" | null) ?? "ai";
     if (newMode !== mode) {
       setMode(newMode);
     }
-    if ((newMode === "direct" || newMode === "past") && !course) {
+    if (newMode === "direct" && !course) {
       setCourse(emptyCourse());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,6 +215,86 @@ export default function PlanNewClient({
   function backToInput() {
     setCourse(null);
     setMockNotice(null);
+  }
+
+  async function parsePast() {
+    if (!text.trim()) return;
+    setLoading(true);
+    setError(null);
+    setMockNotice(null);
+    try {
+      const date = scheduledAt.slice(0, 10); // YYYY-MM-DD
+      const res = await fetch("/api/plan/parse-past", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, date }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? `실패 (${res.status})`);
+        return;
+      }
+      const raw = data.course;
+      if (!raw) {
+        setError("정리 실패");
+        return;
+      }
+      const normalized: Course = {
+        title: raw.title ?? "",
+        subtitle: raw.subtitle ?? "",
+        themeNote: raw.themeNote ?? "",
+        area: raw.area ?? "",
+        weather: raw.weather ?? "cloud",
+        stops: (raw.stops ?? []).map(
+          (
+            s: {
+              time?: string;
+              label?: string;
+              options?: StopOption[];
+            },
+            i: number,
+          ) => {
+            const o = (s.options ?? [])[0] ?? {
+              emoji: "📍",
+              name: "",
+              address: "",
+              type: "기타",
+              description: "",
+              mapQuery: "",
+              estimatedCost: 0,
+            };
+            return {
+              stepOrder: i + 1,
+              time: s.time ?? "",
+              label: s.label ?? "",
+              options: [
+                {
+                  emoji: o.emoji ?? "📍",
+                  name: o.name ?? "",
+                  address: o.address ?? "",
+                  type: o.type ?? "기타",
+                  description: o.description ?? "",
+                  mapQuery: o.mapQuery ?? "",
+                  estimatedCost: o.estimatedCost ?? 0,
+                },
+              ],
+              selectedIdx: 0,
+              manual: true,
+            };
+          },
+        ),
+      };
+      // stops 비어있으면 빈 슬롯 하나 두고 시작
+      if (normalized.stops.length === 0) {
+        normalized.stops = [{ ...blankSlot("19:00"), stepOrder: 1 }];
+      }
+      setCourse(normalized);
+      if (data.mock) setMockNotice(data.message ?? "데모 모드");
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function setSlotMeta(idx: number, patch: Partial<StopSlot>) {
@@ -355,7 +437,7 @@ export default function PlanNewClient({
     }
   }
 
-  if (loading) return <PlanLoading />;
+  if (loading) return <PlanLoading mode={mode} />;
 
   // ── Phase 2: 코스 + (AI 면 단계별 3안 선택) ─────────────────────
   if (course) {
@@ -530,6 +612,10 @@ export default function PlanNewClient({
   }
 
   // ── Phase 1: 입력 ─────────────────────────────────
+  const isPast = mode === "past";
+  const placeholder = isPast
+    ? "어제 성수동에서 카페 갔다가 한식당에서 저녁 먹음. 비용 약 6만원."
+    : PLACEHOLDER;
   return (
     <div className="min-h-screen flex flex-col">
       <header className="px-5 pt-5 pb-3 safe-top flex items-center justify-between">
@@ -537,8 +623,10 @@ export default function PlanNewClient({
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>計 · plan</Eyebrow>
-          <p className="font-display text-base mt-0.5">새 데이트</p>
+          <Eyebrow>{isPast ? "誌 · 회상" : "計 · plan"}</Eyebrow>
+          <p className="font-display text-base mt-0.5">
+            {isPast ? "다녀온 데이트" : "새 데이트"}
+          </p>
         </div>
         <button
           onClick={() => setText("")}
@@ -551,25 +639,35 @@ export default function PlanNewClient({
 
       <main className="flex-1 px-5 space-y-4 pb-32">
         <h1 className="font-display text-2xl leading-snug pt-3">
-          자연어로 알려줘요.
+          {isPast ? "그날 뭐 했는지" : "자연어로 알려줘요."}
           <br />
           <em className="font-display italic text-accent">
-            단계별 3안 짜드려요.
+            {isPast ? "한 줄로 적어줘요." : "단계별 3안 짜드려요."}
           </em>
         </h1>
 
         <div className="flex gap-2 -mt-1">
+          {!isPast && (
+            <Link
+              href="/plan/new?mode=past"
+              className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
+            >
+              📓 다녀온 데이트 기록
+            </Link>
+          )}
+          {isPast && (
+            <Link
+              href="/plan/new?mode=ai"
+              className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
+            >
+              ✨ 미래 데이트 코스
+            </Link>
+          )}
           <Link
-            href="/plan/new?mode=direct"
+            href={`/plan/new?mode=direct${initialDate ? `&date=${initialDate}` : ""}`}
             className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
           >
             ✏️ 직접 입력
-          </Link>
-          <Link
-            href="/plan/new?mode=past"
-            className="tap flex-1 text-center text-[12px] text-fg-soft border border-fg/20 rounded-full py-2 hover:border-fg/40"
-          >
-            📓 다녀온 데이트 기록
           </Link>
         </div>
 
@@ -577,7 +675,7 @@ export default function PlanNewClient({
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, 500))}
-            placeholder={PLACEHOLDER}
+            placeholder={placeholder}
             className="w-full min-h-[180px] bg-bg-warm/50 border border-fg/20 rounded-card p-4 text-sm leading-relaxed resize-none focus:outline-none focus:border-accent placeholder:text-fg-faint placeholder:italic"
           />
           <span className="absolute bottom-3 right-3 font-display text-sm text-accent">
@@ -587,17 +685,23 @@ export default function PlanNewClient({
 
         <div className="space-y-1.5">
           <label className="text-[11px] tracking-widest uppercase text-fg-faint">
-            예정일
+            {isPast ? "다녀온 날짜" : "예정일"}
           </label>
           <input
-            type="datetime-local"
-            value={scheduledAt}
-            onChange={(e) => setScheduledAt(e.target.value)}
+            type={isPast ? "date" : "datetime-local"}
+            value={isPast ? scheduledAt.slice(0, 10) : scheduledAt}
+            onChange={(e) => {
+              if (isPast) {
+                setScheduledAt(dateOnlyToLocal(e.target.value));
+              } else {
+                setScheduledAt(e.target.value);
+              }
+            }}
             className="w-full bg-bg-warm/50 border border-fg/20 rounded-card p-3 text-sm focus:outline-none focus:border-accent"
           />
         </div>
 
-        {chips.length > 0 && (
+        {!isPast && chips.length > 0 && (
           <div className="space-y-2">
             <p className="text-[11px] tracking-widest uppercase text-fg-faint">
               자주 쓰는 조건
@@ -630,11 +734,11 @@ export default function PlanNewClient({
             🎙
           </button>
           <button
-            onClick={generate}
+            onClick={isPast ? parsePast : generate}
             disabled={!text.trim()}
             className="flex-1 bg-ink-card text-bg rounded-card py-3 font-semibold disabled:opacity-40"
           >
-            ✨ 코스 만들기
+            {isPast ? "✨ 정리하기" : "✨ 코스 만들기"}
           </button>
         </div>
       </div>
@@ -846,7 +950,8 @@ function ManualOptionEditor({
   );
 }
 
-function PlanLoading() {
+function PlanLoading({ mode }: { mode: "ai" | "direct" | "past" }) {
+  const isPast = mode === "past";
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center safe-top">
       <div className="relative w-32 h-32 mb-6">
@@ -860,16 +965,38 @@ function PlanLoading() {
         </div>
       </div>
       <h1 className="font-display text-2xl leading-tight">
-        AI가 단계별 3안을
-        <br />
-        <em className="not-italic italic text-accent">짜고 있어요...</em>
+        {isPast ? (
+          <>
+            그날 메모를
+            <br />
+            <em className="not-italic italic text-accent">정리하고 있어요...</em>
+          </>
+        ) : (
+          <>
+            AI가 단계별 3안을
+            <br />
+            <em className="not-italic italic text-accent">짜고 있어요...</em>
+          </>
+        )}
       </h1>
       <ul className="text-left text-sm text-fg-soft space-y-1.5 mt-6">
-        <li>✓ 동선 효율 계산 중</li>
-        <li>✓ 단계별 후보 3개씩 고르는 중</li>
-        <li className="text-accent">· 마지막 와인 한 잔 자리 찾는 중...</li>
+        {isPast ? (
+          <>
+            <li>✓ 장소와 시간 추출 중</li>
+            <li>✓ 비용과 무드 정리 중</li>
+            <li className="text-accent">· 한 줄 회상 다듬는 중...</li>
+          </>
+        ) : (
+          <>
+            <li>✓ 동선 효율 계산 중</li>
+            <li>✓ 단계별 후보 3개씩 고르는 중</li>
+            <li className="text-accent">· 마지막 와인 한 잔 자리 찾는 중...</li>
+          </>
+        )}
       </ul>
-      <p className="text-[11px] text-fg-faint mt-6">평균 20초 정도 걸려요</p>
+      <p className="text-[11px] text-fg-faint mt-6">
+        {isPast ? "평균 5초 정도 걸려요" : "평균 20초 정도 걸려요"}
+      </p>
     </div>
   );
 }
