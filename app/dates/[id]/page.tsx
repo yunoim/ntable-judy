@@ -93,6 +93,14 @@ export default async function DateDetailPage({
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <Link
+        href="/timeline"
+        className="tap absolute top-3 left-3 z-20 text-[11px] text-fg-faint border border-fg/15 rounded-full px-3 py-1.5 bg-bg/85 backdrop-blur hover:text-fg hover:border-fg/30"
+        aria-label="일정으로"
+      >
+        ← 일정
+      </Link>
+
       {canEdit && (
         <Link
           href={`/dates/${date.id}/edit`}
