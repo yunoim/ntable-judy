@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState, type ReactNode } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 // 캘린더 swipe 제스처 wrapper — 좌우 스와이프 시 다음/이전 달로 이동.
 // 손가락 따라 실시간으로 캘린더가 따라가다가 임계점 넘으면 슬라이드 아웃 +
@@ -16,11 +16,21 @@ export default function CalendarSwipe({
   children: ReactNode;
 }) {
   const router = useRouter();
+  const sp = useSearchParams();
+  const ym = sp.get("ym");
   const startX = useRef(0);
   const startY = useRef(0);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
+
+  // 라우팅 끝나서 ym 이 바뀌면 exiting/dragX 리셋 — 안 그러면 새 달 페이지에서도
+  // 셀이 translateX(-100%) 남아서 검은 화면.
+  useEffect(() => {
+    setExiting(null);
+    setDragX(0);
+    setDragging(false);
+  }, [ym]);
 
   function reset() {
     setDragging(false);
