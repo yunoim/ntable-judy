@@ -10,7 +10,6 @@ export type PastItem = {
   title: string;
   scheduledAt: string;
   area: string | null;
-  weather: string | null;
   avgStars: number;
 };
 
@@ -25,7 +24,6 @@ export default function PastDatesList({ items }: { items: PastItem[] }) {
     <>
       <ul className="space-y-3.5">
         {shown.map((d, idx) => {
-          const fallback = d.weather === "rain" ? "☔" : null;
           return (
             <li key={d.id}>
               <Link
@@ -33,13 +31,9 @@ export default function PastDatesList({ items }: { items: PastItem[] }) {
                 className="tap flex gap-4 group"
               >
                 <div className="w-[68px] h-[68px] shrink-0 rounded-[14px] bg-bg-warm border border-fg/8 flex items-center justify-center overflow-hidden">
-                  {fallback ? (
-                    <span className="text-2xl">{fallback}</span>
-                  ) : (
-                    <span className="font-display text-[22px] text-fg-soft tabular-nums">
-                      {String(d.number).padStart(2, "0")}
-                    </span>
-                  )}
+                  <span className="font-display text-[22px] text-fg-soft tabular-nums">
+                    {String(d.number).padStart(2, "0")}
+                  </span>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
                   <p className="font-display text-base truncate group-hover:text-accent transition-colors">

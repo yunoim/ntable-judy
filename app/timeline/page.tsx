@@ -104,7 +104,6 @@ export default async function TimelinePage({
     title: d.title,
     scheduledAt: new Date(d.scheduledAt).toISOString(),
     area: d.area ?? null,
-    weather: d.weather ?? null,
     avgStars: d.reviews.length
       ? d.reviews.reduce((s, r) => s + r.stars, 0) / d.reviews.length
       : 0,

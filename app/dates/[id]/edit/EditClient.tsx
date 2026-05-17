@@ -58,7 +58,6 @@ export default function EditClient({
     date.scheduledEndAt ? toLocalInput(date.scheduledEndAt) : "",
   );
   const [themeNote, setThemeNote] = useState(date.themeNote ?? "");
-  const [weather, setWeather] = useState(date.weather ?? "");
   const [historyLabel, setHistoryLabel] = useState(date.historyLabel ?? "");
   const [status, setStatus] = useState<"planned" | "done" | "cancelled">(
     (date.status as any) ?? "planned",
@@ -118,7 +117,6 @@ export default function EditClient({
           startTime: stops[0]?.time || null,
           endTime: stops[stops.length - 1]?.time || null,
           themeNote: themeNote || null,
-          weather: weather || null,
           historyLabel: historyLabel || null,
           status,
           estimatedTotal: stops.reduce((s, st) => s + (st.cost || 0), 0),
@@ -263,19 +261,6 @@ export default function EditClient({
               <option value="planned">예정</option>
               <option value="done">완료</option>
               <option value="cancelled">취소</option>
-            </select>
-          </FieldGroup>
-          <FieldGroup label="날씨">
-            <select
-              value={weather}
-              onChange={(e) => setWeather(e.target.value)}
-              className={inputCls}
-            >
-              <option value="">자동</option>
-              <option value="sun">☀ 맑음</option>
-              <option value="cloud">☁ 흐림</option>
-              <option value="rain">🌧 비</option>
-              <option value="snow">❄ 눈</option>
             </select>
           </FieldGroup>
         </div>
