@@ -147,26 +147,25 @@ export default function EventsSection({
     }
   }
 
+  // 폼/에러가 없으면 빈 박스만 남으므로 렌더 자체를 건너뛴다.
+  // (캘린더 날짜의 "+ 개인 일정 등록" 버튼 → #add-event 해시 + initialDate 로 form 자동 오픈.)
+  if (!formOpen && !error) {
+    return <div ref={addAnchorRef} id="add-event" />;
+  }
+
   return (
     <section className="px-5 pb-6 space-y-3 pt-5">
       <div ref={addAnchorRef} id="add-event" className="scroll-mt-4" />
-      <div className="flex items-center justify-between">
-        <p className="eyebrow">개인 일정 · {events.length}개</p>
-        <button
-          onClick={() => {
-            if (formOpen) reset();
-            else setAdding(true);
-          }}
-          className={[
-            "tap rounded-full px-3.5 py-1.5 text-[12px] font-display border transition-colors",
-            formOpen
-              ? "border-fg/20 text-fg-faint"
-              : "border-accent text-accent hover:bg-accent hover:text-bg",
-          ].join(" ")}
-        >
-          {formOpen ? "✕ 닫기" : "+ 개인 일정 등록"}
-        </button>
-      </div>
+      {formOpen && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => reset()}
+            className="tap rounded-full px-3.5 py-1.5 text-[12px] font-display border border-fg/20 text-fg-faint"
+          >
+            ✕ 닫기
+          </button>
+        </div>
+      )}
       {error && (
         <p className="text-xs text-rain bg-rain/10 px-3 py-2 rounded-card">
           {error}
