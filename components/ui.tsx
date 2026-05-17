@@ -203,28 +203,39 @@ function useHideOnScroll() {
       window.innerHeight || document.documentElement.clientHeight;
     let lastY = readY();
     let ticking = false;
+    const evaluate = () => {
+      const y = readY();
+      const dy = y - lastY;
+      const viewportH = readViewportH();
+      const docH = readDocH();
+      // 스크롤이 사실상 불가능한 짧은 페이지는 항상 노출.
+      const notScrollable = docH <= viewportH + 8;
+      const atBottom = y + viewportH >= docH - 40;
+      if (notScrollable || y < 80 || atBottom) setHidden(false);
+      else if (dy > 3) setHidden(true);
+      else if (dy < -3) setHidden(false);
+      lastY = y;
+    };
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const y = readY();
-        const dy = y - lastY;
-        const atBottom = y + readViewportH() >= readDocH() - 8;
-        if (y < 80 || atBottom) setHidden(false);
-        else if (dy > 3) setHidden(true);
-        else if (dy < -3) setHidden(false);
-        lastY = y;
+        evaluate();
         ticking = false;
       });
     };
+    // 초기 한 번 — 짧은 페이지에서도 hidden=false 보장.
+    evaluate();
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, {
       passive: true,
       capture: true,
     });
+    window.addEventListener("resize", onScroll);
     return () => {
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("scroll", onScroll, { capture: true });
+      window.removeEventListener("resize", onScroll);
     };
   }, []);
   return hidden;

@@ -27,7 +27,7 @@ export default function CoupleSheets({
           onClick={() => setSheet("buckets")}
           className="tap lift editorial-card px-4 py-3 flex flex-col gap-0.5 text-left"
         >
-          <span className="text-base">🪣</span>
+          <span className="text-base">📋</span>
           <p className="font-display text-sm">버킷리스트</p>
           <p className="text-[10px] text-fg-faint">{buckets.length}개</p>
         </button>
@@ -36,7 +36,7 @@ export default function CoupleSheets({
           onClick={() => setSheet("capsules")}
           className="tap lift editorial-card px-4 py-3 flex flex-col gap-0.5 text-left"
         >
-          <span className="text-base">📦</span>
+          <span className="text-base">💌</span>
           <p className="font-display text-sm">타임캡슐</p>
           <p className="text-[10px] text-fg-faint">{capsules.length}개</p>
         </button>
@@ -49,7 +49,7 @@ export default function CoupleSheets({
             onClick={() => setSheet(null)}
           />
           <div
-            className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up z-30"
+            className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up-centered z-30"
             style={{
               bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
               maxHeight:

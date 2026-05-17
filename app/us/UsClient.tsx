@@ -344,24 +344,11 @@ export default function UsClient({
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
         {/* ─── 기념일 + 마일스톤 통합 timeline ─────────────────── */}
         <section className="space-y-3">
-          <div className="flex items-baseline justify-between gap-2 pt-1">
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-[17px] text-fg">기념일</span>
-              <span className="text-[10px] text-fg-faint">
-                {anniversaryCount}개 + 마일스톤 {milestones.length}
-              </span>
-            </div>
-            <button
-              onClick={toggleAdd}
-              className={[
-                "tap rounded-full px-3 py-1 text-[12px] font-display border transition-colors",
-                formOpen
-                  ? "border-fg/20 text-fg-faint"
-                  : "border-accent text-accent hover:bg-accent hover:text-bg",
-              ].join(" ")}
-            >
-              {formOpen ? "✕ 닫기" : "+ 추가"}
-            </button>
+          <div className="flex items-baseline gap-2 pt-1">
+            <span className="font-display text-[17px] text-fg">기념일</span>
+            <span className="text-[10px] text-fg-faint">
+              {anniversaryCount}개 + 마일스톤 {milestones.length}
+            </span>
           </div>
           {timelineRows.length === 0 ? (
             <div className="text-center pt-8 pb-4">
@@ -500,6 +487,19 @@ export default function UsClient({
           )}
         </section>
       </main>
+
+      <button
+        type="button"
+        onClick={toggleAdd}
+        className="tap fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center font-display text-2xl leading-none"
+        style={{
+          boxShadow:
+            "0 6px 16px -6px rgba(44,32,23,0.35), 0 2px 0 rgba(44,32,23,0.1)",
+        }}
+        aria-label={formOpen ? "닫기" : "기념일 추가"}
+      >
+        {formOpen ? "✕" : "+"}
+      </button>
 
       <TabBar active="us" />
     </div>

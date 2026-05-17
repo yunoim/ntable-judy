@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 // 캘린더 날짜 클릭 시 자동으로 뜨는 액션 시트.
 // 그 날의 기존 데이트/이벤트 + 4가지 등록 액션 표시.
@@ -47,7 +48,20 @@ export default function TimelineActions({
   existingEvents: DayEventSummary[];
 }) {
   const router = useRouter();
-  const open = selectedDayStr !== null;
+  // hash 가 #add-event 면 EventsSection 의 form 이 떠야 하므로 이 sheet 는 숨김.
+  const [hashAddEvent, setHashAddEvent] = useState(false);
+  useEffect(() => {
+    function check() {
+      setHashAddEvent(
+        typeof window !== "undefined" &&
+          window.location.hash === "#add-event",
+      );
+    }
+    check();
+    window.addEventListener("hashchange", check);
+    return () => window.removeEventListener("hashchange", check);
+  }, []);
+  const open = selectedDayStr !== null && !hashAddEvent;
 
   function close() {
     router.push(`/timeline?ym=${ymStr}`);
@@ -62,7 +76,7 @@ export default function TimelineActions({
         onClick={close}
       />
       <div
-        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up z-30"
+        className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up-centered z-30"
         style={{
           bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
           maxHeight:

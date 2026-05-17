@@ -357,15 +357,6 @@ export default async function HomePage() {
         />
       </main>
 
-      <Link
-        href="/plan/new"
-        className="tap fixed bottom-24 right-5 z-30 bg-ink-card text-bg rounded-full w-14 h-14 flex items-center justify-center font-display text-2xl leading-none"
-        style={{ boxShadow: "0 6px 16px -6px rgba(44,32,23,0.35), 0 2px 0 rgba(44,32,23,0.1)" }}
-        aria-label="데이트 계획 추가"
-      >
-        +
-      </Link>
-
       <TabBar active="home" />
     </div>
   );
