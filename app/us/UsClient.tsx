@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Eyebrow, SectionTitle, TabBar } from "@/components/ui";
-import BucketsClient, { type Bucket } from "../buckets/BucketsClient";
-import CapsulesClient, { type Capsule } from "../capsules/CapsulesClient";
 
 type Anniversary = {
   id: number;
@@ -71,15 +69,11 @@ export default function UsClient({
   meRole,
   anniversaries,
   milestones,
-  buckets,
-  capsules,
 }: {
   meId: string;
   meRole: string;
   anniversaries: Anniversary[];
   milestones: Milestone[];
-  buckets: Bucket[];
-  capsules: Capsule[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -87,7 +81,6 @@ export default function UsClient({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [sheet, setSheet] = useState<"buckets" | "capsules" | null>(null);
 
   const [label, setLabel] = useState("");
   const [date, setDate] = useState("");
@@ -506,87 +499,7 @@ export default function UsClient({
             </ul>
           )}
         </section>
-
-        {/* ─── 둘만의 기록 ─────────────────── */}
-        <section className="space-y-3 pt-3 border-t border-fg/10">
-          <SectionTitle title="둘만의 기록" hint="bucket · capsule" />
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => setSheet("buckets")}
-              className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1 text-left"
-            >
-              <span className="text-base">🪣</span>
-              <p className="font-display text-sm">버킷리스트</p>
-              <p className="text-[10px] text-fg-faint">{buckets.length}개</p>
-              <p className="text-[10px] text-fg-faint mt-auto pt-1">
-                같이 하고 싶은 것
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSheet("capsules")}
-              className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1 text-left"
-            >
-              <span className="text-base">📦</span>
-              <p className="font-display text-sm">타임캡슐</p>
-              <p className="text-[10px] text-fg-faint">{capsules.length}개</p>
-              <p className="text-[10px] text-fg-faint mt-auto pt-1">
-                미래에 열어볼 편지
-              </p>
-            </button>
-          </div>
-        </section>
       </main>
-
-      {sheet && (
-        <>
-          {/* backdrop — TabBar 영역은 비워서 (bottom: 0 대신 calc) 하단바 클릭 가능하도록 */}
-          <div
-            className="fixed inset-0 z-30 bg-fg/60"
-            onClick={() => setSheet(null)}
-          />
-          {/* sheet — TabBar 위에 안 들이가도록 bottom 을 TabBar 높이만큼 띄움 */}
-          <div
-            className="fixed left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-bg rounded-t-card overflow-y-auto animate-slide-up z-30"
-            style={{
-              bottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-              maxHeight:
-                "calc(85vh - 72px - env(safe-area-inset-bottom, 0px))",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sticky top-0 z-10 bg-bg/95 backdrop-blur px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between">
-              <p className="font-display text-base">
-                {sheet === "buckets" ? "버킷리스트" : "타임캡슐"}
-              </p>
-              <button
-                type="button"
-                onClick={() => setSheet(null)}
-                aria-label="닫기"
-                className="text-fg-faint text-sm"
-              >
-                ✕
-              </button>
-            </div>
-            {sheet === "buckets" ? (
-              <BucketsClient
-                meId={meId}
-                meRole={meRole}
-                buckets={buckets}
-                embedded
-              />
-            ) : (
-              <CapsulesClient
-                meId={meId}
-                meRole={meRole}
-                capsules={capsules}
-                embedded
-              />
-            )}
-          </div>
-        </>
-      )}
 
       <TabBar active="us" />
     </div>

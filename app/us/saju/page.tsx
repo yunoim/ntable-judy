@@ -161,12 +161,10 @@ function SajuCard({
   saju,
   nickname,
   emoji,
-  index,
 }: {
   saju: SajuProfile;
   nickname: string;
   emoji: string | null;
-  index: string;
 }) {
   const elementOrder: Array<keyof typeof saju.elements> = [
     "木",
@@ -177,7 +175,6 @@ function SajuCard({
   ];
   return (
     <article className="editorial-card relative px-5 py-5 space-y-4">
-      <span className="corner-mark">{index}</span>
       <header className="flex items-center gap-3">
         <span className="text-3xl">{emoji ?? "👤"}</span>
         <div className="flex-1 min-w-0">
@@ -337,7 +334,6 @@ export default async function SajuPage() {
           <section className="space-y-3">
             <SectionTitle index={3} title="궁합" hint="compatibility" />
             <article className="editorial-card-warm relative px-5 py-5 space-y-4">
-              <span className="corner-mark">No.01</span>
               <header className="flex items-baseline justify-between gap-3">
                 <div>
                   <p className="font-display text-2xl">{compat.title}</p>
@@ -412,7 +408,6 @@ export default async function SajuPage() {
                   saju={foxSaju}
                   nickname={fox.nickname}
                   emoji={fox.emoji}
-                  index="No.01"
                 />
               )}
               {bunny && bunnySaju && (
@@ -420,7 +415,6 @@ export default async function SajuPage() {
                   saju={bunnySaju}
                   nickname={bunny.nickname}
                   emoji={bunny.emoji}
-                  index="No.02"
                 />
               )}
             </div>

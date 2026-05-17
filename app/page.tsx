@@ -4,8 +4,6 @@ import {
   Avatar,
   Eyebrow,
   Hero,
-  Numeral,
-  SectionTitle,
   TabBar,
 } from "@/components/ui";
 import {
@@ -18,6 +16,7 @@ import { requireApproved } from "@/lib/auth";
 import { dDay } from "@/lib/data";
 import { coupleDayNumber, COUPLE_START_KIND } from "@/lib/saju";
 import { nextMilestone } from "@/lib/milestones";
+import CoupleSheets from "./CoupleSheets";
 
 export const dynamic = "force-dynamic";
 
@@ -53,13 +52,60 @@ function nearestAnniversary(rows: AnniRow[]) {
 
 export default async function HomePage() {
   const me = await requireApproved();
-  const [next, users, pendingCount, anniversaries] = await Promise.all([
-    getNextDate(),
-    getActiveUsers(),
-    prisma.user.count({ where: { role: "pending" } }),
-    prisma.anniversary.findMany({}),
-  ]);
+  const now = new Date();
+  const [next, users, pendingCount, anniversaries, bucketsRaw, capsulesRaw] =
+    await Promise.all([
+      getNextDate(),
+      getActiveUsers(),
+      prisma.user.count({ where: { role: "pending" } }),
+      prisma.anniversary.findMany({}),
+      prisma.bucket.findMany({
+        orderBy: [
+          { done: "asc" },
+          { priority: "desc" },
+          { createdAt: "desc" },
+        ],
+        include: {
+          doneDate: { select: { id: true, number: true, title: true } },
+          createdBy: { select: { id: true, nickname: true } },
+        },
+      }),
+      prisma.timeCapsule.findMany({
+        orderBy: [{ opened: "asc" }, { openAt: "asc" }],
+        include: { createdBy: { select: { id: true, nickname: true } } },
+      }),
+    ]);
   const isAdmin = me.role === "admin";
+
+  const buckets = bucketsRaw.map((b) => ({
+    id: b.id,
+    title: b.title,
+    emoji: b.emoji,
+    description: b.description,
+    area: b.area,
+    priority: b.priority,
+    done: b.done,
+    doneAt: b.doneAt?.toISOString() ?? null,
+    doneDate: b.doneDate
+      ? {
+          id: b.doneDate.id,
+          number: b.doneDate.number,
+          title: b.doneDate.title,
+        }
+      : null,
+    createdBy: b.createdBy,
+  }));
+  const capsules = capsulesRaw.map((c) => ({
+    id: c.id,
+    title: c.title,
+    body: c.body,
+    openAt: c.openAt.toISOString(),
+    opened: c.opened,
+    openedAt: c.openedAt?.toISOString() ?? null,
+    createdById: c.createdById,
+    createdBy: c.createdBy,
+    canOpen: !c.opened && c.openAt.getTime() <= now.getTime(),
+  }));
 
   const upcomingAnni = nearestAnniversary(anniversaries);
   const coupleStart = anniversaries.find((a) => a.kind === COUPLE_START_KIND);
@@ -138,7 +184,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="flex-1 px-5 pt-2 pb-28 space-y-5">
+      <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
         {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
           <section className="space-y-2.5 rise-in rise-in-1">
@@ -205,27 +251,21 @@ export default async function HomePage() {
 
         {/* ─── 우리 사이 ─────────────────────────── */}
         {(dayNo > 0 || upcomingAnni || upcomingMilestone) && (
-          <section className="space-y-3 rise-in rise-in-2">
-            <SectionTitle title="우리 사이" />
-
+          <section className="space-y-2 rise-in rise-in-2">
             {dayNo > 0 && (
               <Link
                 href="/us/saju"
-                className="tap lift block editorial-card-warm px-5 py-4"
+                className="tap lift block editorial-card-warm px-4 py-2.5"
               >
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] text-fg-faint">함께한 날</p>
-                    <div className="flex items-baseline gap-1.5 mt-0.5">
-                      <Numeral
-                        value={dayNo}
-                        size="lg"
-                        className="text-fg"
-                      />
-                      <span className="text-fg-soft text-sm">일</span>
-                    </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[11px] text-fg-faint">함께한 날</span>
+                    <span className="font-display text-lg text-fg leading-none">
+                      {dayNo}
+                    </span>
+                    <span className="text-fg-soft text-xs">일</span>
                   </div>
-                  <p className="text-[10px] text-fg-faint pb-1.5 tracking-wider">
+                  <p className="text-[10px] text-fg-faint tracking-wider">
                     사주 보기 →
                   </p>
                 </div>
@@ -283,25 +323,22 @@ export default async function HomePage() {
               return (
                 <Link
                   href="/us"
-                  className="tap lift block editorial-card px-4 py-3.5"
+                  className="tap lift block editorial-card px-4 py-2.5"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-lg shrink-0">{pick.emoji}</span>
-                      <div className="min-w-0">
-                        <p className="font-display text-sm truncate">
-                          {pick.label}
-                        </p>
-                        <p className="text-[10px] text-fg-faint">
-                          다음 중요한 날 ·{" "}
-                          {pick.date.toLocaleDateString("ko", {
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0">{pick.emoji}</span>
+                      <span className="font-display text-sm truncate">
+                        {pick.label}
+                      </span>
+                      <span className="text-[10px] text-fg-faint shrink-0">
+                        {pick.date.toLocaleDateString("ko", {
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </span>
                     </div>
-                    <span className="text-accent font-display text-base shrink-0">
+                    <span className="text-accent font-display text-sm shrink-0">
                       {pick.days === 0 ? "오늘" : `D-${pick.days}`}
                     </span>
                   </div>
@@ -311,6 +348,13 @@ export default async function HomePage() {
           </section>
         )}
 
+        {/* ─── 둘만의 기록 ─────────────────────── */}
+        <CoupleSheets
+          meId={me.id}
+          meRole={me.role}
+          buckets={buckets}
+          capsules={capsules}
+        />
       </main>
 
       <Link

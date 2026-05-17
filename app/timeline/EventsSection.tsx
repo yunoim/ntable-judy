@@ -61,17 +61,26 @@ export default function EventsSection({
   const formOpen = adding || editingId !== null;
   const addAnchorRef = useRef<HTMLDivElement | null>(null);
 
-  // initialDate 가 들어오고 #add-event 해시면 자동 열기 + 스크롤
+  // #add-event 해시 + initialDate 가 들어오면 자동 열기 + 스크롤.
+  // hashchange 도 감지 — 같은 selectedDay 상태에서 "+ 개인 일정 등록" 링크를
+  // 다시 클릭해도 URL hash 만 바뀌어 mount 가 안 일어나는 케이스 대응.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.location.hash === "#add-event" && initialDate && !formOpen) {
+    function open() {
+      if (window.location.hash !== "#add-event") return;
+      if (!initialDate) return;
       setAdding(true);
       setDate(initialDate);
       setTimeout(() => {
-        addAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        addAnchorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }, 60);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    open();
+    window.addEventListener("hashchange", open);
+    return () => window.removeEventListener("hashchange", open);
   }, [initialDate]);
 
   function reset() {
