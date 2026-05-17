@@ -8,6 +8,7 @@ import {
   NICK_JUDY_COMPATIBILITY,
   type SajuProfile,
 } from "./saju";
+import { annotateHanja } from "./hanja-annotate";
 
 export type FortuneBody = {
   fox: string;
@@ -141,6 +142,14 @@ const EMPTY: FortuneBody = {
   combined: "운세를 불러오지 못했어요.",
 };
 
+function withAnnotations(body: FortuneBody): FortuneBody {
+  return {
+    fox: annotateHanja(body.fox),
+    bunny: annotateHanja(body.bunny),
+    combined: annotateHanja(body.combined),
+  };
+}
+
 export async function getOrGenerateFortune(
   kind: "daily" | "weekly",
   periodKey: string,
@@ -152,7 +161,7 @@ export async function getOrGenerateFortune(
     const existing = await prisma.sajuFortune.findUnique({
       where: { kind_periodKey: { kind, periodKey } },
     });
-    if (existing) return existing.body as FortuneBody;
+    if (existing) return withAnnotations(existing.body as FortuneBody);
   } catch (e) {
     console.error("[saju-fortune] cache read failed", e);
     return EMPTY;
@@ -175,6 +184,7 @@ export async function getOrGenerateFortune(
   }
 
   // 동시 호출 시 unique 충돌 가능 — 다른 요청이 먼저 저장했다는 뜻이라 무시.
+  // 저장은 한자 그대로 (원본). 렌더 직전에 annotate.
   try {
     await prisma.sajuFortune.create({
       data: { kind, periodKey, body: body as unknown as object },
@@ -183,5 +193,5 @@ export async function getOrGenerateFortune(
     // ignore (race or schema mismatch)
   }
 
-  return body;
+  return withAnnotations(body);
 }

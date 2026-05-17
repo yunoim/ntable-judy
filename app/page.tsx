@@ -8,10 +8,8 @@ import {
   SectionTitle,
   TabBar,
 } from "@/components/ui";
-import PastDatesList from "./PastDatesList";
 import {
   getNextDate,
-  getPastDates,
   getActiveUsers,
   avgStarsByUserId,
   prisma,
@@ -55,9 +53,8 @@ function nearestAnniversary(rows: AnniRow[]) {
 
 export default async function HomePage() {
   const me = await requireApproved();
-  const [next, past, users, pendingCount, anniversaries] = await Promise.all([
+  const [next, users, pendingCount, anniversaries] = await Promise.all([
     getNextDate(),
-    getPastDates(),
     getActiveUsers(),
     prisma.user.count({ where: { role: "pending" } }),
     prisma.anniversary.findMany({}),
@@ -292,35 +289,6 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ─── 지난 데이트 ─────────────────────────── */}
-        {past.length > 0 && (
-          <section className="space-y-3 rise-in rise-in-3">
-            <SectionTitle
-              title="지난 데이트"
-              hint={`총 ${past.length}회`}
-            />
-            <PastDatesList
-              items={past.map((d) => ({
-                id: d.id,
-                number: d.number,
-                title: d.title,
-                scheduledAt: new Date(d.scheduledAt).toISOString(),
-                area: d.area ?? null,
-                weather: d.weather ?? null,
-                avgStars: d.reviews.length
-                  ? d.reviews.reduce((s, r) => s + r.stars, 0) /
-                    d.reviews.length
-                  : 0,
-              }))}
-            />
-            <Link
-              href="/plan/new?mode=past"
-              className="tap block text-center text-[11px] text-fg-faint hover:text-fg-soft py-2 mt-1"
-            >
-              + 다녀온 데이트 기록하기
-            </Link>
-          </section>
-        )}
       </main>
 
       <Link

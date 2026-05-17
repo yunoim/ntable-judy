@@ -1,8 +1,11 @@
-// app/album/page.tsx — 모든 데이트 사진 한 화면 (월별 그룹)
-import { prisma } from "@/lib/db";
+// app/album/page.tsx — 모든 데이트 사진 한 화면 (월별 그룹) + 사진 등록 진입
+import { prisma, getPastDates } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
 import AlbumGrid, { type AlbumPhoto } from "./AlbumGrid";
+import AlbumUploadFlow, {
+  type UploadTargetDate,
+} from "./AlbumUploadFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -20,15 +23,26 @@ function formatYm(ym: string): string {
 export default async function AlbumPage() {
   const me = await requireApproved();
 
-  const photos = await prisma.datePhoto.findMany({
-    orderBy: [{ date: { scheduledAt: "desc" } }, { createdAt: "desc" }],
-    include: {
-      date: {
-        select: { id: true, title: true, scheduledAt: true, number: true },
+  const [photos, pastDates] = await Promise.all([
+    prisma.datePhoto.findMany({
+      orderBy: [{ date: { scheduledAt: "desc" } }, { createdAt: "desc" }],
+      include: {
+        date: {
+          select: { id: true, title: true, scheduledAt: true, number: true },
+        },
+        uploadedBy: { select: { id: true, nickname: true, emoji: true } },
       },
-      uploadedBy: { select: { id: true, nickname: true, emoji: true } },
-    },
-  });
+    }),
+    getPastDates(),
+  ]);
+
+  const uploadTargets: UploadTargetDate[] = pastDates.map((d) => ({
+    id: d.id,
+    number: d.number,
+    title: d.title,
+    scheduledAt: new Date(d.scheduledAt).toISOString(),
+    area: d.area ?? null,
+  }));
 
   // 데이트의 scheduledAt 기준 YYYY-MM 으로 그룹.
   // (사진 업로드 시점이 아닌 "그 데이트가 있었던 월" 기준이 회상에 자연스러움.)
@@ -63,9 +77,8 @@ export default async function AlbumPage() {
               아직 <em className="italic text-accent">사진</em>이 없어요
             </p>
             <p className="text-[11px] text-fg-faint leading-relaxed px-6">
-              데이트 상세 페이지에서 사진을 추가하면
-              <br />
-              여기에 모두 모여요.
+              우측 하단 <em className="italic text-accent">+</em> 버튼으로
+              데이트 골라 사진을 올려보세요.
             </p>
           </div>
         ) : (
@@ -83,6 +96,7 @@ export default async function AlbumPage() {
         )}
       </main>
 
+      <AlbumUploadFlow dates={uploadTargets} />
       <TabBar active="album" />
     </div>
   );

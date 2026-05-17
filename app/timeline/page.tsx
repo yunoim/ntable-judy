@@ -1,9 +1,10 @@
 // app/timeline/page.tsx — 캘린더 (month nav + 날짜 선택 패널) + 데이트 + 개인 일정
 import Link from "next/link";
-import { getAllDates, prisma } from "@/lib/db";
+import { getAllDates, getPastDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
-import { TabBar } from "@/components/ui";
+import { TabBar, SectionTitle } from "@/components/ui";
 import EventsSection, { type EventRow } from "./EventsSection";
+import PastDatesList, { type PastItem } from "../PastDatesList";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,7 @@ export default async function TimelinePage({
   const monthStart = new Date(Date.UTC(year, month, 1) - 9 * 60 * 60 * 1000);
   const monthEnd = new Date(Date.UTC(year, month + 1, 1) - 9 * 60 * 60 * 1000);
 
-  const [dates, eventsRaw, admin, partner] = await Promise.all([
+  const [dates, eventsRaw, admin, partner, past] = await Promise.all([
     getAllDates(),
     // 다일 일정도 잡기: 시작이 월 끝 전 + (단일 = 시작이 월 시작 이후 / 다일 = 종료가 월 시작 이후)
     prisma.personalEvent.findMany({
@@ -91,7 +92,20 @@ export default async function TimelinePage({
     }),
     prisma.user.findFirst({ where: { role: "admin" } }),
     prisma.user.findFirst({ where: { partner: true } }),
+    getPastDates(),
   ]);
+
+  const pastItems: PastItem[] = past.map((d) => ({
+    id: d.id,
+    number: d.number,
+    title: d.title,
+    scheduledAt: new Date(d.scheduledAt).toISOString(),
+    area: d.area ?? null,
+    weather: d.weather ?? null,
+    avgStars: d.reviews.length
+      ? d.reviews.reduce((s, r) => s + r.stars, 0) / d.reviews.length
+      : 0,
+  }));
 
   const adminId = admin?.id ?? null;
   const cells = buildMonth(year, month);
@@ -422,6 +436,16 @@ export default async function TimelinePage({
         ].filter((o, i, arr) => arr.findIndex((x) => x.id === o.id) === i)}
         initialDate={selectedDay !== null ? dayStr(year, month, selectedDay) : undefined}
       />
+
+      {pastItems.length > 0 && (
+        <section className="px-5 pb-6 space-y-3">
+          <SectionTitle
+            title="지난 데이트"
+            hint={`총 ${pastItems.length}회`}
+          />
+          <PastDatesList items={pastItems} />
+        </section>
+      )}
 
       <div className="flex-1" />
       <TabBar active="log" />
