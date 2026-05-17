@@ -8,14 +8,24 @@ export const dynamic = "force-dynamic";
 
 export default async function UsPage() {
   const me = await requireApproved();
+  const now = new Date();
 
-  const [anniversaries, bucketCount, capsuleCount] = await Promise.all([
+  const [anniversaries, buckets, capsules] = await Promise.all([
     prisma.anniversary.findMany({
       orderBy: { date: "asc" },
       include: { createdBy: { select: { id: true, nickname: true } } },
     }),
-    prisma.bucket.count(),
-    prisma.timeCapsule.count(),
+    prisma.bucket.findMany({
+      orderBy: [{ done: "asc" }, { priority: "desc" }, { createdAt: "desc" }],
+      include: {
+        doneDate: { select: { id: true, number: true, title: true } },
+        createdBy: { select: { id: true, nickname: true } },
+      },
+    }),
+    prisma.timeCapsule.findMany({
+      orderBy: [{ opened: "asc" }, { openAt: "asc" }],
+      include: { createdBy: { select: { id: true, nickname: true } } },
+    }),
   ]);
 
   const coupleStart = anniversaries.find((a) => a.kind === COUPLE_START_KIND);
@@ -42,8 +52,31 @@ export default async function UsPage() {
         createdBy: a.createdBy,
       }))}
       milestones={milestones}
-      bucketCount={bucketCount}
-      capsuleCount={capsuleCount}
+      buckets={buckets.map((b) => ({
+        id: b.id,
+        title: b.title,
+        emoji: b.emoji,
+        description: b.description,
+        area: b.area,
+        priority: b.priority,
+        done: b.done,
+        doneAt: b.doneAt?.toISOString() ?? null,
+        doneDate: b.doneDate
+          ? { id: b.doneDate.id, number: b.doneDate.number, title: b.doneDate.title }
+          : null,
+        createdBy: b.createdBy,
+      }))}
+      capsules={capsules.map((c) => ({
+        id: c.id,
+        title: c.title,
+        body: c.body,
+        openAt: c.openAt.toISOString(),
+        opened: c.opened,
+        openedAt: c.openedAt?.toISOString() ?? null,
+        createdById: c.createdById,
+        createdBy: c.createdBy,
+        canOpen: !c.opened && c.openAt.getTime() <= now.getTime(),
+      }))}
     />
   );
 }

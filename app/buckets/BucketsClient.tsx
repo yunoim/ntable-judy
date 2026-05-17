@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Eyebrow, Rule, SectionTitle, TabBar } from "@/components/ui";
 
-type Bucket = {
+export type Bucket = {
   id: number;
   title: string;
   emoji: string | null;
@@ -24,10 +24,12 @@ export default function BucketsClient({
   meId,
   meRole,
   buckets,
+  embedded = false,
 }: {
   meId: string;
   meRole: string;
   buckets: Bucket[];
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -259,31 +261,9 @@ export default function BucketsClient({
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
-        <Link href="/" className="text-xs text-fg-faint pt-1">
-          ← 홈
-        </Link>
-        <div className="text-center">
-          <Eyebrow>bucket list</Eyebrow>
-          <p className="font-display text-2xl mt-1">
-            <em className="italic">같이 가</em>고 싶은
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            if (formOpen) resetForm();
-            else setAdding(true);
-          }}
-          className="text-fg-faint text-base pt-1 w-8 text-right"
-          aria-label="추가"
-        >
-          {formOpen ? "✕" : "+"}
-        </button>
-      </header>
-
-      <Rule variant="dot" className="mx-5" />
+  const inner = (
+    <>
+      {!embedded && <Rule variant="dot" className="mx-5" />}
 
       {error && (
         <div className="mx-5 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
@@ -353,9 +333,34 @@ export default function BucketsClient({
         </section>
       )}
 
-      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+      <div
+        className={
+          embedded
+            ? "px-5 pt-4 pb-6 space-y-5"
+            : "flex-1 px-5 pt-5 pb-28 space-y-7"
+        }
+      >
         <section className="space-y-3">
-          <SectionTitle title="해보고 싶은 것" hint={`${todo.length}개`} />
+          <div className="flex items-baseline justify-between gap-2">
+            <SectionTitle
+              title="해보고 싶은 것"
+              hint={`${todo.length}개`}
+            />
+            <button
+              onClick={() => {
+                if (formOpen) resetForm();
+                else setAdding(true);
+              }}
+              className={[
+                "tap rounded-full px-3 py-1 text-[12px] font-display border transition-colors",
+                formOpen
+                  ? "border-fg/20 text-fg-faint"
+                  : "border-accent text-accent hover:bg-accent hover:text-bg",
+              ].join(" ")}
+            >
+              {formOpen ? "✕ 닫기" : "+ 추가"}
+            </button>
+          </div>
           {todo.length === 0 ? (
             <div className="text-center pt-4 pb-4">
               <span className="text-4xl">🌱</span>
@@ -363,7 +368,7 @@ export default function BucketsClient({
                 <em className="italic">씨앗</em>을 심어볼까요
               </p>
               <p className="text-[11px] text-fg-faint mt-2">
-                + 버튼으로 첫 버킷 추가
+                위 + 버튼으로 첫 버킷 추가
               </p>
             </div>
           ) : (
@@ -377,8 +382,24 @@ export default function BucketsClient({
             <ul className="space-y-2.5">{done.map(renderItem)}</ul>
           </section>
         )}
-      </main>
+      </div>
+    </>
+  );
 
+  if (embedded) return inner;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div className="safe-top px-5 pt-3 pb-2 flex items-center justify-between">
+        <Link href="/us" className="text-xs text-fg-faint">
+          ← 기념일
+        </Link>
+        <p className="font-display text-base">
+          <em className="italic">같이 가</em>고 싶은
+        </p>
+        <span className="w-12" />
+      </div>
+      {inner}
       <TabBar active="us" />
     </div>
   );

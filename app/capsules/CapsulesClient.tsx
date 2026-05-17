@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Eyebrow, Rule, SectionTitle, TabBar } from "@/components/ui";
 
-type Capsule = {
+export type Capsule = {
   id: number;
   title: string;
   body: string;
@@ -29,10 +29,12 @@ export default function CapsulesClient({
   meId,
   meRole,
   capsules,
+  embedded = false,
 }: {
   meId: string;
   meRole: string;
   capsules: Capsule[];
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -126,28 +128,9 @@ export default function CapsulesClient({
     }
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <header className="px-5 pt-5 pb-4 safe-top flex items-start justify-between">
-        <Link href="/" className="text-xs text-fg-faint pt-1">
-          ← 홈
-        </Link>
-        <div className="text-center">
-          <Eyebrow>time capsule</Eyebrow>
-          <p className="font-display text-2xl mt-1">
-            <em className="italic">미래</em>에 보내는
-          </p>
-        </div>
-        <button
-          onClick={() => setAdding((v) => !v)}
-          className="text-fg-faint text-base pt-1 w-8 text-right"
-          aria-label="추가"
-        >
-          {adding ? "✕" : "+"}
-        </button>
-      </header>
-
-      <Rule variant="dot" className="mx-5" />
+  const inner = (
+    <>
+      {!embedded && <Rule variant="dot" className="mx-5" />}
 
       {error && (
         <div className="mx-5 mt-3 px-3 py-2 rounded-card border border-rain/40 bg-rain/10 text-xs text-rain">
@@ -195,9 +178,28 @@ export default function CapsulesClient({
         </section>
       )}
 
-      <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
+      <div
+        className={
+          embedded
+            ? "px-5 pt-4 pb-6 space-y-5"
+            : "flex-1 px-5 pt-5 pb-28 space-y-7"
+        }
+      >
         <section className="space-y-3">
-          <SectionTitle title="봉인된 캡슐" hint={`${sealed.length}개`} />
+          <div className="flex items-baseline justify-between gap-2">
+            <SectionTitle title="봉인된 캡슐" hint={`${sealed.length}개`} />
+            <button
+              onClick={() => setAdding((v) => !v)}
+              className={[
+                "tap rounded-full px-3 py-1 text-[12px] font-display border transition-colors",
+                adding
+                  ? "border-fg/20 text-fg-faint"
+                  : "border-accent text-accent hover:bg-accent hover:text-bg",
+              ].join(" ")}
+            >
+              {adding ? "✕ 닫기" : "+ 추가"}
+            </button>
+          </div>
           {sealed.length === 0 ? (
             <div className="text-center pt-4 pb-4">
               <span className="text-4xl">📜</span>
@@ -318,8 +320,24 @@ export default function CapsulesClient({
             </ul>
           </section>
         )}
-      </main>
+      </div>
+    </>
+  );
 
+  if (embedded) return inner;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div className="safe-top px-5 pt-3 pb-2 flex items-center justify-between">
+        <Link href="/us" className="text-xs text-fg-faint">
+          ← 기념일
+        </Link>
+        <p className="font-display text-base">
+          <em className="italic">미래</em>에 보내는
+        </p>
+        <span className="w-12" />
+      </div>
+      {inner}
       <TabBar active="us" />
     </div>
   );
