@@ -2,13 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireApproved } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import {
-  Eyebrow,
-  Numeral,
-  Rule,
-  SectionTitle,
-  TabBar,
-} from "@/components/ui";
+import { Rule, SectionTitle, TabBar } from "@/components/ui";
 import {
   findSaju,
   compatibilityFor,
@@ -299,36 +293,24 @@ export default async function SajuPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 px-5 pt-6 safe-top pb-28 space-y-7">
-        {/* Hero — 용광로 × 무쇠 */}
-        <section className="editorial-card-dark px-5 pt-6 pb-7 relative overflow-hidden">
-          <Eyebrow className="!text-accent-soft">용광로 × 무쇠</Eyebrow>
-          <div className="mt-3 flex items-baseline gap-3">
-            {dayNo > 0 ? (
-              <>
-                <Numeral value={dayNo} size="xl" className="text-bg" />
-                <span className="serif-italic text-accent-soft text-2xl">
-                  번째 날
-                </span>
-              </>
-            ) : (
-              <span className="serif-italic text-accent-soft text-xl">
-                만남 시작한 날 미등록
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-accent-soft mt-3 leading-relaxed">
-            丁火 (정화) — 용광로의 불 ·{"  "}庚金 (경금) — 다듬어지지 않은 강철
+        {/* 메타: 정/경 × 함께한 날 (얇은 한 줄). 정적 내용은 단독 사주 섹션에 이미 들어 있으므로 비중 최소화. */}
+        <section className="flex items-baseline justify-between gap-3 -mt-1">
+          <p className="text-[11px] text-fg-faint serif-italic">
+            丁火 × 庚金
           </p>
-          <p className="serif-italic text-bg text-base mt-3">
-            “庚金을 단련할 수 있는 불은 오직 丁火뿐이다.”
-          </p>
+          {dayNo > 0 && (
+            <p className="text-[11px] text-fg-soft">
+              <span className="font-display text-fg">{dayNo}</span>
+              <span className="text-fg-faint ml-1">번째 날</span>
+            </p>
+          )}
         </section>
 
         {/* 일일/주간 운세 — Claude 생성 + DB 캐싱 */}
         {fox && bunny && foxSaju && bunnySaju && (
           <>
             <section className="space-y-3">
-              <SectionTitle title="오늘의 운세" hint="daily" />
+              <SectionTitle index={1} title="오늘의 운세" hint="daily" />
               <Suspense fallback={<FortuneSkeleton />}>
                 <FortuneSection
                   kind="daily"
@@ -338,7 +320,7 @@ export default async function SajuPage() {
               </Suspense>
             </section>
             <section className="space-y-3">
-              <SectionTitle title="이번 주 운세" hint="weekly" />
+              <SectionTitle index={2} title="이번 주 운세" hint="weekly" />
               <Suspense fallback={<FortuneSkeleton />}>
                 <FortuneSection
                   kind="weekly"
@@ -353,7 +335,7 @@ export default async function SajuPage() {
         {/* 궁합 카드 */}
         {compat && (
           <section className="space-y-3">
-            <SectionTitle index={1} title="궁합" hint="compatibility" />
+            <SectionTitle index={3} title="궁합" hint="compatibility" />
             <article className="editorial-card-warm relative px-5 py-5 space-y-4">
               <span className="corner-mark">No.01</span>
               <header className="flex items-baseline justify-between gap-3">
@@ -423,7 +405,7 @@ export default async function SajuPage() {
         {/* 단독 사주 */}
         {(fox || bunny) && (
           <section className="space-y-3">
-            <SectionTitle index={2} title="단독 사주" hint="profiles" />
+            <SectionTitle index={4} title="단독 사주" hint="profiles" />
             <div className="space-y-3">
               {fox && foxSaju && (
                 <SajuCard
@@ -487,7 +469,7 @@ export default async function SajuPage() {
 
         {/* Sources */}
         <section className="space-y-2 pt-1">
-          <SectionTitle index={3} title="출처" hint="notion" />
+          <SectionTitle index={5} title="출처" hint="notion" />
           <div className="space-y-1.5 px-1">
             <a
               href="https://www.notion.so/34feff09d942817dbfe2d3500f6839f2"

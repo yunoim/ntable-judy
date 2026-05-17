@@ -111,9 +111,10 @@ async function callClaude(
     kind === "daily" ? dailyLabel(periodKey) : weeklyRangeLabel(periodKey);
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  // 운세는 작문 난이도가 낮아 Haiku 로 충분 (Sonnet 대비 ~5x 저렴).
   const res = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1500,
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 1200,
     system: SYSTEM_PROMPT,
     messages: [
       {
