@@ -163,7 +163,7 @@ export default function EventsSection({
   }
 
   return (
-    <section className="px-5 pb-6 space-y-3 pt-5">
+    <section className="px-5 pb-28 space-y-3 pt-5">
       <div ref={addAnchorRef} id="add-event" className="scroll-mt-4" />
       {formOpen && (
         <div className="flex items-center justify-end">

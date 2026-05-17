@@ -347,7 +347,7 @@ export default async function TimelinePage({
       />
 
       {pastItems.length > 0 && (
-        <section className="px-5 pt-6 pb-6 mt-4 space-y-3 border-t border-fg/10">
+        <section className="px-5 pt-6 pb-28 mt-4 space-y-3 border-t border-fg/10">
           <SectionTitle
             title="지난 데이트"
             hint={`총 ${pastItems.length}회`}
