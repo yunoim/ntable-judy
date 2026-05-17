@@ -254,29 +254,35 @@ export default async function TimelinePage({
                 href={cellHref}
                 scroll={!!c.day}
                 className={[
-                  "tap aspect-square rounded-lg border flex flex-col items-center justify-center relative",
+                  "tap aspect-square rounded-lg border flex items-center justify-center relative overflow-hidden",
                   isToday ? "border-accent border-2" : "border-fg/15",
                   isSelected ? "bg-accent/10 border-accent" : "",
                   done ? "bg-bg-warm" : "",
-                  planned ? "border-dashed" : "",
                   !c.day ? "opacity-0 pointer-events-none" : "",
                 ].join(" ")}
               >
-                <span
-                  className={`text-xs ${isToday ? "font-bold" : "text-fg-soft"}`}
-                >
-                  {c.day}
-                </span>
                 {dRec && (
                   <span
-                    className="font-display text-xs leading-none mt-0.5"
-                    style={{ color: planned ? "var(--accent)" : "var(--fg)" }}
+                    aria-hidden
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none leading-none select-none"
+                    style={{
+                      color: planned
+                        ? "var(--accent)"
+                        : "var(--fg)",
+                      fontSize: "2.4em",
+                      opacity: planned ? 0.35 : 0.25,
+                    }}
                   >
                     ♡
                   </span>
                 )}
+                <span
+                  className={`relative z-10 text-xs ${isToday ? "font-bold" : dRec ? "text-fg" : "text-fg-soft"}`}
+                >
+                  {c.day}
+                </span>
                 {dayEvents.length > 0 && (
-                  <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1">
+                  <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1 z-10">
                     {dayEvents.slice(0, 3).map((e, idx) => (
                       <span
                         key={idx}
