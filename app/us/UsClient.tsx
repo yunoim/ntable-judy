@@ -219,7 +219,7 @@ export default function UsClient({
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>倆 · our days</Eyebrow>
+          <Eyebrow>our days</Eyebrow>
           <p className="font-display text-2xl mt-1">
             우리의 <em className="italic">날들</em>
           </p>

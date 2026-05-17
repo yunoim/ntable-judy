@@ -61,7 +61,7 @@ export default async function AlbumPage() {
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>影 · album</Eyebrow>
+          <Eyebrow>album</Eyebrow>
           <p className="font-display text-base mt-0.5">사진첩</p>
         </div>
         <span className="w-12" />

@@ -13,7 +13,6 @@ import {
   getNextDate,
   getPastDates,
   getActiveUsers,
-  getDoneCount,
   avgStarsByUserId,
   prisma,
 } from "@/lib/db";
@@ -56,15 +55,13 @@ function nearestAnniversary(rows: AnniRow[]) {
 
 export default async function HomePage() {
   const me = await requireApproved();
-  const [next, past, users, totalDates, pendingCount, anniversaries] =
-    await Promise.all([
-      getNextDate(),
-      getPastDates(5),
-      getActiveUsers(),
-      getDoneCount(),
-      prisma.user.count({ where: { role: "pending" } }),
-      prisma.anniversary.findMany({}),
-    ]);
+  const [next, past, users, pendingCount, anniversaries] = await Promise.all([
+    getNextDate(),
+    getPastDates(),
+    getActiveUsers(),
+    prisma.user.count({ where: { role: "pending" } }),
+    prisma.anniversary.findMany({}),
+  ]);
   const isAdmin = me.role === "admin";
 
   const upcomingAnni = nearestAnniversary(anniversaries);
@@ -300,7 +297,7 @@ export default async function HomePage() {
           <section className="space-y-3 rise-in rise-in-3">
             <SectionTitle
               title="지난 데이트"
-              hint={`총 ${totalDates}회`}
+              hint={`총 ${past.length}회`}
             />
             <ul className="space-y-3.5">
               {past.map((d, idx) => {

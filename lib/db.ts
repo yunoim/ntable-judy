@@ -80,7 +80,7 @@ export async function getNextDate() {
   return d ? adaptDate(d) : null;
 }
 
-export async function getPastDates(limit = 5) {
+export async function getPastDates(limit?: number) {
   const startOfToday = startOfTodayKstUtc();
   // 다일 데이트: 종료가 오늘 이전(또는 단일이면서 시작이 오늘 이전) 만 "지난" 으로.
   const dates = await prisma.date.findMany({
@@ -92,14 +92,10 @@ export async function getPastDates(limit = 5) {
       ],
     },
     orderBy: { scheduledAt: "desc" },
-    take: limit,
+    ...(typeof limit === "number" ? { take: limit } : {}),
     include: dateInclude,
   });
   return dates.map(adaptDate);
-}
-
-export async function getDoneCount() {
-  return prisma.date.count({ where: { status: "done" } });
 }
 
 export async function getActiveUsers() {

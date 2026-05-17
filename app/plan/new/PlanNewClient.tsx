@@ -623,7 +623,7 @@ export default function PlanNewClient({
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>{isPast ? "誌 · 회상" : "計 · plan"}</Eyebrow>
+          <Eyebrow>{isPast ? "회상" : "plan"}</Eyebrow>
           <p className="font-display text-base mt-0.5">
             {isPast ? "다녀온 데이트" : "새 데이트"}
           </p>

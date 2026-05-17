@@ -133,7 +133,7 @@ export default function CapsulesClient({
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>函 · time capsule</Eyebrow>
+          <Eyebrow>time capsule</Eyebrow>
           <p className="font-display text-2xl mt-1">
             <em className="italic">미래</em>에 보내는
           </p>
@@ -221,7 +221,7 @@ export default function CapsulesClient({
                       c.canOpen ? "!border-accent" : "",
                     ].join(" ")}
                   >
-                    <span className="corner-mark">封 No.{c.id}</span>
+                    <span className="corner-mark">No.{c.id}</span>
                     <div className="flex items-baseline justify-between gap-3">
                       <p className="font-display text-base truncate">
                         {c.title}
@@ -278,7 +278,7 @@ export default function CapsulesClient({
                     key={c.id}
                     className="editorial-card relative px-5 py-4 space-y-3"
                   >
-                    <span className="corner-mark">開 No.{c.id}</span>
+                    <span className="corner-mark">No.{c.id}</span>
                     <header>
                       <p className="font-display text-base">{c.title}</p>
                       <p className="text-[10px] text-fg-faint mt-0.5">

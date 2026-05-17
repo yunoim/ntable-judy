@@ -214,7 +214,7 @@ export default async function SajuPage() {
           ← 기념일
         </Link>
         <div className="text-center">
-          <Eyebrow>命 · 사주 궁합</Eyebrow>
+          <Eyebrow>사주 궁합</Eyebrow>
           <p className="font-display text-2xl mt-1">
             <em className="italic">정화연경</em>
           </p>
@@ -227,9 +227,6 @@ export default async function SajuPage() {
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
         {/* Hero — 용광로 × 무쇠 */}
         <section className="editorial-card-dark px-5 pt-6 pb-7 relative overflow-hidden">
-          <span className="absolute -right-3 -bottom-6 font-display text-[140px] leading-none text-accent-soft/5 select-none pointer-events-none">
-            煉
-          </span>
           <Eyebrow className="!text-accent-soft">용광로 × 무쇠</Eyebrow>
           <div className="mt-3 flex items-baseline gap-3">
             {dayNo > 0 ? (
@@ -256,9 +253,9 @@ export default async function SajuPage() {
         {/* 궁합 카드 */}
         {compat && (
           <section className="space-y-3">
-            <SectionTitle index="壹" title="궁합" hint="compatibility" />
+            <SectionTitle index={1} title="궁합" hint="compatibility" />
             <article className="editorial-card-warm relative px-5 py-5 space-y-4">
-              <span className="corner-mark">No.壹</span>
+              <span className="corner-mark">No.01</span>
               <header className="flex items-baseline justify-between gap-3">
                 <div>
                   <p className="font-display text-2xl">{compat.title}</p>
@@ -326,14 +323,14 @@ export default async function SajuPage() {
         {/* 단독 사주 */}
         {(fox || bunny) && (
           <section className="space-y-3">
-            <SectionTitle index="貳" title="단독 사주" hint="profiles" />
+            <SectionTitle index={2} title="단독 사주" hint="profiles" />
             <div className="space-y-3">
               {fox && foxSaju && (
                 <SajuCard
                   saju={foxSaju}
                   nickname={fox.nickname}
                   emoji={fox.emoji}
-                  index="No.甲"
+                  index="No.01"
                 />
               )}
               {bunny && bunnySaju && (
@@ -341,7 +338,7 @@ export default async function SajuPage() {
                   saju={bunnySaju}
                   nickname={bunny.nickname}
                   emoji={bunny.emoji}
-                  index="No.乙"
+                  index="No.02"
                 />
               )}
             </div>
@@ -390,7 +387,7 @@ export default async function SajuPage() {
 
         {/* Sources */}
         <section className="space-y-2 pt-1">
-          <SectionTitle index="參" title="출처" hint="notion" />
+          <SectionTitle index={3} title="출처" hint="notion" />
           <div className="space-y-1.5 px-1">
             <a
               href="https://www.notion.so/34feff09d942817dbfe2d3500f6839f2"

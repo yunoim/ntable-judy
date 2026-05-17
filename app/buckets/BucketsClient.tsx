@@ -266,7 +266,7 @@ export default function BucketsClient({
           ← 홈
         </Link>
         <div className="text-center">
-          <Eyebrow>志 · bucket list</Eyebrow>
+          <Eyebrow>bucket list</Eyebrow>
           <p className="font-display text-2xl mt-1">
             <em className="italic">같이 가</em>고 싶은
           </p>
