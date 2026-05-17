@@ -1,8 +1,9 @@
-// app/timeline/page.tsx — 캘린더 (month nav + 날짜 선택 패널) + 데이트 + 개인 약속 도트
+// app/timeline/page.tsx — 캘린더 (month nav + 날짜 선택 패널) + 데이트 + 개인 일정
 import Link from "next/link";
 import { getAllDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar, Eyebrow } from "@/components/ui";
+import EventsSection, { type EventRow } from "./EventsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export default async function TimelinePage({
 }: {
   searchParams: Promise<{ ym?: string; day?: string }>;
 }) {
-  await requireApproved();
+  const me = await requireApproved();
   const sp = await searchParams;
 
   const today = new Date();
@@ -150,6 +151,18 @@ export default async function TimelinePage({
 
   const isCurrentMonth =
     today.getFullYear() === year && today.getMonth() === month;
+
+  const events: EventRow[] = eventsRaw.map((e) => ({
+    id: e.id,
+    title: e.title,
+    startsAt: e.startsAt.toISOString(),
+    endsAt: e.endsAt?.toISOString() ?? null,
+    allDay: e.allDay,
+    category: e.category,
+    emoji: e.emoji,
+    note: e.note,
+    user: e.user,
+  }));
 
   // 선택된 day 의 데이트·이벤트
   const selectedDate = selectedDay ? dateByDay.get(selectedDay) ?? null : null;
@@ -370,18 +383,42 @@ export default async function TimelinePage({
             </ul>
           )}
 
-          {!selectedDate && (
-            <div className="pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {!selectedDate && (
               <Link
                 href={`/plan/new?mode=direct&date=${dayStr(year, month, selectedDay)}`}
-                className="tap lift block bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
+                className="tap lift bg-ink-card text-bg rounded-card py-2.5 text-center text-[12px] font-display"
               >
-                + 데이트 기록
+                + 데이트 일정 등록
               </Link>
-            </div>
-          )}
+            )}
+            <Link
+              href={`/timeline?ym=${ymStr(year, month)}&day=${dayStr(year, month, selectedDay)}#add-event`}
+              className={[
+                "tap lift border border-fg/20 rounded-card py-2.5 text-center text-[12px] font-display",
+                selectedDate ? "col-span-2" : "",
+              ].join(" ")}
+            >
+              + 개인 일정 등록
+            </Link>
+          </div>
         </section>
       )}
+
+      <EventsSection
+        events={events}
+        meId={me.id}
+        meRole={me.role}
+        owners={[
+          ...(admin
+            ? [{ id: admin.id, nickname: admin.nickname, color: "accent" as const }]
+            : []),
+          ...(partner
+            ? [{ id: partner.id, nickname: partner.nickname, color: "rain" as const }]
+            : []),
+        ].filter((o, i, arr) => arr.findIndex((x) => x.id === o.id) === i)}
+        initialDate={selectedDay !== null ? dayStr(year, month, selectedDay) : undefined}
+      />
 
       <div className="flex-1" />
       <TabBar active="log" />
