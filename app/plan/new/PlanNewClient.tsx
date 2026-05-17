@@ -676,24 +676,6 @@ export default function PlanNewClient({
           </span>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-[11px] tracking-widest uppercase text-fg-faint">
-            {isPast ? "다녀온 날짜" : "예정일"}
-          </label>
-          <input
-            type={isPast ? "date" : "datetime-local"}
-            value={isPast ? scheduledAt.slice(0, 10) : scheduledAt}
-            onChange={(e) => {
-              if (isPast) {
-                setScheduledAt(dateOnlyToLocal(e.target.value));
-              } else {
-                setScheduledAt(e.target.value);
-              }
-            }}
-            className="w-full bg-bg-warm/50 border border-fg/20 rounded-card p-3 text-sm focus:outline-none focus:border-accent"
-          />
-        </div>
-
         {!isPast && chips.length > 0 && (
           <div className="space-y-2">
             <p className="text-[11px] tracking-widest uppercase text-fg-faint">
