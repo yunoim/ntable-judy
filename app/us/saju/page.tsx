@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { requireApproved } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -15,6 +16,11 @@ import {
   COUPLE_START_KIND,
   type SajuProfile,
 } from "@/lib/saju";
+import {
+  dailyKey,
+  weeklyKey,
+  getOrGenerateFortune,
+} from "@/lib/saju-fortune";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +75,90 @@ function ElementBar({
       <span className="serif-italic text-fg-faint w-10 text-right text-xs">
         {value.toFixed(1)}
       </span>
+    </div>
+  );
+}
+
+function FortuneCard({
+  label,
+  emoji,
+  body,
+  variant = "default",
+}: {
+  label: string;
+  emoji: string;
+  body: string;
+  variant?: "default" | "warm";
+}) {
+  return (
+    <article
+      className={[
+        "rounded-card border px-4 py-3.5 space-y-1.5",
+        variant === "warm"
+          ? "editorial-card-warm"
+          : "bg-bg border-fg/12",
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-base">{emoji}</span>
+        <p className="font-display text-sm">{label}</p>
+      </div>
+      <p className="text-[13px] leading-relaxed text-fg-soft">{body}</p>
+    </article>
+  );
+}
+
+function FortuneSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-card border border-fg/10 bg-bg px-4 py-3.5 space-y-2 animate-pulse"
+        >
+          <div className="h-3 w-20 bg-fg/10 rounded" />
+          <div className="h-3 w-full bg-fg/8 rounded" />
+          <div className="h-3 w-5/6 bg-fg/8 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function FortuneSection({
+  kind,
+  fox,
+  bunny,
+}: {
+  kind: "daily" | "weekly";
+  fox: { nickname: string; emoji: string | null };
+  bunny: { nickname: string; emoji: string | null };
+}) {
+  const key = kind === "daily" ? dailyKey() : weeklyKey();
+  const body = await getOrGenerateFortune(
+    kind,
+    key,
+    fox.nickname,
+    bunny.nickname,
+  );
+  return (
+    <div className="space-y-2">
+      <FortuneCard
+        label="둘 사이"
+        emoji="💑"
+        body={body.combined}
+        variant="warm"
+      />
+      <FortuneCard
+        label={fox.nickname}
+        emoji={fox.emoji ?? "🦊"}
+        body={body.fox}
+      />
+      <FortuneCard
+        label={bunny.nickname}
+        emoji={bunny.emoji ?? "🐰"}
+        body={body.bunny}
+      />
     </div>
   );
 }
@@ -233,6 +323,32 @@ export default async function SajuPage() {
             “庚金을 단련할 수 있는 불은 오직 丁火뿐이다.”
           </p>
         </section>
+
+        {/* 일일/주간 운세 — Claude 생성 + DB 캐싱 */}
+        {fox && bunny && foxSaju && bunnySaju && (
+          <>
+            <section className="space-y-3">
+              <SectionTitle title="오늘의 운세" hint="daily" />
+              <Suspense fallback={<FortuneSkeleton />}>
+                <FortuneSection
+                  kind="daily"
+                  fox={{ nickname: fox.nickname, emoji: fox.emoji }}
+                  bunny={{ nickname: bunny.nickname, emoji: bunny.emoji }}
+                />
+              </Suspense>
+            </section>
+            <section className="space-y-3">
+              <SectionTitle title="이번 주 운세" hint="weekly" />
+              <Suspense fallback={<FortuneSkeleton />}>
+                <FortuneSection
+                  kind="weekly"
+                  fox={{ nickname: fox.nickname, emoji: fox.emoji }}
+                  bunny={{ nickname: bunny.nickname, emoji: bunny.emoji }}
+                />
+              </Suspense>
+            </section>
+          </>
+        )}
 
         {/* 궁합 카드 */}
         {compat && (

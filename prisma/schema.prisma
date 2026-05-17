@@ -264,3 +264,18 @@ model PushSubscription {
   @@index([userId])
   @@schema("judy")
 }
+
+// 사주 운세 캐시 — 같은 (kind, periodKey) 에 대해 한 번만 생성하고 재사용.
+//   - kind: "daily" | "weekly"
+//   - periodKey: daily="YYYY-MM-DD" (KST), weekly="week-YYYY-MM-DD" (그 주 일요일)
+//   - body: { fox: string, bunny: string, combined: string }
+model SajuFortune {
+  id        Int      @id @default(autoincrement())
+  kind      String
+  periodKey String
+  body      Json
+  createdAt DateTime @default(now())
+
+  @@unique([kind, periodKey])
+  @@schema("judy")
+}
