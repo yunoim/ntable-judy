@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { getDateById, getAllDates, prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
-import Rain from "@/components/Rain";
 import CommentsSection from "./CommentsSection";
 import PhotosSection from "./PhotosSection";
 
@@ -94,8 +93,6 @@ export default async function DateDetailPage({
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {date.weather === "rain" && <Rain />}
-
       {canEdit && (
         <Link
           href={`/dates/${date.id}/edit`}
@@ -120,11 +117,6 @@ export default async function DateDetailPage({
             <p className="text-[12px] tracking-wider mt-3 text-fg-soft">
               {date.subtitle}
             </p>
-          )}
-          {date.weather === "rain" && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-rain bg-rain/10 px-3 py-1 rounded-full mt-3.5">
-              ☔ 비 오는 날
-            </span>
           )}
           {timeRange && (
             <p className="text-[11px] text-fg-faint mt-2 tracking-wider">
