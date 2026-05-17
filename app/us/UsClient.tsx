@@ -95,15 +95,34 @@ export default function UsClient({
 
   const hasCoupleStart = anniversaries.some((a) => a.kind === "couple_start");
 
-  const sorted = [...anniversaries].sort((a, b) => {
-    const aDays = daysUntil(nextOccurrence(a.date, a.recurring));
-    const bDays = daysUntil(nextOccurrence(b.date, b.recurring));
+  // 기념일 + 마일스톤 통합 타임라인. 같은 정렬 규칙 (다가올 순, 지난 건 뒤).
+  type Row =
+    | { type: "anniv"; key: string; data: Anniversary; occurrence: Date }
+    | { type: "miles"; key: string; data: Milestone; occurrence: Date };
+  const timelineRows: Row[] = [
+    ...anniversaries.map<Row>((a) => ({
+      type: "anniv",
+      key: `a${a.id}`,
+      data: a,
+      occurrence: nextOccurrence(a.date, a.recurring),
+    })),
+    ...milestones.map<Row>((m) => ({
+      type: "miles",
+      key: m.key,
+      data: m,
+      occurrence: new Date(m.date),
+    })),
+  ].sort((a, b) => {
+    const aDays = daysUntil(new Date(a.occurrence));
+    const bDays = daysUntil(new Date(b.occurrence));
     const aFuture = aDays >= 0;
     const bFuture = bDays >= 0;
     if (aFuture !== bFuture) return aFuture ? -1 : 1;
     if (aFuture) return aDays - bDays;
     return bDays - aDays;
   });
+  // 추가/수정 UI 의 갯수 hint 는 기념일만 카운트 (마일스톤은 자동이라 사용자 입력 아님)
+  const anniversaryCount = anniversaries.length;
 
   function resetForm() {
     setLabel("");
@@ -327,59 +346,13 @@ export default function UsClient({
       )}
 
       <main className="flex-1 px-5 pt-5 pb-28 space-y-7">
-        {/* ─── 마일스톤 ─────────────────────── */}
-        {milestones.length > 0 && (
-          <section className="space-y-3">
-            <SectionTitle title="마일스톤" hint="자동 계산" />
-            <div className="-mx-5 px-5 overflow-x-auto no-scrollbar">
-              <ul className="flex gap-2.5 pb-1 min-w-max">
-                {milestones.map((m) => {
-                  const days = daysUntil(new Date(m.date));
-                  const past = days < 0;
-                  const today = days === 0;
-                  return (
-                    <li
-                      key={m.key}
-                      className={[
-                        "shrink-0 w-[140px] editorial-card px-4 py-3.5",
-                        today ? "!border-accent !bg-bg-warm" : "",
-                        past ? "opacity-60" : "",
-                      ].join(" ")}
-                    >
-                      <div className="text-base">{m.emoji}</div>
-                      <p className="font-display text-sm mt-1.5 truncate">
-                        {m.label}
-                      </p>
-                      <p className="text-[10px] text-fg-faint mt-0.5">
-                        {new Date(m.date).toLocaleDateString("ko", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                      <p
-                        className={[
-                          "font-display text-sm mt-2",
-                          today ? "text-accent" : "text-fg-soft",
-                        ].join(" ")}
-                      >
-                        {today ? "오늘" : past ? `D+${Math.abs(days)}` : `D-${days}`}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {/* ─── 기념일 timeline ─────────────────── */}
+        {/* ─── 기념일 + 마일스톤 통합 timeline ─────────────────── */}
         <section className="space-y-3">
           <div className="flex items-baseline justify-between gap-2 pt-1">
             <div className="flex items-baseline gap-2">
               <span className="font-display text-[17px] text-fg">기념일</span>
               <span className="text-[10px] text-fg-faint">
-                {sorted.length}개
+                {anniversaryCount}개 + 마일스톤 {milestones.length}
               </span>
             </div>
             <button
@@ -394,7 +367,7 @@ export default function UsClient({
               {formOpen ? "✕ 닫기" : "+ 추가"}
             </button>
           </div>
-          {sorted.length === 0 ? (
+          {timelineRows.length === 0 ? (
             <div className="text-center pt-8 pb-4">
               <span className="text-4xl">📅</span>
               <p className="font-display text-base mt-3">
@@ -408,29 +381,39 @@ export default function UsClient({
             <ul className="relative pl-6">
               {/* timeline rule */}
               <span className="absolute left-[7px] top-2 bottom-2 w-px bg-fg/15" />
-              {sorted.map((a, idx) => {
-                const dist = distanceLabel(a.date, a.recurring);
-                const baseDate = new Date(a.date);
-                const isMine = a.createdBy.id === meId;
-                const canManage = isMine || meRole === "admin";
-                const autoManaged = a.kind === "birthday";
-                const kindBadge =
-                  a.kind === "birthday"
+              {timelineRows.map((row, idx) => {
+                const isMiles = row.type === "miles";
+                const a = !isMiles ? row.data : null;
+                const m = isMiles ? row.data : null;
+                const dist = isMiles
+                  ? distanceLabel(row.occurrence.toISOString(), false)
+                  : distanceLabel(a!.date, a!.recurring);
+                const baseDate = isMiles
+                  ? new Date(m!.date)
+                  : new Date(a!.date);
+                const isMine = !isMiles && a!.createdBy.id === meId;
+                const canManage = !isMiles && (isMine || meRole === "admin");
+                const autoManaged = !isMiles && a!.kind === "birthday";
+                const kindBadge = isMiles
+                  ? "자동 · 마일스톤"
+                  : a!.kind === "birthday"
                     ? "프로필 생일"
-                    : a.kind === "couple_start"
+                    : a!.kind === "couple_start"
                       ? "만남 시작"
                       : null;
                 return (
-                  <li key={a.id} className="relative pb-4 last:pb-0">
+                  <li key={row.key} className="relative pb-4 last:pb-0">
                     {/* dot */}
                     <span
                       className={[
                         "absolute -left-6 top-3.5 w-3 h-3 rounded-full border-2 border-bg",
                         dist.highlight
                           ? "bg-accent"
-                          : dist.past
-                            ? "bg-fg-faint/40"
-                            : "bg-fg/30",
+                          : isMiles
+                            ? "bg-fg/15 border-fg/30"
+                            : dist.past
+                              ? "bg-fg-faint/40"
+                              : "bg-fg/30",
                       ].join(" ")}
                     />
                     <div
@@ -438,17 +421,19 @@ export default function UsClient({
                         "px-4 py-3 rounded-card border flex items-start gap-3",
                         dist.highlight
                           ? "bg-bg-warm border-accent"
-                          : "bg-bg border-fg/15",
+                          : isMiles
+                            ? "bg-bg-warm/30 border-fg/10 border-dashed"
+                            : "bg-bg border-fg/15",
                         dist.past ? "opacity-70" : "",
                       ].join(" ")}
                     >
                       <span className="text-xl shrink-0 leading-none pt-0.5">
-                        {a.emoji ?? "📅"}
+                        {isMiles ? m!.emoji : a!.emoji ?? "📅"}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-display text-base truncate">
-                            {a.label}
+                            {isMiles ? m!.label : a!.label}
                           </p>
                           <span
                             className={[
@@ -469,7 +454,7 @@ export default function UsClient({
                             month: "long",
                             day: "numeric",
                           })}
-                          {a.recurring && " · 매년"}
+                          {!isMiles && a!.recurring && " · 매년"}
                           {kindBadge && (
                             <>
                               <span className="mx-1.5 text-fg-faint/50">·</span>
@@ -477,26 +462,27 @@ export default function UsClient({
                             </>
                           )}
                         </p>
-                        {(canManage && !autoManaged) || autoManaged ? (
+                        {!isMiles &&
+                        ((canManage && !autoManaged) || autoManaged) ? (
                           <div className="flex gap-3 mt-1.5">
                             {canManage && !autoManaged && (
                               <>
                                 <button
-                                  onClick={() => startEdit(a)}
+                                  onClick={() => startEdit(a!)}
                                   className="text-[10px] text-fg-faint underline"
                                 >
                                   수정
                                 </button>
                                 <button
-                                  onClick={() => remove(a.id)}
-                                  disabled={busyId === a.id}
+                                  onClick={() => remove(a!.id)}
+                                  disabled={busyId === a!.id}
                                   className="text-[10px] text-fg-faint underline"
                                 >
                                   삭제
                                 </button>
                               </>
                             )}
-                            {autoManaged && a.kind === "birthday" && (
+                            {autoManaged && a!.kind === "birthday" && (
                               <Link
                                 href="/settings/profile"
                                 className="text-[10px] text-fg-faint underline"
@@ -508,7 +494,7 @@ export default function UsClient({
                         ) : null}
                       </div>
                     </div>
-                    {idx < sorted.length - 1 && (
+                    {idx < timelineRows.length - 1 && (
                       <div className="ml-2 mt-3 dot-rule" />
                     )}
                   </li>

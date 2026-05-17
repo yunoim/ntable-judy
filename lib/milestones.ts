@@ -47,19 +47,12 @@ export function computeMilestones(
     });
   }
 
-  // 오늘 기준 ±N 범위 내만 의미있음. 너무 먼 미래는 잘라내고, 과거는 가장 최근 1개만.
+  // 오늘 이후 1년 이내 (366일) 의 다가올 마일스톤만. 지난 건 더 이상 노출 안 함.
   const oneYearMs = 366 * 86400000;
-  const upcoming = list
+  return list
     .filter((m) => m.date.getTime() >= today.getTime())
     .filter((m) => m.date.getTime() - today.getTime() <= oneYearMs)
     .sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  const recentPast = list
-    .filter((m) => m.date.getTime() < today.getTime())
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 1);
-
-  return [...recentPast, ...upcoming];
 }
 
 export function nextMilestone(

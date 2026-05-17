@@ -232,60 +232,82 @@ export default async function HomePage() {
               </Link>
             )}
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {upcomingAnni && (
+            {(() => {
+              // 다가올 기념일 / 마일스톤 중 가장 가까운 한 건만 카드로 (/us 와 중복 줄임).
+              const t = new Date();
+              t.setHours(0, 0, 0, 0);
+              const anniDays = upcomingAnni?.days;
+              const mileDays = upcomingMilestone
+                ? Math.round(
+                    (upcomingMilestone.date.getTime() - t.getTime()) / 86400000,
+                  )
+                : undefined;
+              type NextCard = {
+                emoji: string;
+                label: string;
+                date: Date;
+                days: number;
+              };
+              let pick: NextCard | null = null;
+              if (anniDays !== undefined && mileDays !== undefined) {
+                pick =
+                  anniDays <= mileDays
+                    ? {
+                        emoji: upcomingAnni!.row.emoji ?? "📅",
+                        label: upcomingAnni!.row.label,
+                        date: upcomingAnni!.nextDate,
+                        days: anniDays,
+                      }
+                    : {
+                        emoji: upcomingMilestone!.emoji,
+                        label: upcomingMilestone!.label,
+                        date: upcomingMilestone!.date,
+                        days: mileDays,
+                      };
+              } else if (anniDays !== undefined) {
+                pick = {
+                  emoji: upcomingAnni!.row.emoji ?? "📅",
+                  label: upcomingAnni!.row.label,
+                  date: upcomingAnni!.nextDate,
+                  days: anniDays,
+                };
+              } else if (mileDays !== undefined) {
+                pick = {
+                  emoji: upcomingMilestone!.emoji,
+                  label: upcomingMilestone!.label,
+                  date: upcomingMilestone!.date,
+                  days: mileDays,
+                };
+              }
+              if (!pick) return null;
+              return (
                 <Link
                   href="/us"
-                  className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
+                  className="tap lift block editorial-card px-4 py-3.5"
                 >
-                  <span className="text-base">
-                    {upcomingAnni.row.emoji ?? "📅"}
-                  </span>
-                  <p className="font-display text-sm truncate">
-                    {upcomingAnni.row.label}
-                  </p>
-                  <p className="text-[10px] text-fg-faint">
-                    {upcomingAnni.nextDate.toLocaleDateString("ko", {
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                  <p className="text-accent font-display text-base mt-auto pt-1">
-                    {upcomingAnni.days === 0
-                      ? "오늘"
-                      : `D-${upcomingAnni.days}`}
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-lg shrink-0">{pick.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="font-display text-sm truncate">
+                          {pick.label}
+                        </p>
+                        <p className="text-[10px] text-fg-faint">
+                          다음 중요한 날 ·{" "}
+                          {pick.date.toLocaleDateString("ko", {
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-accent font-display text-base shrink-0">
+                      {pick.days === 0 ? "오늘" : `D-${pick.days}`}
+                    </span>
+                  </div>
                 </Link>
-              )}
-              {upcomingMilestone &&
-                (() => {
-                  const t = new Date();
-                  t.setHours(0, 0, 0, 0);
-                  const days = Math.round(
-                    (upcomingMilestone.date.getTime() - t.getTime()) / 86400000,
-                  );
-                  return (
-                    <Link
-                      href="/us"
-                      className="tap lift editorial-card px-4 py-3.5 flex flex-col gap-1"
-                    >
-                      <span className="text-base">{upcomingMilestone.emoji}</span>
-                      <p className="font-display text-sm truncate">
-                        {upcomingMilestone.label}
-                      </p>
-                      <p className="text-[10px] text-fg-faint">
-                        {upcomingMilestone.date.toLocaleDateString("ko", {
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </p>
-                      <p className="text-fg-soft font-display text-base mt-auto pt-1">
-                        {days === 0 ? "오늘" : `D-${days}`}
-                      </p>
-                    </Link>
-                  );
-                })()}
-            </div>
+              );
+            })()}
           </section>
         )}
 
