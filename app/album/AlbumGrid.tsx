@@ -78,20 +78,23 @@ export default function AlbumGrid({
 
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 bg-fg/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-fg/95 flex flex-col"
           onClick={() => setLightbox(null)}
         >
-          <div
-            className="max-w-full max-h-full flex flex-col items-center gap-3"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex-1 flex items-center justify-center min-h-0 px-4 pt-4 pb-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={lightbox.url}
               alt={lightbox.caption ?? lightbox.dateTitle}
-              className="max-w-full max-h-[72vh] object-contain rounded-card"
+              className="max-w-full max-h-full object-contain rounded-card"
+              onClick={(e) => e.stopPropagation()}
             />
-            <div className="text-bg text-xs text-center serif-italic space-y-1">
+          </div>
+          <div
+            className="shrink-0 bg-fg/90 backdrop-blur px-4 pt-3 pb-5 safe-bottom border-t border-bg/10 flex flex-col items-center gap-2.5 text-bg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-xs text-center serif-italic">
               <p>
                 {lightbox.uploadedBy.emoji ?? "👤"}{" "}
                 {lightbox.uploadedBy.nickname}
@@ -103,27 +106,27 @@ export default function AlbumGrid({
                   minute: "2-digit",
                 })}
               </p>
-              {lightbox.caption && <p>{lightbox.caption}</p>}
+              {lightbox.caption && <p className="mt-0.5">{lightbox.caption}</p>}
             </div>
             <Link
               href={`/dates/${lightbox.dateId}`}
-              className="tap text-xs text-bg/80 underline serif-italic"
+              className="tap text-[13px] underline serif-italic"
             >
               #{lightbox.dateNumber} {lightbox.dateTitle} →
             </Link>
-            <div className="flex gap-3">
+            <div className="flex gap-2 mt-1">
               {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
                 <button
                   onClick={() => remove(lightbox.id)}
                   disabled={busy}
-                  className="text-xs text-rain underline"
+                  className="tap text-xs text-rain border border-rain/60 rounded-full px-4 py-1.5"
                 >
                   삭제
                 </button>
               )}
               <button
                 onClick={() => setLightbox(null)}
-                className="text-xs text-bg/70 underline"
+                className="tap text-xs text-bg border border-bg/60 rounded-full px-4 py-1.5"
               >
                 닫기
               </button>
