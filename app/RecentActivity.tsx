@@ -32,9 +32,19 @@ export default async function RecentActivity({
 }) {
   const userSel = { id: true, nickname: true, emoji: true };
 
+  // 일부 모델/쿼리가 실패해도 다른 활동은 보여야 하므로 개별 catch.
+  const safe = async <T,>(p: Promise<T[]>): Promise<T[]> => {
+    try {
+      return await p;
+    } catch (e) {
+      console.error("[RecentActivity] query failed", e);
+      return [];
+    }
+  };
+
   const [dates, reviews, comments, photos, annis, buckets, capsules, events] =
     await Promise.all([
-      prisma.date.findMany({
+      safe(prisma.date.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -44,8 +54,8 @@ export default async function RecentActivity({
           createdAt: true,
           createdBy: { select: userSel },
         },
-      }),
-      prisma.review.findMany({
+      })),
+      safe(prisma.review.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -55,8 +65,8 @@ export default async function RecentActivity({
           user: { select: userSel },
           date: { select: { id: true, title: true, number: true } },
         },
-      }),
-      prisma.dateComment.findMany({
+      })),
+      safe(prisma.dateComment.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -66,8 +76,8 @@ export default async function RecentActivity({
           user: { select: userSel },
           date: { select: { id: true, title: true, number: true } },
         },
-      }),
-      prisma.datePhoto.findMany({
+      })),
+      safe(prisma.datePhoto.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -76,8 +86,8 @@ export default async function RecentActivity({
           uploadedBy: { select: userSel },
           date: { select: { id: true, title: true, number: true } },
         },
-      }),
-      prisma.anniversary.findMany({
+      })),
+      safe(prisma.anniversary.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -87,8 +97,8 @@ export default async function RecentActivity({
           createdAt: true,
           createdBy: { select: userSel },
         },
-      }),
-      prisma.bucket.findMany({
+      })),
+      safe(prisma.bucket.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -98,8 +108,8 @@ export default async function RecentActivity({
           createdAt: true,
           createdBy: { select: userSel },
         },
-      }),
-      prisma.timeCapsule.findMany({
+      })),
+      safe(prisma.timeCapsule.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -108,8 +118,8 @@ export default async function RecentActivity({
           createdAt: true,
           createdBy: { select: userSel },
         },
-      }),
-      prisma.personalEvent.findMany({
+      })),
+      safe(prisma.personalEvent.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {
@@ -118,7 +128,7 @@ export default async function RecentActivity({
           createdAt: true,
           user: { select: userSel },
         },
-      }),
+      })),
     ]);
 
   const items: ActivityItem[] = [];
@@ -200,13 +210,16 @@ export default async function RecentActivity({
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, limit);
 
-  if (sorted.length === 0) return null;
-
   return (
     <section className="space-y-2">
       <p className="text-[11px] text-fg-faint tracking-wider uppercase">
         최근 활동
       </p>
+      {sorted.length === 0 ? (
+        <p className="text-[11px] text-fg-faint italic px-1">
+          아직 활동이 없어요.
+        </p>
+      ) : (
       <ul className="rounded-card border border-fg/10 divide-y divide-fg/8 overflow-hidden">
         {sorted.map((it) => (
           <li key={it.id}>
@@ -232,6 +245,7 @@ export default async function RecentActivity({
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 }

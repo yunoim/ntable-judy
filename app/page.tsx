@@ -186,6 +186,9 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
+        {/* ─── 최근 활동 ─────────────────────── */}
+        <RecentActivity />
+
         {/* ─── Hero: 다음 데이트 ─────────────────── */}
         {next ? (
           <section className="space-y-2.5 rise-in rise-in-1">
@@ -348,9 +351,6 @@ export default async function HomePage() {
           buckets={buckets}
           capsules={capsules}
         />
-
-        {/* ─── 최근 활동 ─────────────────────── */}
-        <RecentActivity />
       </main>
 
       <TabBar active="home" />
