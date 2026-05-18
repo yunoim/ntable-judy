@@ -17,6 +17,7 @@ import { dDay } from "@/lib/data";
 import { coupleDayNumber, COUPLE_START_KIND } from "@/lib/saju";
 import { nextMilestone } from "@/lib/milestones";
 import CoupleSheets from "./CoupleSheets";
+import RecentActivity from "./RecentActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -347,6 +348,9 @@ export default async function HomePage() {
           buckets={buckets}
           capsules={capsules}
         />
+
+        {/* ─── 최근 활동 ─────────────────────── */}
+        <RecentActivity />
       </main>
 
       <TabBar active="home" />
