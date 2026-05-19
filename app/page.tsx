@@ -20,6 +20,7 @@ import CoupleSheets from "./CoupleSheets";
 import RecentActivity from "./RecentActivity";
 import DailyEntryCard from "./DailyEntryCard";
 import { todayKstStr, computeStreak } from "@/lib/daily";
+import { getOrCreateDailyQuestion } from "@/lib/dailyQuestions";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +121,7 @@ export default async function HomePage() {
     ? nextMilestone(coupleStartIso)
     : null;
 
-  // 데일리 한 줄 — 오늘 양쪽 entry + 스트릭.
+  // 데일리 Q&A — 오늘 양쪽 entry + 스트릭 + 그날 질문.
   const dateStr = todayKstStr();
   const partnerInitial = users.find(
     (u) => u.partner && u.id !== me.id,
@@ -128,7 +129,9 @@ export default async function HomePage() {
   let myDaily: { body: string; emoji: string | null } | null = null;
   let partnerDaily: { body: string; emoji: string | null } | null = null;
   let streak = 0;
+  let dailyQuestion = "";
   try {
+    dailyQuestion = await getOrCreateDailyQuestion(dateStr, prisma);
     const entries = await prisma.dailyEntry.findMany({
       where: {
         date: dateStr,
@@ -149,6 +152,9 @@ export default async function HomePage() {
   } catch (e) {
     console.error("[home] daily fetch", e);
   }
+  // Q&A 핵심 UX — 내가 답 안 했으면 파트너 답 숨김 (서로 답한 뒤 동시 공개).
+  const partnerDailyForCard = myDaily ? partnerDaily : null;
+  const partnerHasAnswered = !!partnerDaily;
 
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
@@ -218,16 +224,18 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
-        {/* ─── 오늘 한 줄 (데일리 챌린지) ─────────────── */}
+        {/* ─── 오늘의 질문 (Q&A) ─────────────── */}
         {partnerInitial && (
           <DailyEntryCard
             meId={me.id}
             meNickname={me.nickname}
             partnerNickname={partnerInitial.nickname}
             myEntry={myDaily}
-            partnerEntry={partnerDaily}
+            partnerEntry={partnerDailyForCard}
+            partnerHasAnswered={partnerHasAnswered}
             streak={streak}
             dateStr={dateStr}
+            question={dailyQuestion}
           />
         )}
 

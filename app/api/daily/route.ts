@@ -41,11 +41,11 @@ export async function POST(req: Request) {
 
   revalidatePath("/");
 
-  // 새로 작성한 경우에만 푸시 (수정 시 도배 방지).
+  // 새로 작성한 경우에만 푸시 (수정 시 도배 방지). 답 본문은 노출 X — 양쪽 답 후 공개.
   if (!existed) {
     notifyOthers(user.id, {
-      title: `📓 ${user.nickname} 의 오늘 한 줄`,
-      body: text.length > 80 ? text.slice(0, 80) + "…" : text,
+      title: `📓 ${user.nickname} 가 답했어요`,
+      body: "오늘의 질문에 답하러 가볼까?",
       url: "/",
       tag: `daily-${date}-${user.id}`,
     }).catch((e) => console.error("[push] daily", e));

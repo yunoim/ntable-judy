@@ -9,21 +9,26 @@ export type DailyEntryItem = {
 };
 
 export default function DailyEntryCard({
-  meId,
   meNickname,
   partnerNickname,
   myEntry,
   partnerEntry,
+  partnerHasAnswered,
   streak,
   dateStr,
+  question,
 }: {
   meId: string;
   meNickname: string;
   partnerNickname: string | null;
   myEntry: DailyEntryItem | null;
+  // 내가 아직 답 안했을 때는 null 로 들어옴 (서버에서 가림).
   partnerEntry: DailyEntryItem | null;
+  // 파트너가 실제로 답을 했는지 (가렸어도 메타정보는 노출).
+  partnerHasAnswered: boolean;
   streak: number;
   dateStr: string;
+  question: string;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -66,15 +71,15 @@ export default function DailyEntryCard({
     }
   }
 
-  const both = myEntry && partnerEntry;
-  const eitherEmpty = !myEntry || !partnerEntry;
+  const both = !!myEntry && !!partnerEntry;
+  const partnerLabel = partnerNickname ?? "상대";
 
   return (
     <>
       <section className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-[11px] text-fg-faint tracking-wider uppercase">
-            오늘 한 줄
+            오늘의 질문
           </p>
           {streak > 0 && (
             <span className="text-[11px] text-accent font-display">
@@ -83,7 +88,31 @@ export default function DailyEntryCard({
           )}
         </div>
 
+        {/* 질문 — 항상 노출. 둘 다 같은 질문에 답함. */}
+        {question && (
+          <div className="editorial-card-warm px-4 py-3">
+            <p className="font-display text-[15px] leading-snug">
+              {question}
+            </p>
+          </div>
+        )}
+
         {both ? (
+          <div className="grid grid-cols-2 gap-2">
+            <EntryBubble
+              label={meNickname}
+              entry={myEntry!}
+              accent
+              onClick={() => {
+                setText(myEntry!.body);
+                setEmoji(myEntry!.emoji ?? "");
+                setOpen(true);
+              }}
+            />
+            <EntryBubble label={partnerLabel} entry={partnerEntry!} />
+          </div>
+        ) : myEntry ? (
+          // 내가 답했고 파트너는 아직.
           <div className="grid grid-cols-2 gap-2">
             <EntryBubble
               label={meNickname}
@@ -95,55 +124,43 @@ export default function DailyEntryCard({
                 setOpen(true);
               }}
             />
-            <EntryBubble
-              label={partnerNickname ?? "상대"}
-              entry={partnerEntry}
-            />
+            <div className="editorial-card px-3 py-2.5 flex flex-col gap-1 text-left bg-bg-warm/30">
+              <p className="text-[10px] text-fg-faint">{partnerLabel}</p>
+              <p className="text-[13px] text-fg-faint italic leading-snug">
+                답을 기다리는 중…
+              </p>
+            </div>
           </div>
         ) : (
           <button
             type="button"
             onClick={() => {
-              setText(myEntry?.body ?? "");
-              setEmoji(myEntry?.emoji ?? "");
+              setText("");
+              setEmoji("");
               setOpen(true);
             }}
             className="tap lift w-full editorial-card-warm px-4 py-3 text-left"
           >
-            {myEntry ? (
-              <>
-                <p className="text-[10px] text-fg-faint">내 한 줄</p>
-                <p className="text-sm mt-0.5 line-clamp-2">
-                  {myEntry.emoji && <span className="mr-1">{myEntry.emoji}</span>}
-                  {myEntry.body}
-                </p>
-                <p className="text-[10px] text-fg-faint mt-1">
-                  {partnerNickname ?? "상대"} 기다리는 중…
-                </p>
-              </>
-            ) : partnerEntry ? (
+            {partnerHasAnswered ? (
               <>
                 <p className="text-[10px] text-fg-faint">
-                  {partnerNickname ?? "상대"} 가 한 줄 남겼어요
+                  {partnerLabel} 가 먼저 답했어요
                 </p>
-                <p className="text-sm mt-0.5 line-clamp-2 text-fg-soft italic">
-                  {partnerEntry.emoji && (
-                    <span className="mr-1">{partnerEntry.emoji}</span>
-                  )}
-                  {partnerEntry.body}
+                <p className="font-display text-sm mt-0.5">
+                  + 답하고 서로 답 보기
                 </p>
-                <p className="text-[11px] text-accent font-display mt-1">
-                  + 내 차례
+                <p className="text-[10px] text-fg-faint mt-1 italic">
+                  둘 다 답해야 서로 답이 공개돼요
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[10px] text-fg-faint">오늘 한 줄</p>
+                <p className="text-[10px] text-fg-faint">먼저 답해보기</p>
                 <p className="font-display text-sm mt-0.5">
-                  + 오늘 한 줄 남기기
+                  + 오늘의 답 남기기
                 </p>
                 <p className="text-[10px] text-fg-faint mt-1">
-                  둘 다 작성하면 스트릭 +1
+                  둘 다 답하면 스트릭 +1
                 </p>
               </>
             )}
@@ -166,7 +183,7 @@ export default function DailyEntryCard({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 z-10 bg-bg/95 backdrop-blur px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between">
-              <p className="font-display text-base">오늘 한 줄</p>
+              <p className="font-display text-base">오늘의 답</p>
               <button
                 type="button"
                 onClick={close}
@@ -177,6 +194,11 @@ export default function DailyEntryCard({
               </button>
             </div>
             <div className="px-5 py-4 space-y-3">
+              {question && (
+                <p className="text-[13px] text-fg-soft leading-snug font-display">
+                  Q. {question}
+                </p>
+              )}
               <div className="flex gap-1.5 flex-wrap">
                 {["", "😊", "🥰", "😴", "🍜", "☕", "🎬", "✨", "💭"].map(
                   (e) => (
@@ -199,7 +221,7 @@ export default function DailyEntryCard({
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value.slice(0, 500))}
-                placeholder="오늘은 뭐 했어? 기분 어땠어?"
+                placeholder="여기에 답을 적어보세요"
                 rows={4}
                 autoFocus
                 className="w-full bg-bg-warm/40 border border-fg/15 rounded-card px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-accent placeholder:italic placeholder:text-fg-faint"

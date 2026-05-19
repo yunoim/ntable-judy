@@ -325,3 +325,26 @@ model SajuFortune {
   @@unique([kind, periodKey])
   @@schema("judy")
 }
+
+// 데일리 Q&A 의 그날 질문 (date 기준 양쪽 사용자가 같은 질문을 답하도록 고정).
+// 한번 결정되면 다시 안 바뀜 — pool 이 바뀌어도 과거 답변 컨텍스트 보존.
+model DailyQuestion {
+  date      String   @id  // 'YYYY-MM-DD' (KST)
+  question  String
+  createdAt DateTime @default(now())
+
+  @@schema("judy")
+}
+
+// 스케줄러 dedup 용 — 같은 (kind, key) 는 한 번만 발송.
+//   - kind: 'dday-1' | 'anniversary-morning' | ...
+//   - key:  'date-{id}' | 'anni-{id}-{YYYY-MM-DD}'
+model NotificationLog {
+  id     Int      @id @default(autoincrement())
+  kind   String
+  key    String
+  sentAt DateTime @default(now())
+
+  @@unique([kind, key])
+  @@schema("judy")
+}
