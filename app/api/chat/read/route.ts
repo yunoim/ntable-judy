@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { emitChatRead } from "@/lib/chatStream";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
     create: { userId: user.id, lastReadId },
     update: { lastReadId },
   });
+
+  emitChatRead({ userId: user.id, lastReadId });
 
   return NextResponse.json({ ok: true });
 }

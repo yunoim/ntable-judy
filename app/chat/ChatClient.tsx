@@ -46,14 +46,19 @@ const POLL_MS = 30_000;
 export default function ChatClient({
   initial,
   meId,
+  initialPartnerLastReadId,
 }: {
   initial: ChatMessageItem[];
   meId: string;
+  initialPartnerLastReadId: number;
 }) {
   const [messages, setMessages] = useState<ChatMessageItem[]>(initial);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [partnerLastReadId, setPartnerLastReadId] = useState<number>(
+    initialPartnerLastReadId,
+  );
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const lastIdRef = useRef<number>(
     initial.length ? initial[initial.length - 1].id : 0,
@@ -118,6 +123,21 @@ export default function ChatClient({
       try {
         const { id } = JSON.parse((evt as MessageEvent).data) as { id: number };
         setMessages((prev) => prev.filter((m) => m.id !== id));
+      } catch {
+        /* ignore */
+      }
+    });
+    es.addEventListener("chat-read", (evt) => {
+      try {
+        const data = JSON.parse((evt as MessageEvent).data) as {
+          userId: string;
+          lastReadId: number;
+        };
+        // 상대방의 읽음 진행만 추적 (본인 device 끼리 sync 도 들어오지만 무해).
+        if (data.userId === meId) return;
+        setPartnerLastReadId((prev) =>
+          data.lastReadId > prev ? data.lastReadId : prev,
+        );
       } catch {
         /* ignore */
       }
@@ -334,8 +354,18 @@ export default function ChatClient({
                     )}
                     <div className="flex items-end gap-1.5">
                       {isMine && (
-                        <span className="text-[10px] text-fg-faint pb-0.5">
-                          {formatTime(m.createdAt)}
+                        <span className="flex flex-col items-end pb-0.5 leading-tight">
+                          {m.id > partnerLastReadId && (
+                            <span
+                              className="text-[10px] text-accent font-display"
+                              aria-label="안 읽음"
+                            >
+                              1
+                            </span>
+                          )}
+                          <span className="text-[10px] text-fg-faint">
+                            {formatTime(m.createdAt)}
+                          </span>
                         </span>
                       )}
                       <div

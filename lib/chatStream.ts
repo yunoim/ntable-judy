@@ -6,9 +6,12 @@ import type { ChatMessageBroadcast } from "./chatTypes";
 
 type NewListener = (msg: ChatMessageBroadcast) => void;
 type DeleteListener = (id: number) => void;
+export type ReadEvent = { userId: string; lastReadId: number };
+type ReadListener = (evt: ReadEvent) => void;
 
 const newListeners = new Set<NewListener>();
 const delListeners = new Set<DeleteListener>();
+const readListeners = new Set<ReadListener>();
 
 export function emitChat(msg: ChatMessageBroadcast) {
   for (const l of newListeners) {
@@ -41,5 +44,22 @@ export function subscribeChatDelete(l: DeleteListener): () => void {
   delListeners.add(l);
   return () => {
     delListeners.delete(l);
+  };
+}
+
+export function emitChatRead(evt: ReadEvent) {
+  for (const l of readListeners) {
+    try {
+      l(evt);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function subscribeChatRead(l: ReadListener): () => void {
+  readListeners.add(l);
+  return () => {
+    readListeners.delete(l);
   };
 }
