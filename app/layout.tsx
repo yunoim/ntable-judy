@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const dmSerif = DM_Serif_Display({
   weight: ["400"],
@@ -22,6 +23,17 @@ export const metadata: Metadata = {
   title: "judy.ntable.kr",
   description: "둘이서 쓰는 데이트 다이어리",
   robots: { index: false, follow: false },
+  manifest: "/manifest.webmanifest",
+  applicationName: "judy",
+  appleWebApp: {
+    capable: true,
+    title: "judy",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -39,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto max-w-[390px] min-h-screen relative overflow-x-hidden">
           {children}
         </div>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
