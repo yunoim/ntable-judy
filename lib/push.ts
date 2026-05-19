@@ -1,5 +1,6 @@
-// 알림(Web Push) — 채팅 기능 도입 시 부활 예정 (2026-05-04 보류).
-// 부활 시 아래 주석 해제 + .env 의 VAPID_* + sw.js + PushToggle + cron 함께 활성화.
+// 알림 (Web Push) — 활성. .env 의 VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY 필요.
+import webpush from "web-push";
+import { prisma } from "@/lib/db";
 
 export type PushPayload = {
   title: string;
@@ -9,25 +10,8 @@ export type PushPayload = {
   tag?: string;
 };
 
-export async function sendPushTo(
-  _userId: string,
-  _payload: PushPayload,
-): Promise<{ sent: number; removed: number }> {
-  return { sent: 0, removed: 0 };
-}
-
-export async function broadcast(
-  _payload: PushPayload,
-): Promise<{ sent: number; removed: number }> {
-  return { sent: 0, removed: 0 };
-}
-
-/* === 원래 구현 (보류) ===========================================
-import webpush from "web-push";
-import { prisma } from "@/lib/db";
-
 let configured = false;
-function ensureConfigured() {
+function ensureConfigured(): boolean {
   if (configured) return true;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
@@ -59,8 +43,11 @@ export async function sendPushTo(
           data: { lastUsedAt: new Date() },
         })
         .catch(() => {});
-    } catch (e: any) {
-      const status = e?.statusCode;
+    } catch (e: unknown) {
+      const status =
+        e && typeof e === "object" && "statusCode" in e
+          ? (e as { statusCode: number }).statusCode
+          : 0;
       if (status === 410 || status === 404) {
         await prisma.pushSubscription
           .delete({ where: { endpoint: s.endpoint } })
@@ -72,6 +59,7 @@ export async function sendPushTo(
   return { sent, removed };
 }
 
+// 모든 approved 사용자에게 broadcast
 export async function broadcast(
   payload: PushPayload,
 ): Promise<{ sent: number; removed: number }> {
@@ -89,4 +77,24 @@ export async function broadcast(
   }
   return { sent, removed };
 }
-=================================================================== */
+
+// 자기 자신을 제외한 나머지 (보통 파트너 한 명) 에게만 발송.
+// "내가 등록했어요" 알림이 본인에게도 가는 걸 막기 위함.
+export async function notifyOthers(
+  excludeUserId: string,
+  payload: PushPayload,
+): Promise<{ sent: number; removed: number }> {
+  if (!ensureConfigured()) return { sent: 0, removed: 0 };
+  const users = await prisma.user.findMany({
+    where: { role: { in: ["admin", "approved"] }, NOT: { id: excludeUserId } },
+    select: { id: true },
+  });
+  let sent = 0;
+  let removed = 0;
+  for (const u of users) {
+    const r = await sendPushTo(u.id, payload);
+    sent += r.sent;
+    removed += r.removed;
+  }
+  return { sent, removed };
+}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { notifyOthers } from "@/lib/push";
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
@@ -91,5 +92,13 @@ export async function POST(req: Request) {
   });
 
   revalidatePath("/timeline");
+
+  notifyOthers(user.id, {
+    title: `📌 ${user.nickname} 의 일정`,
+    body: `${title} · ${startsAt.toLocaleDateString("ko", { month: "long", day: "numeric" })}`,
+    url: "/timeline",
+    tag: `event-${created.id}`,
+  }).catch((e) => console.error("[push] event", e));
+
   return NextResponse.json({ id: created.id });
 }

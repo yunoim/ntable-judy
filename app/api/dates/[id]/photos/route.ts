@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
+import { notifyOthers } from "@/lib/push";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
@@ -73,6 +74,14 @@ export async function POST(
     });
 
     revalidatePath(`/dates/${id}`);
+
+    notifyOthers(user.id, {
+      title: `📷 ${user.nickname} 이 사진 추가`,
+      body: `#${String(date.number).padStart(2, "0")} ${date.title}`,
+      url: `/dates/${id}`,
+      tag: `photo-${created.id}`,
+    }).catch((e) => console.error("[push] photo", e));
+
     return NextResponse.json({
       id: created.id,
       url: created.url,

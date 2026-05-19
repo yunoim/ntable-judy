@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { notifyOthers } from "@/lib/push";
 import { COUPLE_START_KIND } from "@/lib/saju";
 
 const ALLOWED_KINDS = new Set(["", COUPLE_START_KIND]);
@@ -53,5 +54,13 @@ export async function POST(req: Request) {
   });
   revalidatePath("/");
   revalidatePath("/us");
+
+  notifyOthers(user.id, {
+    title: `${emoji ?? "📅"} ${user.nickname} 이 기념일 등록`,
+    body: `${label} · ${date.toLocaleDateString("ko", { month: "long", day: "numeric" })}`,
+    url: "/us",
+    tag: `anni-${created.id}`,
+  }).catch((e) => console.error("[push] anni", e));
+
   return NextResponse.json({ id: created.id });
 }

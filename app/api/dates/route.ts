@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma, renumberDates } from "@/lib/db";
+import { notifyOthers } from "@/lib/push";
 
 type StopAlternative = {
   emoji?: string | null;
@@ -141,6 +142,17 @@ export async function POST(req: Request) {
     where: { id: created.id },
     select: { number: true },
   });
+
+  // 파트너에게 푸시
+  const isPast = requestedStatus === "done";
+  notifyOthers(user.id, {
+    title: isPast
+      ? `📓 ${user.nickname} 이 다녀온 데이트 기록`
+      : `✨ ${user.nickname} 이 데이트 계획`,
+    body: `#${String(final?.number ?? created.number).padStart(2, "0")} ${created.title}`,
+    url: `/dates/${created.id}`,
+    tag: `date-${created.id}`,
+  }).catch((e) => console.error("[push] date create", e));
 
   return NextResponse.json({
     id: created.id,

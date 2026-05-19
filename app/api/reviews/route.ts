@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { notifyOthers } from "@/lib/push";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -35,6 +36,13 @@ export async function POST(req: Request) {
       });
     }
   }
+
+  notifyOthers(user.id, {
+    title: `★ ${user.nickname} 의 후기 (${stars})`,
+    body: `#${String(date.number).padStart(2, "0")} ${date.title}${oneLine ? ` · ${oneLine}` : ""}`,
+    url: `/dates/${dateId}`,
+    tag: `review-${dateId}-${user.id}`,
+  }).catch((e) => console.error("[push] review", e));
 
   return NextResponse.json({ ok: true });
 }

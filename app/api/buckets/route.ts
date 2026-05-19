@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { notifyOthers } from "@/lib/push";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -49,5 +50,13 @@ export async function POST(req: Request) {
   });
   revalidatePath("/buckets");
   revalidatePath("/");
+
+  notifyOthers(user.id, {
+    title: `📋 ${user.nickname} 의 버킷리스트`,
+    body: `${emoji ?? ""}${emoji ? " " : ""}${title}`,
+    url: "/us",
+    tag: `bucket-${created.id}`,
+  }).catch((e) => console.error("[push] bucket", e));
+
   return NextResponse.json({ id: created.id });
 }

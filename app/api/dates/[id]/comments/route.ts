@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { notifyOthers } from "@/lib/push";
 
 export async function POST(
   req: Request,
@@ -29,6 +30,14 @@ export async function POST(
   });
 
   revalidatePath(`/dates/${id}`);
+
+  notifyOthers(user.id, {
+    title: `💬 ${user.nickname} 의 댓글`,
+    body: `#${String(date.number).padStart(2, "0")} ${date.title} · ${text.slice(0, 40)}${text.length > 40 ? "…" : ""}`,
+    url: `/dates/${id}`,
+    tag: `comment-${created.id}`,
+  }).catch((e) => console.error("[push] comment", e));
+
   return NextResponse.json({
     id: created.id,
     body: created.body,
