@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export type AlbumPhoto = {
   id: number;
@@ -15,8 +15,10 @@ export type AlbumPhoto = {
   uploadedBy: { id: string; nickname: string; emoji: string | null };
 };
 
-// 개별 그리드 셀 — 이미지 로딩 실패 시 fallback 으로 데이트 정보 표시 +
-// 데이트 페이지로 이동. 브라우저 기본 동작 (alt 텍스트 노출) 회피.
+// 개별 그리드 셀 — 이미지 로딩 실패 시 최대 2회 재시도 (cache-busting query 로
+// 캐리어/WebView 의 stale negative cache 우회), 그 후에도 실패하면 fallback.
+const MAX_RETRY = 2;
+
 function AlbumCell({
   photo,
   onOpen,
@@ -24,9 +26,19 @@ function AlbumCell({
   photo: AlbumPhoto;
   onOpen: () => void;
 }) {
+  const [retry, setRetry] = useState(0);
   const [errored, setErrored] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const baseClass =
     "tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group";
+
   if (errored) {
     return (
       <Link
@@ -42,15 +54,35 @@ function AlbumCell({
       </Link>
     );
   }
+
+  // retry 시 query 한 비트씩 변경 — 새 URL 로 인식해 HTTP cache 우회.
+  const src =
+    retry === 0
+      ? photo.url
+      : `${photo.url}${photo.url.includes("?") ? "&" : "?"}r=${retry}`;
+
+  function handleError() {
+    if (retry < MAX_RETRY) {
+      const next = retry + 1;
+      // 백오프 — 300ms, 800ms.
+      const delay = next === 1 ? 300 : 800;
+      timerRef.current = setTimeout(() => setRetry(next), delay);
+    } else {
+      setErrored(true);
+    }
+  }
+
   return (
     <button onClick={onOpen} className={baseClass}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={photo.url}
+        key={retry}
+        src={src}
         alt=""
         className="w-full h-full object-cover transition-transform group-hover:scale-105"
         loading="lazy"
-        onError={() => setErrored(true)}
+        decoding="async"
+        onError={handleError}
       />
     </button>
   );
