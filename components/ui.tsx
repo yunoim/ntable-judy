@@ -184,8 +184,7 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
 type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
 
 // 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
-// 단 상단 근처 (scrollY < 80) 와 페이지 끝 (bottom 도달) 에서는 항상 노출 —
-// 끝까지 내렸을 때도 TabBar 가 보여야 하므로.
+// 단 상단 근처 (scrollY < 80) 와 페이지 끝 도달 (마지막 8px) 에서는 항상 노출.
 function useHideOnScroll() {
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
@@ -208,12 +207,16 @@ function useHideOnScroll() {
       const dy = y - lastY;
       const viewportH = readViewportH();
       const docH = readDocH();
-      // 스크롤이 사실상 불가능한 짧은 페이지는 항상 노출.
-      const notScrollable = docH <= viewportH + 8;
-      const atBottom = y + viewportH >= docH - 40;
-      if (notScrollable || y < 80 || atBottom) setHidden(false);
-      else if (dy > 3) setHidden(true);
-      else if (dy < -3) setHidden(false);
+      // 스크롤 가능 여부 — viewport 보다 32px 이상 길어야 의미.
+      const scrollable = docH > viewportH + 32;
+      const atBottom = scrollable && y + viewportH >= docH - 8;
+      if (!scrollable || y < 80 || atBottom) {
+        setHidden(false);
+      } else if (dy > 1) {
+        setHidden(true);
+      } else if (dy < -1) {
+        setHidden(false);
+      }
       lastY = y;
     };
     const onScroll = () => {
@@ -224,7 +227,6 @@ function useHideOnScroll() {
         ticking = false;
       });
     };
-    // 초기 한 번 — 짧은 페이지에서도 hidden=false 보장.
     evaluate();
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, {
@@ -232,10 +234,12 @@ function useHideOnScroll() {
       capture: true,
     });
     window.addEventListener("resize", onScroll);
+    window.addEventListener("touchmove", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("scroll", onScroll, { capture: true });
       window.removeEventListener("resize", onScroll);
+      window.removeEventListener("touchmove", onScroll);
     };
   }, []);
   return hidden;
