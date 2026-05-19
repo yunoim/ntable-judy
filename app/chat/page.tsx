@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
+import { TabBar } from "@/components/ui";
 import ChatClient, { type ChatMessageItem } from "./ChatClient";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export default async function ChatPage() {
       </header>
 
       <ChatClient initial={messages} meId={me.id} />
+
+      <TabBar active="chat" />
     </div>
   );
 }

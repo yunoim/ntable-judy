@@ -254,7 +254,9 @@ export default function ChatClient({
 
       <div
         className="border-t border-fg/10 bg-bg/95 backdrop-blur px-3 py-2 flex items-end gap-2"
-        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
+        style={{
+          marginBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
+        }}
       >
         <textarea
           value={text}

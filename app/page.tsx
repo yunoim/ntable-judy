@@ -120,20 +120,6 @@ export default async function HomePage() {
     ? nextMilestone(coupleStartIso)
     : null;
 
-  // 안 읽은 채팅 수 — 내가 마지막 읽은 ID 이후의, 상대가 보낸 메시지.
-  let unreadCount = 0;
-  try {
-    const read = await prisma.chatRead.findUnique({
-      where: { userId: me.id },
-    });
-    const lastReadId = read?.lastReadId ?? 0;
-    unreadCount = await prisma.chatMessage.count({
-      where: { id: { gt: lastReadId }, NOT: { userId: me.id } },
-    });
-  } catch (e) {
-    console.error("[home] unread chat count", e);
-  }
-
   // 데일리 한 줄 — 오늘 양쪽 entry + 스트릭.
   const dateStr = todayKstStr();
   const partnerInitial = users.find(
@@ -201,20 +187,6 @@ export default async function HomePage() {
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <Link
-            href="/chat"
-            className="tap relative w-9 h-9 flex items-center justify-center rounded-full text-fg-faint hover:text-fg hover:bg-bg-warm"
-            aria-label="채팅"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-            </svg>
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-accent text-bg text-[9px] rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center leading-none">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
           {isAdmin && (
             <Link
               href="/admin"

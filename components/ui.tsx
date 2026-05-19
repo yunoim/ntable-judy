@@ -1,6 +1,7 @@
 // components/ui.tsx — shared UI primitives
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -178,10 +179,16 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
           <path d="M4 17l4.8-4.8 3 3 3.5-3.5L20 16.5" />
         </svg>
       );
+    case "chat":
+      return (
+        <svg {...common}>
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        </svg>
+      );
   }
 }
 
-type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
+type TabId = "home" | "plan" | "log" | "us" | "saju" | "album" | "chat";
 
 // 스크롤 다운하면 숨기고, 스크롤 업하면 다시 보여준다.
 // 상단 (y<20) 와 페이지 끝 (last 8px) 에서는 항상 노출.
@@ -238,15 +245,44 @@ function useHideOnScroll() {
   return hidden;
 }
 
+// 채팅 안 읽은 수 폴링. path 가 바뀔 때마다 즉시 refetch + 10초 인터벌.
+function useUnreadChat(): number {
+  const [count, setCount] = useState(0);
+  const pathname = usePathname();
+  useEffect(() => {
+    let alive = true;
+    async function tick() {
+      try {
+        const res = await fetch("/api/chat/unread", { cache: "no-store" });
+        if (alive && res.ok) {
+          const data = await res.json();
+          setCount(Number(data.count ?? 0));
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    tick();
+    const interval = setInterval(tick, 10000);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, [pathname]);
+  return count;
+}
+
 export function TabBar({ active }: { active?: TabId }) {
   const items: Array<{ id: TabId; label: string; href: string }> = [
     { id: "home", label: "홈", href: "/" },
+    { id: "chat", label: "채팅", href: "/chat" },
     { id: "log", label: "일정", href: "/timeline" },
     { id: "us", label: "기념일", href: "/us" },
     { id: "album", label: "사진첩", href: "/album" },
     { id: "saju", label: "사주", href: "/us/saju" },
   ];
   const hidden = useHideOnScroll();
+  const unreadChat = useUnreadChat();
   return (
     <nav
       className={cn(
@@ -258,17 +294,25 @@ export function TabBar({ active }: { active?: TabId }) {
       <ul className="flex justify-around items-center px-2 pt-2 pb-1">
         {items.map((it) => {
           const isActive = active === it.id;
+          const badge = it.id === "chat" && unreadChat > 0 ? unreadChat : 0;
           return (
             <li key={it.id} className="flex-1">
               <Link
                 href={it.href}
                 prefetch={false}
                 className={cn(
-                  "tap flex flex-col items-center gap-1 px-2 py-1.5",
+                  "tap flex flex-col items-center gap-1 px-2 py-1.5 relative",
                   isActive ? "text-fg" : "text-fg-faint",
                 )}
               >
-                <TabIcon id={it.id} active={isActive} />
+                <span className="relative">
+                  <TabIcon id={it.id} active={isActive} />
+                  {badge > 0 && (
+                    <span className="absolute -top-1 -right-2 bg-accent text-bg text-[9px] rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center leading-none font-medium">
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
+                </span>
                 <span
                   className={cn(
                     "text-[10.5px] tracking-wider",
