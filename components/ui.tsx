@@ -183,62 +183,56 @@ function TabIcon({ id, active }: { id: TabId; active: boolean }) {
 
 type TabId = "home" | "plan" | "log" | "us" | "saju" | "album";
 
-// 아래로 스크롤하면 숨기고, 위로 스크롤하면 다시 보여준다.
-// 단 상단 근처 (scrollY < 80) 와 페이지 끝 도달 (마지막 8px) 에서는 항상 노출.
+// 스크롤 다운하면 숨기고, 스크롤 업하면 다시 보여준다.
+// 상단 (y<20) 와 페이지 끝 (last 8px) 에서는 항상 노출.
 function useHideOnScroll() {
   const [hidden, setHidden] = useState(false);
   useEffect(() => {
-    const readY = () =>
+    let lastY =
       window.scrollY ||
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
-    const readDocH = () =>
-      Math.max(
+    let frame = 0;
+
+    const update = () => {
+      const y =
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        document.body.scrollTop ||
+        0;
+      const dy = y - lastY;
+      const viewportH =
+        window.innerHeight || document.documentElement.clientHeight;
+      const docH = Math.max(
         document.documentElement.scrollHeight,
         document.body.scrollHeight,
       );
-    const readViewportH = () =>
-      window.innerHeight || document.documentElement.clientHeight;
-    let lastY = readY();
-    let ticking = false;
-    const evaluate = () => {
-      const y = readY();
-      const dy = y - lastY;
-      const viewportH = readViewportH();
-      const docH = readDocH();
       const atBottom = y + viewportH >= docH - 8;
-      // y < 20 또는 페이지 끝일 때만 강제 노출. 그 외엔 스크롤 방향 따라.
-      if (y < 20 || atBottom) {
-        setHidden(false);
-      } else if (dy > 1) {
-        setHidden(true);
-      } else if (dy < -1) {
-        setHidden(false);
-      }
+      if (y < 20 || atBottom) setHidden(false);
+      else if (dy > 0) setHidden(true);
+      else if (dy < 0) setHidden(false);
       lastY = y;
     };
+
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        evaluate();
-        ticking = false;
-      });
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
     };
-    evaluate();
+
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, {
       passive: true,
       capture: true,
     });
-    window.addEventListener("resize", onScroll);
     window.addEventListener("touchmove", onScroll, { passive: true });
+    window.addEventListener("wheel", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("scroll", onScroll, { capture: true });
-      window.removeEventListener("resize", onScroll);
       window.removeEventListener("touchmove", onScroll);
+      window.removeEventListener("wheel", onScroll);
+      cancelAnimationFrame(frame);
     };
   }, []);
   return hidden;
