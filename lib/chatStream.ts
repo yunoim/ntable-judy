@@ -4,22 +4,42 @@
 
 import type { ChatMessageBroadcast } from "./chatTypes";
 
-type Listener = (msg: ChatMessageBroadcast) => void;
-const listeners = new Set<Listener>();
+type NewListener = (msg: ChatMessageBroadcast) => void;
+type DeleteListener = (id: number) => void;
+
+const newListeners = new Set<NewListener>();
+const delListeners = new Set<DeleteListener>();
 
 export function emitChat(msg: ChatMessageBroadcast) {
-  for (const l of listeners) {
+  for (const l of newListeners) {
     try {
       l(msg);
     } catch {
-      /* ignore listener errors */
+      /* ignore */
     }
   }
 }
 
-export function subscribeChat(l: Listener): () => void {
-  listeners.add(l);
+export function subscribeChat(l: NewListener): () => void {
+  newListeners.add(l);
   return () => {
-    listeners.delete(l);
+    newListeners.delete(l);
+  };
+}
+
+export function emitChatDelete(id: number) {
+  for (const l of delListeners) {
+    try {
+      l(id);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function subscribeChatDelete(l: DeleteListener): () => void {
+  delListeners.add(l);
+  return () => {
+    delListeners.delete(l);
   };
 }

@@ -1,7 +1,7 @@
 // 채팅 SSE 스트림. EventSource 로 클라이언트가 long-lived 연결 유지.
 // 새 메시지 broadcast 가 들어오면 즉시 push.
 import { getCurrentUser } from "@/lib/auth";
-import { subscribeChat } from "@/lib/chatStream";
+import { subscribeChat, subscribeChatDelete } from "@/lib/chatStream";
 
 export const dynamic = "force-dynamic";
 
@@ -34,15 +34,19 @@ export async function GET(req: Request) {
         send(`: ping\n\n`);
       }, 25_000);
 
-      const unsubscribe = subscribeChat((msg) => {
+      const unsubscribeNew = subscribeChat((msg) => {
         send(`event: chat\ndata: ${JSON.stringify(msg)}\n\n`);
+      });
+      const unsubscribeDel = subscribeChatDelete((id) => {
+        send(`event: chat-delete\ndata: ${JSON.stringify({ id })}\n\n`);
       });
 
       const cleanup = () => {
         if (closed) return;
         closed = true;
         clearInterval(hb);
-        unsubscribe();
+        unsubscribeNew();
+        unsubscribeDel();
         try {
           controller.close();
         } catch {

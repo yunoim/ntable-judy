@@ -114,6 +114,14 @@ export default function ChatClient({
         /* ignore */
       }
     });
+    es.addEventListener("chat-delete", (evt) => {
+      try {
+        const { id } = JSON.parse((evt as MessageEvent).data) as { id: number };
+        setMessages((prev) => prev.filter((m) => m.id !== id));
+      } catch {
+        /* ignore */
+      }
+    });
     return () => {
       es.close();
     };
@@ -191,6 +199,53 @@ export default function ChatClient({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // long-press 삭제. 본인 메시지 말풍선을 500ms 누르면 confirm 후 삭제.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressTriggered = useRef(false);
+
+  function cancelPress() {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }
+
+  async function deleteMessage(id: number) {
+    // 낙관적 제거. 실패 시 폴링/SSE 가 다음 tick 때 복원하지는 않으므로
+    // 실패하면 alert 후 새로고침 안내.
+    const snapshot = messages;
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+    try {
+      const res = await fetch(`/api/chat/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setMessages(snapshot);
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "삭제 실패");
+      }
+    } catch (e: any) {
+      setMessages(snapshot);
+      setError(e?.message ?? "네트워크 오류");
+    }
+  }
+
+  function startPress(id: number) {
+    cancelPress();
+    pressTriggered.current = false;
+    pressTimer.current = setTimeout(() => {
+      pressTriggered.current = true;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try {
+          (navigator as Navigator).vibrate?.(40);
+        } catch {
+          /* ignore */
+        }
+      }
+      if (confirm("이 메시지를 삭제할까요?")) {
+        deleteMessage(id);
+      }
+    }, 500);
+  }
 
   async function uploadPhoto(file: File) {
     if (sending) return;
@@ -285,14 +340,38 @@ export default function ChatClient({
                       )}
                       <div
                         className={[
-                          "flex flex-col gap-1 max-w-full",
+                          "flex flex-col gap-1 max-w-full select-none",
                           isMine ? "items-end" : "items-start",
                         ].join(" ")}
+                        onPointerDown={
+                          isMine ? () => startPress(m.id) : undefined
+                        }
+                        onPointerUp={isMine ? cancelPress : undefined}
+                        onPointerLeave={isMine ? cancelPress : undefined}
+                        onPointerCancel={isMine ? cancelPress : undefined}
+                        onContextMenu={
+                          isMine
+                            ? (e) => {
+                                // 데스크탑 우클릭 = 삭제 단축.
+                                e.preventDefault();
+                                if (confirm("이 메시지를 삭제할까요?")) {
+                                  deleteMessage(m.id);
+                                }
+                              }
+                            : undefined
+                        }
                       >
                         {m.imageUrl && (
                           <button
                             type="button"
-                            onClick={() => setLightbox(m.imageUrl!)}
+                            onClick={() => {
+                              // long-press 가 발동했으면 click 무시.
+                              if (pressTriggered.current) {
+                                pressTriggered.current = false;
+                                return;
+                              }
+                              setLightbox(m.imageUrl!);
+                            }}
                             className="tap block rounded-2xl overflow-hidden border border-fg/10"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
