@@ -18,6 +18,8 @@ import { coupleDayNumber, COUPLE_START_KIND } from "@/lib/saju";
 import { nextMilestone } from "@/lib/milestones";
 import CoupleSheets from "./CoupleSheets";
 import RecentActivity from "./RecentActivity";
+import DailyEntryCard from "./DailyEntryCard";
+import { todayKstStr, computeStreak } from "@/lib/daily";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +134,36 @@ export default async function HomePage() {
     console.error("[home] unread chat count", e);
   }
 
+  // 데일리 한 줄 — 오늘 양쪽 entry + 스트릭.
+  const dateStr = todayKstStr();
+  const partnerInitial = users.find(
+    (u) => u.partner && u.id !== me.id,
+  ) ?? users.find((u) => u.role === "approved" && u.id !== me.id);
+  let myDaily: { body: string; emoji: string | null } | null = null;
+  let partnerDaily: { body: string; emoji: string | null } | null = null;
+  let streak = 0;
+  try {
+    const entries = await prisma.dailyEntry.findMany({
+      where: {
+        date: dateStr,
+        userId: { in: [me.id, partnerInitial?.id ?? "_"] },
+      },
+      select: { userId: true, body: true, emoji: true },
+    });
+    for (const e of entries) {
+      if (e.userId === me.id) {
+        myDaily = { body: e.body, emoji: e.emoji };
+      } else if (partnerInitial && e.userId === partnerInitial.id) {
+        partnerDaily = { body: e.body, emoji: e.emoji };
+      }
+    }
+    if (partnerInitial) {
+      streak = await computeStreak(me.id, partnerInitial.id, dateStr);
+    }
+  } catch (e) {
+    console.error("[home] daily fetch", e);
+  }
+
   const userStars = await Promise.all(
     users.map(async (u) => ({ ...u, avg: await avgStarsByUserId(u.id) })),
   );
@@ -214,6 +246,19 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
+        {/* ─── 오늘 한 줄 (데일리 챌린지) ─────────────── */}
+        {partnerInitial && (
+          <DailyEntryCard
+            meId={me.id}
+            meNickname={me.nickname}
+            partnerNickname={partnerInitial.nickname}
+            myEntry={myDaily}
+            partnerEntry={partnerDaily}
+            streak={streak}
+            dateStr={dateStr}
+          />
+        )}
+
         {/* ─── 최근 활동 ─────────────────────── */}
         <RecentActivity />
 

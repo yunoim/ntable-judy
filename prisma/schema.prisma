@@ -42,6 +42,7 @@ model User {
   personalEvents       PersonalEvent[]
   chatMessages         ChatMessage[]
   chatRead             ChatRead?
+  dailyEntries         DailyEntry[]
 
   @@schema("judy")
 }
@@ -289,6 +290,22 @@ model ChatRead {
   lastReadId Int?
   updatedAt  DateTime @updatedAt
 
+  @@schema("judy")
+}
+
+// 하루 한 줄 (데일리 챌린지). 양쪽 모두 작성한 연속 날짜 수가 스트릭.
+model DailyEntry {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String   // 'YYYY-MM-DD' (KST 자정 기준)
+  body      String
+  emoji     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
   @@schema("judy")
 }
 
