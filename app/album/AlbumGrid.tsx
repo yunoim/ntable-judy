@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -74,14 +75,14 @@ function AlbumCell({
 
   return (
     <button onClick={onOpen} className={baseClass}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         key={retry}
         src={src}
         alt=""
+        width={200}
+        height={200}
+        sizes="(max-width: 390px) 130px, 200px"
         className="w-full h-full object-cover transition-transform group-hover:scale-105"
-        loading="lazy"
-        decoding="async"
         onError={handleError}
       />
     </button>
