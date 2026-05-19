@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { notifyOthers } from "@/lib/push";
+import { emitChat } from "@/lib/chatStream";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,16 @@ export async function POST(req: Request) {
     })
     .catch(() => {});
 
+  const wire = {
+    id: created.id,
+    body: created.body,
+    imageUrl: created.imageUrl,
+    createdAt: created.createdAt.toISOString(),
+    user: created.user,
+  };
+
+  emitChat(wire);
+
   notifyOthers(user.id, {
     title: `📷 ${user.nickname}`,
     body: bodyText || "사진 보냄",
@@ -93,11 +104,5 @@ export async function POST(req: Request) {
     tag: "chat",
   }).catch((e) => console.error("[push] chat photo", e));
 
-  return NextResponse.json({
-    id: created.id,
-    body: created.body,
-    imageUrl: created.imageUrl,
-    createdAt: created.createdAt.toISOString(),
-    user: created.user,
-  });
+  return NextResponse.json(wire);
 }

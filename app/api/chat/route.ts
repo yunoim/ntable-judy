@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { notifyOthers } from "@/lib/push";
+import { emitChat } from "@/lib/chatStream";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,16 @@ export async function POST(req: Request) {
     })
     .catch(() => {});
 
+  const wire = {
+    id: created.id,
+    body: created.body,
+    imageUrl: null,
+    createdAt: created.createdAt.toISOString(),
+    user: created.user,
+  };
+
+  emitChat(wire);
+
   notifyOthers(user.id, {
     title: `💬 ${user.nickname}`,
     body: text.length > 80 ? text.slice(0, 80) + "…" : text,
@@ -75,11 +86,5 @@ export async function POST(req: Request) {
     tag: "chat",
   }).catch((e) => console.error("[push] chat", e));
 
-  return NextResponse.json({
-    id: created.id,
-    body: created.body,
-    imageUrl: null,
-    createdAt: created.createdAt.toISOString(),
-    user: created.user,
-  });
+  return NextResponse.json(wire);
 }

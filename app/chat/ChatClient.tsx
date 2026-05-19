@@ -40,7 +40,8 @@ function dateLabel(iso: string): string {
   });
 }
 
-const POLL_MS = 4000;
+// SSE 가 우선. 연결 끊김 대비로 폴링도 30초마다 (놓친 메시지 catch up).
+const POLL_MS = 30_000;
 
 export default function ChatClient({
   initial,
@@ -74,7 +75,52 @@ export default function ChatClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 폴링 — POLL_MS 마다 새 메시지 가져오기.
+  // 새 메시지 도착 처리 — SSE / 폴링 / 보내기 후 공통.
+  const handleIncoming = (incoming: ChatMessageItem[]) => {
+    if (!incoming.length) return;
+    setMessages((prev) => {
+      const known = new Set(prev.map((m) => m.id));
+      const newOnes = incoming.filter((m) => !known.has(m.id));
+      if (newOnes.length === 0) return prev;
+      const merged = [...prev, ...newOnes].sort((a, b) => a.id - b.id);
+      const last = merged[merged.length - 1];
+      lastIdRef.current = last.id;
+      fetch("/api/chat/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lastReadId: last.id }),
+      }).catch(() => {});
+      return merged;
+    });
+    requestAnimationFrame(() => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+      if (nearBottom) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    });
+  };
+
+  // SSE — 새 메시지 즉시 push. EventSource 가 자동 재연결.
+  useEffect(() => {
+    if (typeof window === "undefined" || !("EventSource" in window)) return;
+    const es = new EventSource("/api/chat/stream");
+    es.addEventListener("chat", (evt) => {
+      try {
+        const data = JSON.parse((evt as MessageEvent).data) as ChatMessageItem;
+        handleIncoming([data]);
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => {
+      es.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 폴링 fallback — SSE 가 끊긴 사이의 놓친 메시지 catch up.
   useEffect(() => {
     let alive = true;
     let t: ReturnType<typeof setTimeout>;
@@ -85,33 +131,7 @@ export default function ChatClient({
         if (res.ok) {
           const data = await res.json();
           const incoming = (data.messages ?? []) as ChatMessageItem[];
-          if (incoming.length) {
-            setMessages((prev) => {
-              const known = new Set(prev.map((m) => m.id));
-              const newOnes = incoming.filter((m) => !known.has(m.id));
-              if (newOnes.length === 0) return prev;
-              const merged = [...prev, ...newOnes];
-              const last = merged[merged.length - 1];
-              lastIdRef.current = last.id;
-              // 새 메시지 마지막 ID 읽음 처리.
-              fetch("/api/chat/read", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ lastReadId: last.id }),
-              }).catch(() => {});
-              return merged;
-            });
-            // 새 메시지 들어오면 하단으로 스크롤 (사용자가 이미 거의 하단이면).
-            requestAnimationFrame(() => {
-              const el = scrollerRef.current;
-              if (!el) return;
-              const nearBottom =
-                el.scrollHeight - el.scrollTop - el.clientHeight < 200;
-              if (nearBottom) {
-                el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-              }
-            });
-          }
+          handleIncoming(incoming);
         }
       } catch {
         /* ignore */
