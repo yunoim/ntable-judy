@@ -40,6 +40,8 @@ model User {
   photos               DatePhoto[]        @relation("PhotoUploader")
   pushSubs             PushSubscription[]
   personalEvents       PersonalEvent[]
+  chatMessages         ChatMessage[]
+  chatRead             ChatRead?
 
   @@schema("judy")
 }
@@ -265,6 +267,28 @@ model PushSubscription {
   lastUsedAt DateTime?
 
   @@index([userId])
+  @@schema("judy")
+}
+
+// 1:1 채팅 메시지. 둘이서만 쓰는 앱이라 별도 chat room 모델 없이 글로벌 1개.
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@schema("judy")
+}
+
+// 한 사용자가 마지막으로 읽은 메시지 ID. unread 카운트 계산에 사용.
+model ChatRead {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadId Int?
+  updatedAt  DateTime @updatedAt
+
   @@schema("judy")
 }
 
