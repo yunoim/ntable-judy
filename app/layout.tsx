@@ -24,10 +24,10 @@ export const metadata: Metadata = {
   description: "둘이서 쓰는 데이트 다이어리",
   robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
-  applicationName: "judy",
+  applicationName: "🦊🐰",
   appleWebApp: {
     capable: true,
-    title: "judy",
+    title: "🦊🐰",
     statusBarStyle: "default",
   },
   icons: {
