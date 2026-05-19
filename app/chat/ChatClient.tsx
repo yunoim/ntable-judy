@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 export type ChatMessageItem = {
   id: number;
   body: string;
+  imageUrl?: string | null;
   createdAt: string;
   user: { id: string; nickname: string; emoji: string | null };
 };
@@ -124,6 +125,17 @@ export default function ChatClient({
     };
   }, []);
 
+  function appendMessage(msg: ChatMessageItem) {
+    setMessages((prev) => [...prev, msg]);
+    lastIdRef.current = msg.id;
+    requestAnimationFrame(() => {
+      scrollerRef.current?.scrollTo({
+        top: scrollerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }
+
   async function send() {
     const body = text.trim();
     if (!body || sending) return;
@@ -141,16 +153,8 @@ export default function ChatClient({
         return;
       }
       const created = (await res.json()) as ChatMessageItem;
-      setMessages((prev) => [...prev, created]);
-      lastIdRef.current = created.id;
+      appendMessage(created);
       setText("");
-      // 다음 paint 이후 스크롤.
-      requestAnimationFrame(() => {
-        scrollerRef.current?.scrollTo({
-          top: scrollerRef.current.scrollHeight,
-          behavior: "smooth",
-        });
-      });
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
     } finally {
@@ -162,6 +166,41 @@ export default function ChatClient({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
+    }
+  }
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  async function uploadPhoto(file: File) {
+    if (sending) return;
+    setSending(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (text.trim()) fd.append("body", text.trim());
+      const res = await fetch("/api/chat/photo", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          data.error === "too_large"
+            ? "8MB 이하 이미지만"
+            : data.error === "bad_mime"
+              ? "이미지 파일만"
+              : data.error === "storage_not_configured"
+                ? "사진 저장소 미설정"
+                : data.error ?? "업로드 실패",
+        );
+        return;
+      }
+      appendMessage(data as ChatMessageItem);
+      setText("");
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setSending(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -224,16 +263,39 @@ export default function ChatClient({
                           {formatTime(m.createdAt)}
                         </span>
                       )}
-                      <p
+                      <div
                         className={[
-                          "rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words leading-relaxed",
-                          isMine
-                            ? "bg-accent text-bg rounded-br-md"
-                            : "bg-bg-warm text-fg rounded-bl-md",
+                          "flex flex-col gap-1 max-w-full",
+                          isMine ? "items-end" : "items-start",
                         ].join(" ")}
                       >
-                        {m.body}
-                      </p>
+                        {m.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setLightbox(m.imageUrl!)}
+                            className="tap block rounded-2xl overflow-hidden border border-fg/10"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={m.imageUrl}
+                              alt=""
+                              className="max-w-[220px] max-h-[280px] object-cover block"
+                            />
+                          </button>
+                        )}
+                        {m.body && (
+                          <p
+                            className={[
+                              "rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words leading-relaxed",
+                              isMine
+                                ? "bg-accent text-bg rounded-br-md"
+                                : "bg-bg-warm text-fg rounded-bl-md",
+                            ].join(" ")}
+                          >
+                            {m.body}
+                          </p>
+                        )}
+                      </div>
                       {!isMine && (
                         <span className="text-[10px] text-fg-faint pb-0.5">
                           {formatTime(m.createdAt)}
@@ -258,6 +320,26 @@ export default function ChatClient({
           marginBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
         }}
       >
+        <label
+          className={[
+            "tap shrink-0 w-10 h-10 rounded-full flex items-center justify-center border border-fg/20 text-fg-soft cursor-pointer",
+            sending ? "opacity-40 cursor-wait" : "hover:bg-bg-warm",
+          ].join(" ")}
+          aria-label="사진 첨부"
+        >
+          📷
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            disabled={sending}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadPhoto(f);
+            }}
+            className="hidden"
+          />
+        </label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, 2000))}
@@ -277,6 +359,24 @@ export default function ChatClient({
           ↑
         </button>
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 bg-fg/95 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightbox}
+            alt=""
+            className="max-w-full max-h-full object-contain rounded-card"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(null);
+            }}
+          />
+        </div>
+      )}
     </>
   );
 }

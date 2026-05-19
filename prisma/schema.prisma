@@ -276,7 +276,9 @@ model ChatMessage {
   id        Int      @id @default(autoincrement())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  body      String
+  body      String   // 이미지만 보낼 때는 빈 문자열 가능
+  imageUrl  String?
+  imageKey  String?
   createdAt DateTime @default(now())
 
   @@index([createdAt])

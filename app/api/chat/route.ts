@@ -33,6 +33,7 @@ export async function GET(req: Request) {
     .map((m) => ({
       id: m.id,
       body: m.body,
+      imageUrl: m.imageUrl,
       createdAt: m.createdAt.toISOString(),
       user: m.user,
     }));
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     id: created.id,
     body: created.body,
+    imageUrl: null,
     createdAt: created.createdAt.toISOString(),
     user: created.user,
   });

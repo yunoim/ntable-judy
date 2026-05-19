@@ -21,6 +21,7 @@ export default async function ChatPage() {
     .map((m) => ({
       id: m.id,
       body: m.body,
+      imageUrl: m.imageUrl,
       createdAt: m.createdAt.toISOString(),
       user: m.user,
     }));
