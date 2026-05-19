@@ -15,6 +15,47 @@ export type AlbumPhoto = {
   uploadedBy: { id: string; nickname: string; emoji: string | null };
 };
 
+// 개별 그리드 셀 — 이미지 로딩 실패 시 fallback 으로 데이트 정보 표시 +
+// 데이트 페이지로 이동. 브라우저 기본 동작 (alt 텍스트 노출) 회피.
+function AlbumCell({
+  photo,
+  onOpen,
+}: {
+  photo: AlbumPhoto;
+  onOpen: () => void;
+}) {
+  const [errored, setErrored] = useState(false);
+  const baseClass =
+    "tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group";
+  if (errored) {
+    return (
+      <Link
+        href={`/dates/${photo.dateId}`}
+        className={`${baseClass} flex flex-col items-center justify-center p-2 border border-dashed border-fg/15 text-center`}
+        aria-label={`사진 누락 — ${photo.dateTitle}`}
+      >
+        <span className="text-[18px] mb-1 opacity-50">🖼️</span>
+        <span className="text-[10px] text-fg-faint italic">사진 누락</span>
+        <span className="text-[10px] text-fg-faint mt-0.5 line-clamp-1">
+          #{String(photo.dateNumber).padStart(2, "0")}
+        </span>
+      </Link>
+    );
+  }
+  return (
+    <button onClick={onOpen} className={baseClass}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo.url}
+        alt=""
+        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        loading="lazy"
+        onError={() => setErrored(true)}
+      />
+    </button>
+  );
+}
+
 export default function AlbumGrid({
   items,
   meId,
@@ -71,22 +112,11 @@ export default function AlbumGrid({
       )}
       <div className="grid grid-cols-3 gap-1.5">
         {items.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setLightbox(p)}
-            className="tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={p.url}
-              alt={p.caption ?? p.dateTitle}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              loading="lazy"
-            />
-          </button>
+          <AlbumCell key={p.id} photo={p} onOpen={() => setLightbox(p)} />
         ))}
       </div>
 
+      {/* 라이트박스 */}
       {lightbox && (
         <div
           className="fixed inset-0 z-50 bg-fg/95 flex flex-col"
