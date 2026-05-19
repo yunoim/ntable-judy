@@ -207,10 +207,9 @@ function useHideOnScroll() {
       const dy = y - lastY;
       const viewportH = readViewportH();
       const docH = readDocH();
-      // 스크롤 가능 여부 — viewport 보다 32px 이상 길어야 의미.
-      const scrollable = docH > viewportH + 32;
-      const atBottom = scrollable && y + viewportH >= docH - 8;
-      if (!scrollable || y < 80 || atBottom) {
+      const atBottom = y + viewportH >= docH - 8;
+      // y < 20 또는 페이지 끝일 때만 강제 노출. 그 외엔 스크롤 방향 따라.
+      if (y < 20 || atBottom) {
         setHidden(false);
       } else if (dy > 1) {
         setHidden(true);
