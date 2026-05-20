@@ -132,39 +132,31 @@ export default function DailyEntryCard({
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setText("");
-              setEmoji("");
-              setOpen(true);
-            }}
-            className="tap lift w-full editorial-card-warm px-4 py-3 text-left"
-          >
-            {partnerHasAnswered ? (
-              <>
-                <p className="text-[10px] text-fg-faint">
-                  {partnerLabel} 가 먼저 답했어요
-                </p>
-                <p className="font-display text-sm mt-0.5">
-                  + 답하고 서로 답 보기
-                </p>
-                <p className="text-[10px] text-fg-faint mt-1 italic">
-                  둘 다 답해야 서로 답이 공개돼요
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] text-fg-faint">먼저 답해보기</p>
-                <p className="font-display text-sm mt-0.5">
-                  + 오늘의 답 남기기
-                </p>
-                <p className="text-[10px] text-fg-faint mt-1">
-                  둘 다 답하면 스트릭 +1
-                </p>
-              </>
-            )}
-          </button>
+          // 미응답 — 카드가 아니라 진짜 CTA 버튼처럼 진한 배경 + 큰 라벨.
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setText("");
+                setEmoji("");
+                setOpen(true);
+              }}
+              className="tap lift w-full bg-ink-card text-bg rounded-card px-5 py-4 font-display text-[15px] flex items-center justify-between shadow-sm"
+            >
+              <span>
+                ✏️{" "}
+                {partnerHasAnswered
+                  ? "답하고 서로 답 보기"
+                  : "오늘의 답 쓰기"}
+              </span>
+              <span className="text-accent-soft text-base">→</span>
+            </button>
+            <p className="text-[11px] text-fg-faint text-center italic px-2">
+              {partnerHasAnswered
+                ? `${partnerLabel} 가 먼저 답했어요 · 둘 다 답해야 공개`
+                : "둘 다 답하면 스트릭 🔥 +1"}
+            </p>
+          </div>
         )}
       </section>
 
