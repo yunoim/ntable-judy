@@ -849,7 +849,7 @@ function ManualOptionEditor({
 function PlanLoading({ mode }: { mode: "ai" | "direct" | "past" }) {
   const isPast = mode === "past";
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center safe-top">
+    <div className="fixed inset-0 bg-bg overflow-hidden flex flex-col items-center justify-center px-6 text-center safe-top">
       <div className="relative w-32 h-32 mb-6">
         <div
           className="absolute inset-0 rounded-full border-2 border-dashed border-fg animate-spin"
