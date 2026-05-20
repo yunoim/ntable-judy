@@ -123,9 +123,11 @@ export default async function HomePage() {
 
   // 데일리 Q&A — 오늘 양쪽 entry + 스트릭 + 그날 질문.
   const dateStr = todayKstStr();
-  const partnerInitial = users.find(
-    (u) => u.partner && u.id !== me.id,
-  ) ?? users.find((u) => u.role === "approved" && u.id !== me.id);
+  const partnerInitial =
+    users.find((u) => u.partner && u.id !== me.id) ??
+    users.find(
+      (u) => u.id !== me.id && (u.role === "admin" || u.role === "approved"),
+    );
   let myDaily: { body: string; emoji: string | null } | null = null;
   let partnerDaily: { body: string; emoji: string | null } | null = null;
   let streak = 0;
