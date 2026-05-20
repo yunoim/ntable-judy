@@ -173,8 +173,13 @@ export default function ChatClient({
     };
   }, []);
 
+  // 본인이 보낸 직후 + SSE echo 가 race 로 같은 id 두 번 추가되는 걸 막기 위해
+  // dedup. setMessages 가 functional 이라 같은 batch 내에서도 안전.
   function appendMessage(msg: ChatMessageItem) {
-    setMessages((prev) => [...prev, msg]);
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === msg.id)) return prev;
+      return [...prev, msg];
+    });
     lastIdRef.current = msg.id;
     requestAnimationFrame(() => {
       scrollerRef.current?.scrollTo({
@@ -184,9 +189,14 @@ export default function ChatClient({
     });
   }
 
+  // setState 기반 sending 가드는 더블 탭 race 에 약함 (setState 가 비동기
+  // 라 같은 React batch 내 두 번째 read 도 false 봄). ref 로 즉시 차단.
+  const sendingRef = useRef(false);
+
   async function send() {
     const body = text.trim();
-    if (!body || sending) return;
+    if (!body || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setError(null);
     try {
@@ -206,6 +216,7 @@ export default function ChatClient({
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -268,7 +279,8 @@ export default function ChatClient({
   }
 
   async function uploadPhoto(file: File) {
-    if (sending) return;
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setError(null);
     try {
@@ -294,6 +306,7 @@ export default function ChatClient({
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
     } finally {
+      sendingRef.current = false;
       setSending(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }

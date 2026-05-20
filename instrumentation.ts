@@ -16,16 +16,24 @@ export async function register() {
 
   // Lazy import — Edge 빌드 분석에서 prisma 가 끌려오지 않게.
   const { runDailyNotifications } = await import("./lib/cron");
+  const { cleanupOldChatPhotos } = await import("./lib/chat-cleanup");
 
   const KST_OFFSET_MS = 9 * 3600 * 1000;
   let lastFiredKstDate: string | null = null;
 
   async function tick() {
+    // 채팅 사진 24h TTL 정리 — 매 tick (5분) 마다.
+    try {
+      const r = await cleanupOldChatPhotos();
+      if (r.scanned > 0) console.log("[cleanup] chat photos", r);
+    } catch (e) {
+      console.error("[cleanup] tick error", e);
+    }
+    // 일일 알림 — KST 08~09 시 사이의 첫 1회만.
     try {
       const kstNow = new Date(Date.now() + KST_OFFSET_MS);
       const hour = kstNow.getUTCHours();
       const dateStr = kstNow.toISOString().slice(0, 10);
-      // KST 08~09시 사이에 첫 1회.
       if (hour < 8 || hour >= 10) return;
       if (lastFiredKstDate === dateStr) return;
       lastFiredKstDate = dateStr;
