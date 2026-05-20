@@ -154,7 +154,7 @@ export default function DailyEntryCard({
             <p className="text-[11px] text-fg-faint text-center italic px-2">
               {partnerHasAnswered
                 ? `${partnerLabel} 가 먼저 답했어요 · 둘 다 답해야 공개`
-                : "둘 다 답하면 스트릭 🔥 +1"}
+                : "둘 다 답하면 🔥 연속 +1일"}
             </p>
           </div>
         )}
