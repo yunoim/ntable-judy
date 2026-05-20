@@ -1,5 +1,6 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { DM_Serif_Display, Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -34,6 +35,9 @@ export const metadata: Metadata = {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
+  other: {
+    "google-adsense-account": "ca-pub-3975271252056880",
+  },
 };
 
 export const viewport: Viewport = {
@@ -52,6 +56,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <ServiceWorkerRegister />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3975271252056880"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
