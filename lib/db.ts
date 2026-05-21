@@ -165,6 +165,7 @@ export type AdaptedDate = {
   themeNote: string | null;
   weather: string | null;
   historyLabel: string | null;
+  attachmentUrl: string | null;
   plan: { stops: AdaptedStop[]; estimatedTotal: number; summary: string };
   tags: string[];
   reviews: AdaptedReview[];
@@ -213,6 +214,7 @@ function adaptDate(d: any): AdaptedDate {
     status: d.status,
     estimatedCost: d.estimatedCost ?? computedTotal,
     themeNote: d.themeNote,
+    attachmentUrl: d.attachmentUrl ?? null,
     weather: d.weather,
     historyLabel: d.historyLabel,
     plan: {

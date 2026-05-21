@@ -59,6 +59,7 @@ export default function EditClient({
   );
   const [themeNote, setThemeNote] = useState(date.themeNote ?? "");
   const [historyLabel, setHistoryLabel] = useState(date.historyLabel ?? "");
+  const [attachmentUrl, setAttachmentUrl] = useState(date.attachmentUrl ?? "");
   const [status, setStatus] = useState<"planned" | "done" | "cancelled">(
     (date.status as any) ?? "planned",
   );
@@ -118,6 +119,7 @@ export default function EditClient({
           endTime: stops[stops.length - 1]?.time || null,
           themeNote: themeNote || null,
           historyLabel: historyLabel || null,
+          attachmentUrl: attachmentUrl.trim() || null,
           status,
           estimatedTotal: stops.reduce((s, st) => s + (st.cost || 0), 0),
           stops: stops.map((s) => ({
@@ -271,6 +273,16 @@ export default function EditClient({
             onChange={(e) => setThemeNote(e.target.value)}
             rows={3}
             className={`${inputCls} resize-none`}
+          />
+        </FieldGroup>
+
+        <FieldGroup label="첨부 일정표 URL (HTML 등)">
+          <input
+            type="text"
+            value={attachmentUrl}
+            onChange={(e) => setAttachmentUrl(e.target.value)}
+            placeholder="/attachments/jeju.html"
+            className={inputCls}
           />
         </FieldGroup>
 

@@ -133,6 +133,32 @@ export default async function DateDetailPage({
           )}
         </header>
 
+        {date.attachmentUrl && (
+          <section className="mb-8 rise-in rise-in-1">
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="text-[10.5px] tracking-[0.2em] text-accent">
+                첨부 일정표
+              </p>
+              <a
+                href={date.attachmentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tap text-[11px] text-fg-soft underline hover:text-fg"
+              >
+                새 창으로 열기 ↗
+              </a>
+            </div>
+            <div className="rounded-card overflow-hidden border border-fg/15 bg-bg-warm">
+              <iframe
+                src={date.attachmentUrl}
+                title="첨부 일정표"
+                className="w-full block"
+                style={{ height: "70vh" }}
+              />
+            </div>
+          </section>
+        )}
+
         {date.themeNote && (
           <section className="mb-8 p-5 rounded-card bg-bg-warm border border-accent/25 rise-in rise-in-1">
             <p className="text-[10.5px] tracking-[0.2em] text-accent mb-3">

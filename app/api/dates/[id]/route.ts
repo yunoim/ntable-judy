@@ -31,6 +31,7 @@ type Body = {
   themeNote?: string | null;
   weather?: string | null;
   historyLabel?: string | null;
+  attachmentUrl?: string | null;
   estimatedCost?: number | null;
   estimatedTotal?: number | null;
   stops?: StopInput[];
@@ -87,6 +88,8 @@ export async function PATCH(
   if (body.weather !== undefined) data.weather = body.weather || null;
   if (body.historyLabel !== undefined)
     data.historyLabel = body.historyLabel || null;
+  if (body.attachmentUrl !== undefined)
+    data.attachmentUrl = body.attachmentUrl || null;
   if (body.estimatedCost !== undefined)
     data.estimatedCost = body.estimatedCost ?? null;
   else if (body.estimatedTotal !== undefined)

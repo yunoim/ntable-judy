@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>닉과 주디의 첫 제주도 여행</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Fraunces:opsz,wght,SOFT,WONK@9..144,400;9..144,600;9..144,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4ede2;
+    --bg-deep: #e8dcc7;
+    --ink: #2a1f17;
+    --ink-soft: #5c4a3a;
+    --accent: #c2410c;
+    --accent-deep: #7c2d12;
+    --stone: #3d3833;
+    --moss: #4d5d3e;
+    --sand: #d9c4a3;
+    --line: rgba(42, 31, 23, 0.15);
+    --verified: #15803d;
+    --info: #1e5b94;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Gowun Dodum', sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body.modal-open { overflow: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(60, 50, 40, 0.04) 1px, transparent 2px),
+      radial-gradient(circle at 70% 80%, rgba(60, 50, 40, 0.05) 1px, transparent 2px),
+      radial-gradient(circle at 40% 60%, rgba(60, 50, 40, 0.03) 1px, transparent 2px);
+    background-size: 60px 60px, 80px 80px, 100px 100px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 60px 32px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    height: 380px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, #2a1f17 0%, #5c4a3a 100%);
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a3a4a 0%, #2d5a6b 30%, #4a7a8a 60%, #7b9aa8 100%);
+    overflow: hidden;
+  }
+
+  .hero-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 30%, rgba(255, 220, 180, 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(255, 150, 100, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 50% 100%, rgba(46, 122, 154, 0.6) 0%, transparent 60%);
+  }
+
+  .hero-bg::after {
+    content: '🌊';
+    position: absolute;
+    bottom: -30px;
+    right: -20px;
+    font-size: 280px;
+    opacity: 0.08;
+    transform: rotate(-15deg);
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(42, 31, 23, 0.3) 0%, rgba(42, 31, 23, 0.85) 100%);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 32px;
+    color: white;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: rgba(255, 220, 180, 0.9);
+    font-size: 14px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: white;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  .hero h1 .accent {
+    font-style: italic;
+    font-weight: 400;
+    color: #ffb380;
+    font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  }
+
+  .hero-sub {
+    font-family: 'Gowun Batang', serif;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.05em;
+  }
+
+  /* 섹션 헤더 */
+  .section-header {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 60px 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  .section-header .num {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--accent);
+    font-size: 24px;
+  }
+
+  /* 여행자 박스 */
+  .travelers {
+    background: linear-gradient(135deg, rgba(194, 65, 12, 0.08) 0%, rgba(255, 252, 246, 0.6) 70%);
+    border: 1px solid rgba(194, 65, 12, 0.2);
+    padding: 20px 28px;
+    border-radius: 4px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .travelers-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+
+  .traveler-name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+
+  .traveler-name + .traveler-name::before {
+    content: ' & ';
+    color: var(--ink-soft);
+    font-weight: 400;
+    margin: 0 6px;
+  }
+
+  /* 필수 정보 */
+  .essentials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .essentials-grid.two-cols {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .essential-card.clickable {
+    cursor: pointer;
+  }
+
+  .essential-card.clickable:hover {
+    border-color: var(--accent);
+  }
+
+  .essential-card {
+    background: rgba(255, 252, 246, 0.85);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 20px 22px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  .essential-card:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(42, 31, 23, 0.08);
+  }
+
+  .essential-card.flight { border-left-color: var(--info); }
+  .essential-card.lodging { border-left-color: var(--moss); }
+  .essential-card.booking { border-left-color: var(--accent-deep); }
+
+  .essential-label {
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .essential-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .essential-detail {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+
+  .essential-detail strong { color: var(--ink); font-weight: 700; }
+
+  /* 한화리조트 카드 */
+  .resort-hero {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    background: white;
+    border: 1px solid var(--line);
+  }
+
+  .resort-hero-img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .resort-hero-banner {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, #4d5d3e 0%, #2a3829 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .resort-hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,0.08) 1px, transparent 2px),
+      radial-gradient(circle at 70% 80%, rgba(255,255,255,0.06) 1px, transparent 2px),
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 1px, transparent 2px);
+    background-size: 50px 50px, 70px 70px, 90px 90px;
+  }
+
+  .resort-hero-banner::after {
+    content: '🌲';
+    position: absolute;
+    bottom: -20px;
+    right: 20px;
+    font-size: 180px;
+    opacity: 0.12;
+  }
+
+  .resort-banner-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    color: white;
+    padding: 0 32px;
+  }
+
+  .resort-banner-icon {
+    font-size: 72px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  }
+
+  .resort-banner-name {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .resort-banner-sub {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.05em;
+  }
+
+  .resort-hero-body {
+    padding: 24px 28px;
+  }
+
+  .resort-hero-body h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .resort-hero-body p {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    line-height: 1.75;
+  }
+
+  .resort-amenities {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .amenity {
+    background: rgba(244, 237, 226, 0.5);
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+    border-radius: 3px;
+  }
+
+  .amenity-icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .amenity-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .amenity-info {
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* DAY 섹션 */
+  .day-section { margin-bottom: 56px; position: relative; }
+
+  .day-header {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 8px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .day-number {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.04em;
+  }
+
+  .day-info { flex: 1; }
+
+  .day-date {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+
+  .day-title {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  /* 타임라인 */
+  .timeline { position: relative; padding: 30px 0 0 0; }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 80px;
+    top: 30px;
+    bottom: 0;
+    width: 2px;
+    background: var(--sand);
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-left: 110px;
+    margin-bottom: 24px;
+  }
+
+  .timeline-item:last-child { margin-bottom: 0; }
+
+  .timeline-time {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 70px;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+    text-align: right;
+    line-height: 1.2;
+  }
+
+  .timeline-time small {
+    display: block;
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 74px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px var(--sand);
+    z-index: 2;
+  }
+
+  .timeline-item.activity::before { background: var(--moss); }
+  .timeline-item.meal::before { background: var(--accent); }
+  .timeline-item.move::before {
+    background: var(--ink-soft);
+    width: 8px;
+    height: 8px;
+    left: 77px;
+    top: 9px;
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 5px transparent;
+  }
+
+  /* 인터랙티브 카드 */
+  .place-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+  }
+
+  .place-card.clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(42, 31, 23, 0.12);
+    border-color: var(--accent);
+  }
+
+  .place-card.clickable.activity {
+    border-left: 3px solid var(--moss);
+  }
+
+  .place-card.clickable.meal {
+    border-left: 3px solid var(--accent);
+  }
+
+  .place-card.move {
+    background: transparent;
+    border: 1px dashed var(--line);
+    padding: 10px 18px;
+    cursor: default;
+  }
+
+  .place-card.move:hover { transform: none; box-shadow: none; }
+
+  .place-card-photo {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .place-card-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-size: 40px 40px;
+    background-image:
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 1px, transparent 2px),
+      radial-gradient(circle at 70% 70%, rgba(0,0,0,0.05) 1px, transparent 2px);
+    pointer-events: none;
+  }
+
+  .place-card-photo .photo-icon {
+    font-size: 72px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+    transition: transform 0.4s ease;
+    z-index: 1;
+  }
+
+  .place-card.clickable:hover .photo-icon {
+    transform: scale(1.1) rotate(-3deg);
+  }
+
+  /* 장소별 배경 그라디언트 */
+  .photo-bg-hanwha { background: linear-gradient(135deg, #4d5d3e 0%, #2a3829 100%); }
+  .photo-bg-ujin { background: linear-gradient(135deg, #c2410c 0%, #7c2d12 100%); }
+  .photo-bg-yeongsil { background: linear-gradient(135deg, #d97755 0%, #88358b 50%, #4d5d3e 100%); }
+  .photo-bg-1100 { background: linear-gradient(135deg, #8b9d83 0%, #4d5d3e 100%); }
+  .photo-bg-hamdeok { background: linear-gradient(135deg, #5eb3d1 0%, #2e7a9a 100%); }
+  .photo-bg-baeglog { background: linear-gradient(135deg, #4a90b8 0%, #2c5f7c 100%); }
+  .photo-bg-basalt { background: linear-gradient(135deg, #3d3833 0%, #1a1817 100%); }
+  .photo-bg-donsadon { background: linear-gradient(135deg, #8b3a2a 0%, #4a1f15 100%); }
+  .photo-bg-meat { background: linear-gradient(135deg, #a0432d 0%, #5c2418 100%); }
+  .photo-bg-noodle { background: linear-gradient(135deg, #d4a574 0%, #8b6745 100%); }
+
+  .place-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+  }
+
+  .place-card-body {
+    padding: 18px 22px;
+  }
+
+  .place-card-body.activity {
+    background: linear-gradient(135deg, rgba(77, 93, 62, 0.08) 0%, white 70%);
+  }
+
+  .place-card-body.meal {
+    background: linear-gradient(135deg, rgba(194, 65, 12, 0.06) 0%, white 60%);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: var(--verified);
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .card-tag {
+    font-family: 'Gowun Batang', serif;
+    font-size: 10px;
+    color: var(--accent-deep);
+    background: var(--sand);
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .card-tag.activity { background: rgba(77, 93, 62, 0.2); color: var(--moss); }
+
+  .card-desc {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    margin-top: 4px;
+  }
+
+  .card-meta-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .card-meta-row .rating {
+    color: var(--accent-deep);
+    font-weight: 700;
+  }
+
+  .expand-hint {
+    margin-top: 12px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    color: var(--accent);
+    font-style: italic;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 대안 옵션 그리드 - 클릭 가능 */
+  .alternatives {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .alt-label {
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+
+  .alt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .alt-card {
+    background: rgba(244, 237, 226, 0.7);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .alt-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(42, 31, 23, 0.1);
+    border-color: var(--accent);
+    background: white;
+  }
+
+  .alt-card-photo {
+    width: 100%;
+    height: 70px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .alt-card-photo .alt-icon {
+    font-size: 36px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+    transition: transform 0.3s ease;
+  }
+
+  .alt-card:hover .alt-icon {
+    transform: scale(1.15);
+  }
+
+  .alt-card-body {
+    padding: 10px 12px;
+  }
+
+  .alt-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .alt-info {
+    font-family: 'Gowun Batang', serif;
+    color: var(--ink-soft);
+    font-size: 10px;
+  }
+
+  /* ===== 모달 ===== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 31, 23, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .modal-backdrop.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal {
+    background: var(--bg);
+    border-radius: 8px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    transform: scale(0.95) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  }
+
+  .modal-backdrop.open .modal {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+    font-size: 18px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+
+  .modal-close:hover {
+    background: white;
+    transform: rotate(90deg);
+  }
+
+  .modal-photo {
+    width: 100%;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .modal-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12) 1px, transparent 2px),
+      radial-gradient(circle at 70% 70%, rgba(0,0,0,0.06) 1px, transparent 2px);
+    background-size: 50px 50px, 70px 70px;
+  }
+
+  .modal-photo-icon {
+    font-size: 120px;
+    filter: drop-shadow(0 6px 20px rgba(0,0,0,0.3));
+    position: relative;
+    z-index: 1;
+  }
+
+  .modal-body {
+    padding: 28px 32px 32px;
+  }
+
+  .modal-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .modal-subtitle {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+    font-style: italic;
+  }
+
+  .modal-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .modal-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .modal-stat-label {
+    font-family: 'Gowun Batang', serif;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+  }
+
+  .modal-stat-value {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+  }
+
+  .modal-stat-value.rating { color: var(--accent-deep); }
+
+  .modal-section {
+    margin-bottom: 20px;
+  }
+
+  .modal-section-label {
+    font-family: 'Gowun Batang', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .modal-section-content {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  .modal-section-content strong { font-weight: 700; }
+
+  .modal-tip {
+    background: rgba(194, 65, 12, 0.07);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 20px;
+  }
+
+  .modal-tip-label {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .modal-tip-text {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  .modal-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .modal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(42, 31, 23, 0.06);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 12px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .modal-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .modal-link.naver {
+    background: rgba(3, 199, 90, 0.08);
+    border-color: rgba(3, 199, 90, 0.3);
+    color: #03c75a;
+  }
+  .modal-link.naver:hover { background: #03c75a; color: white; }
+
+  .modal-link.kakao {
+    background: rgba(255, 230, 0, 0.15);
+    border-color: rgba(255, 200, 0, 0.4);
+    color: #3c1e1e;
+  }
+  .modal-link.kakao:hover { background: #fee500; }
+
+  .modal-link.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .modal-link.primary:hover { background: var(--accent-deep); }
+
+  /* 체크리스트 */
+  .checklist {
+    background: rgba(255, 252, 246, 0.85);
+    border: 1px solid var(--line);
+    padding: 22px 26px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .checklist h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+
+  .check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 8px;
+  }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(244, 237, 226, 0.6);
+    border-radius: 3px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .check-item:hover {
+    background: rgba(255, 220, 180, 0.4);
+  }
+
+  .check-item.checked {
+    text-decoration: line-through;
+    color: var(--ink-soft);
+    opacity: 0.6;
+  }
+
+  .check-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .check-item.checked .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* 경고박스 */
+  .warning-box {
+    background: rgba(124, 45, 18, 0.07);
+    border-left: 3px solid var(--accent-deep);
+    padding: 14px 18px;
+    margin-top: 20px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--accent-deep);
+    border-radius: 0 4px 4px 0;
+  }
+  .warning-box strong { font-weight: 700; }
+
+  .info-box {
+    background: rgba(30, 91, 148, 0.06);
+    border-left: 3px solid var(--info);
+    padding: 14px 18px;
+    margin-top: 20px;
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--info);
+    border-radius: 0 4px 4px 0;
+  }
+  .info-box strong { font-weight: 700; }
+
+  /* 콘택트 */
+  .contacts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .contact-item {
+    padding: 14px 18px;
+    background: rgba(255, 252, 246, 0.85);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--stone);
+    border-radius: 3px;
+  }
+
+  .contact-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .contact-phone {
+    font-family: 'Gowun Dodum', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  .contact-phone a { color: inherit; text-decoration: none; }
+
+  /* 푸터 */
+  .footer {
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+  }
+
+  .footer-note {
+    font-family: 'Gowun Batang', serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.8;
+  }
+
+  .footer-mark {
+    margin-top: 20px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 30px 16px 50px; }
+    .hero { height: 280px; }
+    .day-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .day-number { font-size: 48px; }
+    .timeline::before { left: 60px; }
+    .timeline-item { padding-left: 90px; }
+    .timeline-time { width: 50px; font-size: 15px; }
+    .timeline-item::before { left: 54px; }
+    .timeline-item.move::before { left: 57px; }
+    .section-header { font-size: 24px; }
+    .modal-photo { height: 220px; }
+    .modal-body { padding: 20px 22px 24px; }
+    .modal-title { font-size: 22px; }
+    .alt-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">2026.05.29 — 05.31</div>
+        <h1>닉과 주디의<br>첫 <span class="accent">제주도</span> 여행</h1>
+        <div class="hero-sub">2박 3일</div>
+      </div>
+    </header>
+
+    <!-- 1. 핵심 정보 -->
+    <h2 class="section-header"><span class="num">01</span> 항공 · 숙소</h2>
+
+    <div class="essentials-grid two-cols">
+      <div class="essential-card flight clickable" onclick="openModal('flight')">
+        <div class="essential-label">✈ 대한항공 · 예약 FG89W6</div>
+        <div class="essential-title">왕복 항공권</div>
+        <div class="essential-detail">
+          <strong>5/29 금</strong> KE1165 · 16:35 → 17:50<br>
+          <strong>5/31 일</strong> KE1268 · 16:50 → 18:05<br>
+          임윤호 / 장민경
+        </div>
+      </div>
+      <div class="essential-card lodging clickable" onclick="openModal('hanwha')">
+        <div class="essential-label">🏨 숙소 · 2박</div>
+        <div class="essential-title">한화리조트 제주</div>
+        <div class="essential-detail">
+          제주시 명림로 575-107<br>
+          15:00 체크인 / 11:00 체크아웃<br>
+          ☎ 064-725-9000
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 일정표 -->
+    <h2 class="section-header"><span class="num">02</span> 일정</h2>
+
+    <!-- DAY 1 -->
+    <section class="day-section">
+      <div class="day-header">
+        <div class="day-number">01</div>
+        <div class="day-info">
+          <div class="day-date">FRI · 5월 29일</div>
+          <div class="day-title">제주 도착, 우진해장국</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">16:35<small>출발</small></div>
+          <div class="place-card move">
+            <div class="card-desc"><strong>KE1165</strong> 김포 → 제주 · 1h 15m</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">17:50</div>
+          <div class="place-card move">
+            <div class="card-desc">제주공항 도착 · 짐 찾기 + 렌터카 (레이) 픽업 · 30m</div>
+          </div>
+        </div>
+
+        <div class="timeline-item meal">
+          <div class="timeline-time">19:00<small>저녁</small></div>
+          <div class="place-card clickable meal" onclick="openModal('ujin')">
+            <div class="place-card-body meal">
+              <div class="card-top">
+                <div class="card-title">우진해장국 <span class="verified-badge">✓</span></div>
+                <span class="card-tag">고사리육개장</span>
+              </div>
+              <div class="card-desc">제주 고사리육개장 대표. 평일 저녁이라 대기 짧음.</div>
+
+              <div class="alternatives">
+                <div class="alt-label">근처 대안 (도보 5분 이내)</div>
+                <div class="alt-grid">
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('taegwang');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">태광식당 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.0 · 한치주물럭 · 도보 2분</div>
+                    </div>
+                  </div>
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('jangin');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">장인의집 탑동점 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.7 · 해물만두전골 · 도보 1분</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">20:15<small>이동</small></div>
+          <div class="place-card move">
+            <div class="card-desc">우진해장국 → 한화리조트 · 25m</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">20:30</div>
+          <div class="place-card clickable" onclick="openModal('hanwha')">
+            <div class="place-card-body">
+              <div class="card-top">
+                <div class="card-title">한화리조트 체크인</div>
+                <span class="card-tag">2박</span>
+              </div>
+              <div class="card-desc">짐 풀고 호수 산책. 편의점에서 와인 픽업 가능.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DAY 2 -->
+    <section class="day-section">
+      <div class="day-header">
+        <div class="day-number">02</div>
+        <div class="day-info">
+          <div class="day-date">SAT · 5월 30일</div>
+          <div class="day-title">윗세오름, 바람, 바다</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>5/30은 산철쭉 절정기</strong> · 영실은 한국 3대 철쭉 명소. 윗세오름 능선에 수십만 그루 동시 개화. 이번 여행 메인.
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">08:00<small>아침</small></div>
+          <div class="place-card move">
+            <div class="card-desc">조식 · 등산 짐 (등산화·바람막이·물·간식)</div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">09:00<small>이동</small></div>
+          <div class="place-card move">
+            <div class="card-desc">한화리조트 → 영실휴게소 · 67km · 1h 10m</div>
+          </div>
+        </div>
+
+        <div class="timeline-item activity">
+          <div class="timeline-time">10:30<small>등산</small></div>
+          <div class="place-card clickable activity" onclick="openModal('yeongsil')">
+            <div class="place-card-body activity">
+              <div class="card-top">
+                <div class="card-title">영실 → 윗세오름 <span class="verified-badge">✓</span></div>
+                <span class="card-tag activity">HIKING</span>
+              </div>
+              <div class="card-desc">편도 5.8km · 1,280m → 1,700m · 왕복 3시간 · 산철쭉 절정.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item meal">
+          <div class="timeline-time">14:30<small>점심</small></div>
+          <div class="place-card clickable meal" onclick="openModal('1100')">
+            <div class="place-card-body meal">
+              <div class="card-top">
+                <div class="card-title">1100고지 휴게소 <span class="verified-badge">✓</span></div>
+                <span class="card-tag">간편식</span>
+              </div>
+              <div class="card-desc">하산 후 따뜻한 국물. 어묵·우동·라면. 해발 1,100m.</div>
+
+              <div class="alternatives">
+                <div class="alt-label">제대로 먹을 거면 (중문 · 1100도로 30분 더)</div>
+                <div class="alt-grid">
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('gozip');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">고집돌우럭 중문점 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.7 · 우럭조림 · 저녁과 메뉴 안 겹침</div>
+                    </div>
+                  </div>
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('geuttae');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">그땐그집 중문본점 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.8 · 흑돼지 셋트 · 9:50 오픈</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">15:30<small>이동</small></div>
+          <div class="place-card move">
+            <div class="card-desc">1100고지 → 함덕 · 50km · 1h</div>
+          </div>
+        </div>
+
+        <div class="timeline-item activity">
+          <div class="timeline-time">16:30<small>바다</small></div>
+          <div class="place-card clickable activity" onclick="openModal('hamdeok')">
+            <div class="place-card-body activity">
+              <div class="card-top">
+                <div class="card-title">함덕해수욕장 + 델문도 <span class="verified-badge">✓</span></div>
+                <span class="card-tag activity">BEACH + CAFE</span>
+              </div>
+              <div class="card-desc">바다 산책 + 델문도 오션뷰 카페.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item meal">
+          <div class="timeline-time">19:00<small>저녁</small></div>
+          <div class="place-card clickable meal" onclick="openModal('baeglog')">
+            <div class="place-card-body meal">
+              <div class="card-top">
+                <div class="card-title">백록집 <span class="verified-badge">✓</span></div>
+                <span class="card-tag">고등어회 명소</span>
+              </div>
+              <div class="card-desc">함덕 고등어회. 미나리·양파소스에 싸먹는 게 시그니처.</div>
+
+              <!-- 대안 옵션 -->
+              <div class="alternatives">
+                <div class="alt-label">대안 옵션 (모두 도보 5분)</div>
+                <div class="alt-grid">
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('hoonnam');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">훈남횟집 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.3 · 모듬회 다양</div>
+                    </div>
+                  </div>
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('samchon');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">제주삼촌 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.9 · 함덕 최고 흑돼지</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">21:00<small>복귀</small></div>
+          <div class="place-card move">
+            <div class="card-desc">함덕 → 한화리조트 · 20m. 사우나 또는 테라피센터.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>등산 시간 제한</strong> · 영실 입구 14:00 입산 마감 / 윗세오름 17:00 하산. 5월 말 주말은 철쭉 시즌 → 주차장 만차 가능. 09:30까지 도착 권장.
+      </div>
+    </section>
+
+    <!-- DAY 3 -->
+    <section class="day-section">
+      <div class="day-header">
+        <div class="day-number">03</div>
+        <div class="day-info">
+          <div class="day-date">SUN · 5월 31일</div>
+          <div class="day-title">크로스핏, 흑돼지, 김포</div>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-time">09:00<small>아침</small></div>
+          <div class="place-card move">
+            <div class="card-desc">조식 · 체크아웃 · 운동복 환복</div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">10:30<small>이동</small></div>
+          <div class="place-card move">
+            <div class="card-desc">한화리조트 → 바솔트 크로스핏 · 도두동 · 30m</div>
+          </div>
+        </div>
+
+        <div class="timeline-item activity">
+          <div class="timeline-time">11:30<small>운동</small></div>
+          <div class="place-card clickable activity" onclick="openModal('basalt')">
+            <div class="place-card-body activity">
+              <div class="card-top">
+                <div class="card-title">바솔트 크로스핏 <span class="verified-badge">✓</span></div>
+                <span class="card-tag activity">CROSSFIT</span>
+              </div>
+              <div class="card-desc">제주 공식 크로스핏 박스. 일요일 클래스. 네이버 예약 완료.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item meal">
+          <div class="timeline-time">13:00<small>점심</small></div>
+          <div class="place-card clickable meal" onclick="openModal('donsadon')">
+            <div class="place-card-body meal">
+              <div class="card-top">
+                <div class="card-title">돈사돈 본점 <span class="verified-badge">✓</span></div>
+                <span class="card-tag">흑돼지 명가</span>
+              </div>
+              <div class="card-desc">제주 흑돼지 대표. 두툼한 컷, 직원이 구워줌. 멜젓 원조.</div>
+
+              <!-- 대안 옵션 - 클릭 가능한 카드 -->
+              <div class="alternatives">
+                <div class="alt-label">대안 옵션</div>
+                <div class="alt-grid">
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('geumdon');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">금돈 흑돼지 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.8 · 13시 오픈 · 2단계 굽기</div>
+                    </div>
+                  </div>
+                  <div class="alt-card" onclick="event.stopPropagation(); openModal('hayeogeum');">
+                    <div class="alt-card-body">
+                      <div class="alt-name">하여금 <span class="verified-badge">✓</span></div>
+                      <div class="alt-info">★4.8 · 12시 오픈 · 청결도 1위</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">14:30<small>마지막</small></div>
+          <div class="place-card move">
+            <div class="card-desc">동문시장 (오메기떡·한라봉) or 공항 카페</div>
+          </div>
+        </div>
+
+        <div class="timeline-item move">
+          <div class="timeline-time">15:30<small>반납</small></div>
+          <div class="place-card move">
+            <div class="card-desc">렌터카 반납 → 공항</div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">16:50<small>출발</small></div>
+          <div class="place-card move">
+            <div class="card-desc"><strong>KE1268</strong> 제주 → 김포 · 18:05 도착</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warning-box">
+        <strong>비행기 16:50</strong> · 13시 흑돼지집 정각 도착, 식사 1시간, 14:30 출발, 15:30 렌터카 반납, 16:00 공항.
+      </div>
+    </section>
+
+    <!-- 4. 체크리스트 -->
+    <h2 class="section-header"><span class="num">03</span> 챙길 것</h2>
+
+    <div class="checklist">
+      <h3>🎒 등산 필수 (5/30 토)</h3>
+      <div class="check-grid">
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>등산화 (방수)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>바람막이 자켓</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>물 1L 이상</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>간식 (초콜릿·견과류)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>썬크림·모자</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>등산스틱 (선택)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>여벌 양말</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>보조배터리</div>
+      </div>
+    </div>
+
+    <div class="checklist">
+      <h3>💪 크로스핏 (5/31 일)</h3>
+      <div class="check-grid">
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>운동복 상·하의</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>운동화 (크로스핏용)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>수건 2장</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>여벌 옷</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>물병</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>드랍인 비용</div>
+      </div>
+    </div>
+
+    <div class="checklist">
+      <h3>📋 사전 예약 (필요시)</h3>
+      <div class="check-grid">
+        <div class="check-item checked" onclick="toggleCheck(this)"><span class="check-box">✓</span>렌터카 (레이) - 주디 예약완료</div>
+        <div class="check-item checked" onclick="toggleCheck(this)"><span class="check-box">✓</span>바솔트 크로스핏 - 네이버 예약완료</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>한화 조식 사전 신청 (10% 할인)</div>
+        <div class="check-item" onclick="toggleCheck(this)"><span class="check-box"></span>테라피센터 예약 (선택)</div>
+      </div>
+    </div>
+
+    <!-- 5. 비상 연락처 -->
+    <h2 class="section-header"><span class="num">04</span> 연락처</h2>
+
+    <div class="contacts">
+      <div class="contact-item">
+        <div class="contact-name">한화리조트 프론트</div>
+        <div class="contact-phone"><a href="tel:064-725-9000">064-725-9000</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-name">한화 테라피센터</div>
+        <div class="contact-phone"><a href="tel:064-786-1301">064-786-1301</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-name">한라산국립공원</div>
+        <div class="contact-phone"><a href="tel:064-713-9950">064-713-9950</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-name">대한항공</div>
+        <div class="contact-phone"><a href="tel:1588-2001">1588-2001</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-name">제주공항 안내</div>
+        <div class="contact-phone"><a href="tel:1661-2626">1661-2626</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-name">바솔트 크로스핏</div>
+        <div class="contact-phone"><a href="tel:064-747-0720">064-747-0720</a></div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="footer-note">
+        ✓ 표시: 다이닝코드·식신·비짓제주·나무위키 교차 검증 완료<br>
+        영업시간은 변동 가능 · 방문 전 전화/네이버 재확인 권장
+      </p>
+      <div class="footer-mark">🦊 & 🐰</div>
+    </footer>
+  </div>
+
+  <!-- ===== 모달 ===== -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeModalIfBackdrop(event)">
+    <div class="modal" id="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    // 장소 데이터
+    const places = {
+      flight: {
+        emoji: '✈️', bg: 'photo-bg-hanwha',
+        title: '대한항공 왕복',
+        verified: false,
+        subtitle: '예약번호 FG89W6',
+        rating: '—',
+        reviews: '—',
+        hours: '체크인: 출발 1시간 전 권장',
+        address: '제주공항: 제주시 공항로 2',
+        phone: '대한항공 1588-2001 / 제주공항 1661-2626',
+        about: '<strong>가는편</strong> 5/29(금) KE1165 · 16:35 김포 → 17:50 제주 · 좌석 Y · 확약<br><br><strong>오는편</strong> 5/31(일) KE1268 · 16:50 제주 → 18:05 김포 · 좌석 Y · 확약<br><br>탑승객: 임/윤호, 장/민경',
+        tipLabel: '체크인 팁',
+        tipText: '대한항공 앱에서 24시간 전 모바일 체크인 가능. 김포공항 국내선은 30분 전 도착 권장. 제주 → 김포 일요일 오후는 혼잡하니 16:00 공항 도착 목표.',
+        links: [
+          { url: 'https://www.koreanair.com/booking/manage-booking', label: '대한항공 예약확인', type: 'primary' },
+          { url: 'https://www.airport.co.kr/jeju/main.do', label: '제주공항', type: 'default' }
+        ]
+      },
+      hanwha: {
+        emoji: '🏨', bg: 'photo-bg-hanwha',
+        title: '한화리조트 제주',
+        verified: true,
+        subtitle: '봉개동 · 한라산 자락',
+        rating: '4.0',
+        reviews: '3,610',
+        hours: '체크인 15:00 / 체크아웃 11:00',
+        address: '제주시 명림로 575-107 (봉개동)',
+        phone: '064-725-9000',
+        about: '한라산 자락의 조용한 리조트. 호수·산책로 좋음. 차로 함덕 20분, 공항 30분. 외곽이라 야간 외부 이동 어려움 → 차로 도착·복귀.',
+        menu: '<strong>시설</strong><br>♨ 사우나 (남/여, 종일, 무료)<br>💆 테라피센터 07:30–21:00 (예약 064-786-1301)<br>🍳 조식 뷔페 07:00–10:00 (3만원, 사전예약 시 10% 할인)<br>🍖 파크가든 (단지내 흑돼지)<br>🚶 호수 산책로<br>🍷 객실 취사 가능 (간이주방)',
+        tipLabel: '예약 필요한 것',
+        tipText: '① 조식 — 체크인 시 사전 신청해야 10% 할인.<br>② 테라피센터 — 사전 예약 필수. 토 저녁 또는 일 새벽 추천.<br>③ 매점에서 와인·맥주 픽업 가능.',
+        links: [
+          { url: 'https://map.naver.com/p/search/한화리조트%20제주', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=한화리조트%20제주', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.hanwharesort.co.kr/irsweb/resort3/resort/rs_intro.do?bp_cd=1101', label: '공식 홈페이지', type: 'primary' },
+          { url: 'https://hwjeju.modoo.at/?link=a1fk1zh4', label: '테라피센터', type: 'default' }
+        ]
+      },
+      ujin: {
+        emoji: '🍲', bg: 'photo-bg-ujin',
+        title: '우진해장국',
+        verified: true,
+        subtitle: '제주 향토음식 고사리육개장의 대명사',
+        rating: '4.1',
+        reviews: '9,425',
+        hours: '매일 06:00 – 22:00 (연중무휴)',
+        address: '제주시 서사로 11 (삼도2동)',
+        phone: '064-757-3393',
+        about: '제주 향토 고사리육개장. 고사리를 갈아 넣어 진하게 끓인 걸쭉한 국물. 돼지고기 들어감. 호불호 있지만 중독성. 녹두빈대떡 추천. 수요미식회 출연.',
+        menu: '고사리해장국 / 고사리육개장 / 사골해장국 / 몸국 / 녹두빈대떡',
+        tipLabel: '대기',
+        tipText: '주말·점심 1~2시간 대기. 평일 19시 이후 한산. 매콤하게 먹으려면 고춧가루 추가.',
+        links: [
+          { url: 'https://map.naver.com/p/search/우진해장국', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=우진해장국', label: '카카오맵', type: 'kakao' },
+          { url: 'https://namu.wiki/w/우진해장국', label: '나무위키', type: 'default' },
+          { url: 'https://www.siksinhot.com/P/257720', label: '식신', type: 'default' },
+          { url: 'https://www.diningcode.com/profile.php?rid=qDqIccpAUNVy', label: '다이닝코드', type: 'default' }
+        ]
+      },
+      taegwang: {
+        emoji: '🦑', bg: 'photo-bg-meat',
+        title: '태광식당',
+        verified: true,
+        subtitle: '우진해장국 도보 2분 · 한치주물럭',
+        rating: '4.0',
+        reviews: '1,342',
+        hours: '월~토 10:30 – 22:00 (일요일 휴무)',
+        address: '제주시 탑동로 142',
+        phone: '064-751-1071',
+        about: '우진해장국 바로 근처. 한치주물럭이 시그니처. 매콤한 양념에 한치와 돼지고기를 함께 볶음. 소면 추가 필수. 다이닝코드 우진해장국 근처 추천 1순위.',
+        menu: '한치주물럭 / 돼지주물럭 / 한치+돼지 모듬 / 소면 추가',
+        tipLabel: '대안 이유',
+        tipText: '우진 대기 길거나, 해장국 대신 매콤한 술안주 원할 때. 일요일 휴무 주의.',
+        links: [
+          { url: 'https://map.naver.com/p/search/태광식당%20제주', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=태광식당%20제주', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      jangin: {
+        emoji: '🥟', bg: 'photo-bg-noodle',
+        title: '장인의집 탑동점',
+        verified: true,
+        subtitle: '우진해장국 옆 · 해물만두전골',
+        rating: '4.7',
+        reviews: '49',
+        hours: '매일 09:30 – 22:00',
+        address: '제주시 서사로 12',
+        phone: '064-755-4008',
+        about: '우진해장국 바로 옆 (서사로 12). 해물만두전골이 시그니처. 문어·전복·갯가재·차돌박이·표고버섯이 푸짐하게 들어간 얼큰한 국물. 2인 28,000원, 양 많음.',
+        menu: '해물만두전골 (28,000원/2인) / 만둣국 / 해물탕',
+        tipLabel: '대안 이유',
+        tipText: '우진 대기 길 때 / 해장국보다 따뜻한 전골 원할 때. 비교적 최근 오픈, 친절한 서비스.',
+        links: [
+          { url: 'https://map.naver.com/p/search/장인의집%20탑동점', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=장인의집%20탑동점', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      parkgarden: {
+        emoji: '🍖', bg: 'photo-bg-hanwha',
+        title: '파크가든 (한화리조트 단지내)',
+        verified: false,
+        subtitle: '단지내 흑돼지 숯불구이',
+        rating: '—',
+        reviews: '—',
+        hours: '리조트 운영시간 내',
+        address: '제주시 명림로 575-107 한화리조트 내',
+        phone: '064-725-9000',
+        about: '한화리조트 단지내 흑돼지 식당. 외출 어려운 저녁에 무이동 옵션. 청정 제주산 흑돼지 숯불구이.',
+        menu: '흑돼지 오겹살 / 목살 / 김치찌개',
+        tipLabel: '옵션',
+        tipText: '도착이 늦거나 피곤하면 무이동 옵션. 봉개동 외곽이라 야간 외출 어려움.',
+        links: [
+          { url: 'https://www.hanwharesort.co.kr/irsweb/resort3/resort/rs_intro.do?bp_cd=1101', label: '한화리조트 공식', type: 'primary' }
+        ]
+      },
+      yeongsil: {
+        emoji: '🌸', bg: 'photo-bg-yeongsil',
+        title: '영실 → 윗세오름 등산',
+        verified: true,
+        subtitle: '한국 3대 철쭉 명소 · 5월 말 절정',
+        rating: '4.3',
+        reviews: '2,029',
+        hours: '하절기(4~9월) 05:00 입산 가능 · 14:00 입산 마감 · 17:00 하산 완료',
+        address: '서귀포시 하원동 영실탐방로',
+        phone: '064-747-9950',
+        about: '편도 5.8km, 왕복 3시간. 영실휴게소(1,280m) → 병풍바위 → 윗세오름(1,700m). 5월 말 산철쭉 절정. 백록담 정상 진입 불가, 윗세오름에서 회차.',
+        menu: '코스: 영실휴게소 → 병풍바위(1.5km) → 윗세오름(2.2km) · 난이도 보통',
+        tipLabel: '주의',
+        tipText: '주차장 09:30 만차 가능. 출발 전 기상 체크 (064-713-9950). 매점 없음 → 물·간식 미리. 그늘 적음 → 모자·선글라스.',
+        links: [
+          { url: 'https://map.naver.com/p/search/영실휴게소', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=영실휴게소', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.jeju.go.kr/hallasan/index.htm', label: '한라산국립공원', type: 'primary' },
+          { url: 'https://www.tlog.pe.kr/post/한라산-영실코스-철쭉-가이드', label: '철쭉 가이드 블로그', type: 'default' },
+          { url: 'https://ohiking.today/mountain_course/24', label: '코스 상세 정보', type: 'default' }
+        ]
+      },
+      '1100': {
+        emoji: '⛰️', bg: 'photo-bg-1100',
+        title: '1100고지 휴게소',
+        verified: true,
+        subtitle: '해발 1,100m, 하산 후 따뜻한 한 그릇',
+        rating: '4.3',
+        reviews: '5,000',
+        hours: '매일 06:00 – 16:30',
+        address: '서귀포시 색달동 산1-1',
+        phone: '제공 안 됨',
+        about: '해발 1,100m 휴게소. 영실에서 내려오는 길. 어묵·우동·라면. GS25 편의점 (한국 최고 고도). 노루 출현 가능.',
+        menu: '어묵 / 우동 / 라면 / 컵라면 / 핫도그 / 커피',
+        tipLabel: '보너스',
+        tipText: '1100고지 습지(천연기념물) 산책 가능. 16:30 마감 주의.',
+        links: [
+          { url: 'https://map.naver.com/p/search/1100고지%20휴게소', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=1100고지%20휴게소', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      gozip: {
+        emoji: '🐟', bg: 'photo-bg-baeglog',
+        title: '고집돌우럭 중문점',
+        verified: true,
+        subtitle: '갈치·우럭조림 셋트',
+        rating: '4.7',
+        reviews: '7,813',
+        hours: '매일 10:00 – 14:50, 17:00 – 21:30 (브레이크타임)',
+        address: '서귀포시 일주서로 879',
+        phone: '064-738-1540',
+        about: '갈치·우럭조림이 유명. 셋트로 주문 (2인 1셋트). 양 많고 반찬 풍성. 영실에서 1100도로 따라 35분, 점심 시간엔 줄. 저녁 백록집(고등어회)과 메뉴 안 겹쳐서 점심 옵션으로 좋음.',
+        menu: 'A셋트 (우럭조림 + 갈치구이) / B셋트 / 흑돼지 추가',
+        tipLabel: '시간',
+        tipText: '하산 후 13:30~14:00 도착 권장 (14:50 브레이크). 1인 1셋트 의무 → 둘이 가면 충분 양. 주차장 넓음.',
+        links: [
+          { url: 'https://map.naver.com/p/search/고집돌우럭%20중문점', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=고집돌우럭%20중문점', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      geuttae: {
+        emoji: '🥩', bg: 'photo-bg-meat',
+        title: '그땐그집 중문본점',
+        verified: true,
+        subtitle: '중문 흑돼지 셋트',
+        rating: '4.8',
+        reviews: '1,162',
+        hours: '매일 09:50 – 22:50',
+        address: '서귀포시 상예로 181-28',
+        phone: '064-784-9244',
+        about: '중문권 흑돼지 셋트. 직원이 구워줌. 09:50 오픈이라 영실에서 바로 내려와도 가능. 반찬 스테이션 셀프 리필. 영실에서 차로 30분.',
+        menu: '흑돼지 셋트 (오겹살+목살) / 김치찌개 / 무한 반찬',
+        tipLabel: '주의',
+        tipText: '둘째날 점심을 흑돼지로 하면 일요일 돈사돈과 메뉴 중복. 흑돼지 두 끼 OK면 추천.',
+        links: [
+          { url: 'https://map.naver.com/p/search/그땐그집%20중문본점', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=그땐그집%20중문본점', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      hamdeok: {
+        emoji: '🏖️', bg: 'photo-bg-hamdeok',
+        title: '함덕해수욕장 + Cafe Del Moondo',
+        verified: true,
+        subtitle: '에메랄드빛 바다 + 오션뷰 카페',
+        rating: '4.5',
+        reviews: '11,648 (해변) · 4,804 (카페)',
+        hours: '해변: 24시간 · Cafe Del Moondo: 매일 06:00 – 24:00',
+        address: '제주시 조천읍 함덕리 + 조함해안로 519-10',
+        phone: '카페: 064-702-0007',
+        about: '에메랄드빛 + 흰 모래 + 서우봉 풍경. 5월 입수는 차가움. 델문도는 함덕 대표 카페, 2층 오션뷰. 한라봉 리코타 추천.',
+        menu: '델문도: 한라봉 리코타 / 피넛 라떼 / 카푸치노 / 크루아상',
+        tipLabel: '일몰 타이밍',
+        tipText: '5/30 일몰 19:34. 카페 16:30-18:00 → 해변 산책 18:00-18:30 → 백록집 18:30 도착이 자연스러움.',
+        links: [
+          { url: 'https://map.naver.com/p/search/함덕해수욕장', label: '함덕해변', type: 'naver' },
+          { url: 'https://map.naver.com/p/search/델문도%20제주', label: '델문도', type: 'naver' },
+          { url: 'https://delmoondo.com/', label: '델문도 공식', type: 'primary' }
+        ]
+      },
+      hoonnam: {
+        emoji: '🍣', bg: 'photo-bg-baeglog',
+        title: '훈남횟집',
+        verified: true,
+        subtitle: '다이닝코드 함덕 횟집 1위',
+        rating: '4.3',
+        reviews: '441',
+        hours: '매일 12:00-15:00, 17:00-23:30 (브레이크타임 있음)',
+        address: '제주시 조천읍 함덕13길 7 1층',
+        phone: '064-783-0083',
+        about: '1층 회 선택 → 2층 식사. 갈치·고등어·광어·딱새우·뿔소라·전복. 해변에서 도보 5분.',
+        menu: '모듬회 (소 35,000원~) / 새우회 / 멍게 / 회덮밥 / 매운탕 / 라면',
+        tipLabel: '대기 + 가격',
+        tipText: '평일 저녁 30분 대기. 식사 시간 1.5시간. 둘이 7~9만원.',
+        links: [
+          { url: 'https://map.naver.com/p/search/훈남횟집%20함덕', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=훈남횟집%20함덕', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.diningcode.com/list.dc?query=함덕%20횟집', label: '다이닝코드 함덕 횟집 Top', type: 'default' }
+        ]
+      },
+      baeglog: {
+        emoji: '🐟', bg: 'photo-bg-baeglog',
+        title: '백록집',
+        verified: true,
+        subtitle: '함덕 고등어회의 끝판왕',
+        rating: '4.5',
+        reviews: '88',
+        hours: '매일 17:00 – 23:00',
+        address: '제주시 조천읍 함덕로 24',
+        phone: '050-71381-6021',
+        about: '함덕 고등어회 명소. 시그니처: 고등어회 + 미나리 + 양파소스에 쌈처럼 싸먹기. 갯가재도 단맛 진함. 해변에서 도보 5분.',
+        menu: '고등어회 (시그니처) / 모듬회 / 갯가재 / 해물라면 / 한라산 소주',
+        tipLabel: '먹는 법',
+        tipText: '고등어회 + 한라산 소주 페어링. 17시 오픈, 토요일 저녁 줄 있으니 18:30 도착. 주차장 없음 → 함덕 공용주차장.',
+        links: [
+          { url: 'https://map.naver.com/p/search/백록집%20함덕', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=백록집%20함덕', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.diningcode.com/list.dc?query=함덕%20고등어회', label: '다이닝코드 함덕 고등어회 Top', type: 'default' }
+        ]
+      },
+      samchon: {
+        emoji: '🥩', bg: 'photo-bg-donsadon',
+        title: '제주삼촌',
+        verified: true,
+        subtitle: '함덕 최고의 흑돼지',
+        rating: '4.9',
+        reviews: '622',
+        hours: '매일 14:00 – 23:00',
+        address: '제주시 조천읍 신북로 537-1',
+        phone: '050-71483-5565',
+        about: '함덕 최고 흑돼지로 평가. 습식 숙성 흑돼지, 직원이 직접 구워줌. 작은 가게라 회전 빠르고 분위기 깔끔. 뒤뜰 정원 있음. 오겹살 추천. 백록집 도보 3분.',
+        menu: '오겹살 / 목살 / 항정살 / 김치찌개',
+        tipLabel: '대안 이유',
+        tipText: '회 말고 흑돼지 원할 때. 평점 4.9로 함덕권 최고. 약간 비싸지만 값어치 있음. 일요일 돈사돈과 겹치지만 흑돼지 두 끼 OK면 추천.',
+        links: [
+          { url: 'https://map.naver.com/p/search/제주삼촌%20함덕', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=제주삼촌%20함덕', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      basalt: {
+        emoji: '💪', bg: 'photo-bg-basalt',
+        title: '바솔트 크로스핏 (BASALT CROSSFIT)',
+        verified: true,
+        subtitle: '제주 공식 크로스핏 박스',
+        rating: '5.0',
+        reviews: '4',
+        hours: '일요일 09:00 – 17:00 · 평일 06:50–22:00',
+        address: '제주시 도두해안로 168',
+        phone: '064-747-0720',
+        about: 'CrossFit 공식 박스. 실내 + 야외 트레이닝 존. 클래스 1시간.',
+        menu: '드랍인 클래스 · 파트너 WOD · 인스타: @basalt_crossfit',
+        tipLabel: '준비',
+        tipText: '네이버 예약 완료. 11:30 → 12:30 종료. 드랍인 비용 현금 준비.',
+        links: [
+          { url: 'https://map.naver.com/p/search/바솔트%20크로스핏', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=바솔트%20크로스핏', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.instagram.com/basalt_crossfit', label: '인스타그램 DM', type: 'primary' }
+        ]
+      },
+      donsadon: {
+        emoji: '🥩', bg: 'photo-bg-donsadon',
+        title: '돈사돈 본점',
+        verified: true,
+        subtitle: '제주 흑돼지 대표 명가',
+        rating: '4.1',
+        reviews: '2,403',
+        hours: '월·수·목·금·토·일 12:30 – 22:00 (화요일 휴무)',
+        address: '제주시 노형동 3086-3',
+        phone: '064-746-8989',
+        about: '제주 흑돼지 대표. 두툼한 컷, 직원이 숯불 직화로 구워줌. 멜젓 원조.',
+        menu: '오겹살 / 목살 / 항정살 / 김치찌개 (둘이 400g + 200g 추천)',
+        tipLabel: '주문',
+        tipText: '둘이 오겹살 400g + 목살 200g. 화요일 휴무. 13시 정각 도착 권장.',
+        links: [
+          { url: 'https://map.naver.com/p/search/돈사돈%20본점', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=돈사돈%20본점', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.diningcode.com/list.dc?query=제주%20흑돼지', label: '다이닝코드 흑돼지 Top', type: 'default' }
+        ]
+      },
+      geumdon: {
+        emoji: '🔥', bg: 'photo-bg-meat',
+        title: '금돈 흑돼지',
+        verified: true,
+        subtitle: '2단계 굽기 기법의 흑돼지 명가',
+        rating: '4.8',
+        reviews: '257',
+        hours: '매일 13:00 – 01:00',
+        address: '제주시 원노형남1길 16 1층',
+        phone: '050-71387-1394',
+        about: '숯불 → 팬 2단계 굽기. 항정살이 가장 즙 많음. 평점 4.8★.',
+        menu: '오겹살 / 항정살 / 목살 / 김치찌개',
+        tipLabel: '시그니처',
+        tipText: '13시 오픈. 크로스핏 끝나고 동선 맞음. 항정살 무조건.',
+        links: [
+          { url: 'https://map.naver.com/p/search/금돈%20흑돼지', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=금돈%20흑돼지', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      hayeogeum: {
+        emoji: '🍴', bg: 'photo-bg-meat',
+        title: '하여금 흑돼지 전문점',
+        verified: true,
+        subtitle: '깨끗한 분위기 + 두툼한 흑돼지',
+        rating: '4.8',
+        reviews: '270',
+        hours: '매일 12:00 – 24:00',
+        address: '제주시 원노형4길 11 1층',
+        phone: '050-71349-4695',
+        about: '두툼한 컷, 직원이 구워줌. 청결도 1위. 영어 메뉴.',
+        menu: '오겹살 / 목살 / 모듬 / 된장찌개',
+        tipLabel: '분위기',
+        tipText: '돈사돈보다 차분한 분위기. 12시 오픈. 점심 한산. 평점 4.8★.',
+        links: [
+          { url: 'https://map.naver.com/p/search/하여금%20흑돼지', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=하여금%20흑돼지', label: '카카오맵', type: 'kakao' }
+        ]
+      },
+      guksi: {
+        emoji: '🍜', bg: 'photo-bg-noodle',
+        title: '국시트멍 (제주고기국수)',
+        verified: true,
+        subtitle: '돈코츠 라멘 같은 진한 고기국수',
+        rating: '4.4',
+        reviews: '885',
+        hours: '평일 09:00-19:00 (LO 18:30) / 주말 11:00-16:00 (LO 15:30)',
+        address: '제주시 노형동 진군길 31-3',
+        phone: '064-725-7004',
+        about: '돈코츠 라멘 같은 진한 사골국물 + 쫄깃한 면. 회전 빠름. 비행기 시간 안 늦음.',
+        menu: '고기국수 / 멸치고기국수 / 비빔고기국수 / 제주냉면 / 돈쌈',
+        tipLabel: '옵션',
+        tipText: '가벼운 선택. 일요일 LO 15:30 주의. 매콤하면 비빔. 돈쌈도 추천.',
+        links: [
+          { url: 'https://map.naver.com/p/search/국시트멍', label: '네이버지도', type: 'naver' },
+          { url: 'https://map.kakao.com/?q=국시트멍', label: '카카오맵', type: 'kakao' },
+          { url: 'https://www.tabling.co.kr/restaurant/8596', label: '테이블링 예약', type: 'primary' }
+        ]
+      }
+    };
+
+    function openModal(key) {
+      const p = places[key];
+      if (!p) return;
+
+      
+
+      let html = `
+        <h2 class="modal-title">${p.title}${p.verified ? ' <span class="verified-badge">✓</span>' : ''}</h2>
+        <p class="modal-subtitle">${p.subtitle}</p>
+
+        <div class="modal-stats">
+          <div class="modal-stat">
+            <span class="modal-stat-label">평점</span>
+            <span class="modal-stat-value rating">★ ${p.rating}</span>
+          </div>
+          <div class="modal-stat">
+            <span class="modal-stat-label">리뷰</span>
+            <span class="modal-stat-value">${p.reviews}</span>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-label">소개</div>
+          <div class="modal-section-content">${p.about}</div>
+        </div>
+      `;
+
+      if (p.menu) {
+        html += `
+          <div class="modal-section">
+            <div class="modal-section-label">메뉴 / 코스</div>
+            <div class="modal-section-content">${p.menu}</div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="modal-section">
+          <div class="modal-section-label">영업 시간</div>
+          <div class="modal-section-content">${p.hours}</div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-label">주소</div>
+          <div class="modal-section-content">${p.address}</div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-label">전화</div>
+          <div class="modal-section-content"><a href="tel:${p.phone}" style="color: var(--accent); font-weight: 700;">${p.phone}</a></div>
+        </div>
+      `;
+
+      if (p.tipText) {
+        html += `
+          <div class="modal-tip">
+            <div class="modal-tip-label">${p.tipLabel}</div>
+            <div class="modal-tip-text">${p.tipText}</div>
+          </div>
+        `;
+      }
+
+      if (p.links && p.links.length > 0) {
+        html += `<div class="modal-section">
+          <div class="modal-section-label">관련 링크</div>
+          <div class="modal-links">`;
+        p.links.forEach(link => {
+          html += `<a href="${link.url}" target="_blank" class="modal-link ${link.type || ''}">${link.label}</a>`;
+        });
+        html += `</div></div>`;
+      }
+
+      document.getElementById('modalBody').innerHTML = html;
+      document.getElementById('modalBackdrop').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    function closeModalIfBackdrop(event) {
+      if (event.target.id === 'modalBackdrop') closeModal();
+    }
+
+    function toggleCheck(item) {
+      item.classList.toggle('checked');
+      const box = item.querySelector('.check-box');
+      box.textContent = item.classList.contains('checked') ? '✓' : '';
+    }
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+</html>

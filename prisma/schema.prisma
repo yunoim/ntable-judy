@@ -77,6 +77,7 @@ model Date {
   themeNote     String?
   weather       String?
   historyLabel  String?
+  attachmentUrl String? // 외부 첨부 (여행 일정 HTML 등). 비우면 미노출.
 
   aiInput       String?
   aiResponseRaw String?
