@@ -226,20 +226,18 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
-        {/* ─── 오늘의 질문 (Q&A) ─────────────── */}
-        {partnerInitial && (
-          <DailyEntryCard
-            meId={me.id}
-            meNickname={me.nickname}
-            partnerNickname={partnerInitial.nickname}
-            myEntry={myDaily}
-            partnerEntry={partnerDailyForCard}
-            partnerHasAnswered={partnerHasAnswered}
-            streak={streak}
-            dateStr={dateStr}
-            question={dailyQuestion}
-          />
-        )}
+        {/* ─── 오늘의 질문 (Q&A) — partnerInitial 없어도 본인 답은 가능 ───── */}
+        <DailyEntryCard
+          meId={me.id}
+          meNickname={me.nickname}
+          partnerNickname={partnerInitial?.nickname ?? null}
+          myEntry={myDaily}
+          partnerEntry={partnerDailyForCard}
+          partnerHasAnswered={partnerHasAnswered}
+          streak={streak}
+          dateStr={dateStr}
+          question={dailyQuestion}
+        />
 
         {/* ─── 최근 활동 ─────────────────────── */}
         <RecentActivity />

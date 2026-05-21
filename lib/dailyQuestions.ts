@@ -116,27 +116,32 @@ export function pickQuestionForDate(dateStr: string): string {
 }
 
 // DB 에 한 번 저장해두고 같은 날 다시 호출되면 read.
+// DB 장애 시에도 deterministic 한 fallback (pickQuestionForDate) 반환 — 카드가 항상 렌더되도록.
 export async function getOrCreateDailyQuestion(
   dateStr: string,
   prisma: import("@prisma/client").PrismaClient,
 ): Promise<string> {
-  const existed = await prisma.dailyQuestion.findUnique({
-    where: { date: dateStr },
-  });
-  if (existed) return existed.question;
-  const question = pickQuestionForDate(dateStr);
+  const fallback = pickQuestionForDate(dateStr);
   try {
-    await prisma.dailyQuestion.create({
-      data: { date: dateStr, question },
-    });
-  } catch {
-    // race: 다른 요청이 먼저 만들었을 수 있음 — re-read.
-    const again = await prisma.dailyQuestion.findUnique({
+    const existed = await prisma.dailyQuestion.findUnique({
       where: { date: dateStr },
     });
-    if (again) return again.question;
+    if (existed) return existed.question;
+    try {
+      await prisma.dailyQuestion.create({
+        data: { date: dateStr, question: fallback },
+      });
+    } catch {
+      const again = await prisma.dailyQuestion
+        .findUnique({ where: { date: dateStr } })
+        .catch(() => null);
+      if (again) return again.question;
+    }
+    return fallback;
+  } catch (e) {
+    console.error("[daily-question] db error, using fallback", e);
+    return fallback;
   }
-  return question;
 }
 
 export function todayKstDateStr(now: Date = new Date()): string {
