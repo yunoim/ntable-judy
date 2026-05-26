@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -78,9 +79,12 @@ export default function DailyEntryCard({
     <>
       <section className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[11px] text-fg-faint tracking-wider uppercase">
-            오늘의 질문
-          </p>
+          <Link
+            href="/daily"
+            className="tap text-[11px] text-fg-faint tracking-wider uppercase hover:text-fg-soft"
+          >
+            오늘의 질문 →
+          </Link>
           {streak > 0 && (
             <span className="text-[11px] text-accent font-display">
               🔥 {streak}일 연속
