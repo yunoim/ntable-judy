@@ -79,12 +79,9 @@ export default function DailyEntryCard({
     <>
       <section className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <Link
-            href="/daily"
-            className="tap text-[11px] text-fg-faint tracking-wider uppercase hover:text-fg-soft"
-          >
-            오늘의 질문 →
-          </Link>
+          <p className="text-[11px] text-fg-faint tracking-wider uppercase">
+            오늘의 질문
+          </p>
           {streak > 0 && (
             <span className="text-[11px] text-accent font-display">
               🔥 {streak}일 연속
@@ -162,6 +159,13 @@ export default function DailyEntryCard({
             </p>
           </div>
         )}
+
+        <Link
+          href="/daily"
+          className="tap block text-center text-[11px] text-fg-faint hover:text-fg-soft py-1"
+        >
+          지난 질문 보기 →
+        </Link>
       </section>
 
       {open && (
