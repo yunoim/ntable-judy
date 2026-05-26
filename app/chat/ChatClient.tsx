@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import DrawingCanvas from "./DrawingCanvas";
 
 export type ChatMessageItem = {
@@ -65,7 +65,14 @@ export default function ChatClient({
     initial.length ? initial[initial.length - 1].id : 0,
   );
 
-  // 마운트 시 lastReadId 갱신 + 스크롤 하단으로.
+  // 마운트 시 즉시 하단 스크롤 (paint 전). 사용자가 맨 위를 안 보게.
+  useLayoutEffect(() => {
+    scrollerRef.current?.scrollTo({
+      top: scrollerRef.current.scrollHeight,
+      behavior: "auto",
+    });
+  }, []);
+  // 이미지 등 비동기 로드로 높이 변하면 다시 하단. + lastReadId 갱신.
   useEffect(() => {
     if (lastIdRef.current > 0) {
       fetch("/api/chat/read", {
@@ -74,10 +81,13 @@ export default function ChatClient({
         body: JSON.stringify({ lastReadId: lastIdRef.current }),
       }).catch(() => {});
     }
-    scrollerRef.current?.scrollTo({
-      top: scrollerRef.current.scrollHeight,
-      behavior: "auto",
-    });
+    const t = setTimeout(() => {
+      scrollerRef.current?.scrollTo({
+        top: scrollerRef.current.scrollHeight,
+        behavior: "auto",
+      });
+    }, 300);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
