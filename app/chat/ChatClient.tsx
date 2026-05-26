@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import DrawingCanvas from "./DrawingCanvas";
 
 export type ChatMessageItem = {
   id: number;
@@ -230,6 +231,33 @@ export default function ChatClient({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [showCanvas, setShowCanvas] = useState(false);
+
+  async function sendDrawing(blob: Blob) {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    setSending(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      const file = new File([blob], "drawing.png", { type: "image/png" });
+      fd.append("file", file);
+      fd.append("body", "🎨");
+      const res = await fetch("/api/chat/photo", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "전송 실패");
+        return;
+      }
+      appendMessage(data as ChatMessageItem);
+      setShowCanvas(false);
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
+    }
+  }
 
   // long-press 삭제. 본인 메시지 말풍선을 500ms 누르면 confirm 후 삭제.
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -482,6 +510,18 @@ export default function ChatClient({
             className="hidden"
           />
         </label>
+        <button
+          type="button"
+          onClick={() => setShowCanvas(true)}
+          disabled={sending}
+          className={[
+            "tap shrink-0 w-10 h-10 rounded-full flex items-center justify-center border border-fg/20 text-fg-soft",
+            sending ? "opacity-40 cursor-wait" : "hover:bg-bg-warm",
+          ].join(" ")}
+          aria-label="낙서"
+        >
+          🎨
+        </button>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value.slice(0, 2000))}
@@ -501,6 +541,14 @@ export default function ChatClient({
           ↑
         </button>
       </div>
+
+      {showCanvas && (
+        <DrawingCanvas
+          onSend={sendDrawing}
+          onClose={() => setShowCanvas(false)}
+          sending={sending}
+        />
+      )}
 
       {lightbox && (
         <div
