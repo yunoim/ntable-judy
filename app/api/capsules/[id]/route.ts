@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { todayKstStr } from "@/lib/daily";
 
 export async function PATCH(
   req: Request,
@@ -24,13 +25,9 @@ export async function PATCH(
 
   const body = await req.json().catch(() => ({}));
 
-  // 열기 액션
+  // 열기 액션 — KST 날짜 기준 (서버 UTC 자정 비교 시 KST 0~9시 못 여는 버그 회피).
   if (body.action === "open") {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const openTarget = new Date(existing.openAt);
-    openTarget.setHours(0, 0, 0, 0);
-    if (today.getTime() < openTarget.getTime()) {
+    if (todayKstStr(new Date(existing.openAt)) > todayKstStr()) {
       return NextResponse.json({ error: "not_yet" }, { status: 400 });
     }
     if (existing.opened) {

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { notifyOthers } from "@/lib/push";
+import { todayKstStr } from "@/lib/daily";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -36,9 +37,8 @@ export async function POST(req: Request) {
   if (!openAt || Number.isNaN(openAt.getTime())) {
     return NextResponse.json({ error: "bad_openAt" }, { status: 400 });
   }
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (openAt.getTime() <= today.getTime()) {
+  // KST 기준 오늘 이하면 거부 (미래 날짜만 봉인 가능).
+  if (todayKstStr(openAt) <= todayKstStr()) {
     return NextResponse.json({ error: "openAt_past" }, { status: 400 });
   }
 

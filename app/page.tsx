@@ -108,7 +108,7 @@ export default async function HomePage() {
     openedAt: c.openedAt?.toISOString() ?? null,
     createdById: c.createdById,
     createdBy: c.createdBy,
-    canOpen: !c.opened && c.openAt.getTime() <= now.getTime(),
+    canOpen: !c.opened && todayKstStr(new Date(c.openAt)) <= todayKstStr(),
   }));
 
   const upcomingAnni = nearestAnniversary(anniversaries);
