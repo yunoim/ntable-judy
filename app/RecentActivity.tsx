@@ -110,6 +110,7 @@ export default async function RecentActivity({
         },
       })),
       safe(prisma.timeCapsule.findMany({
+        where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
         take: 5,
         select: {

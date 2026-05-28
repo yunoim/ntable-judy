@@ -29,11 +29,13 @@ export default function CapsulesClient({
   meId,
   meRole,
   capsules,
+  deletedCapsules = [],
   embedded = false,
 }: {
   meId: string;
   meRole: string;
   capsules: Capsule[];
+  deletedCapsules?: Capsule[];
   embedded?: boolean;
 }) {
   const router = useRouter();
@@ -101,6 +103,29 @@ export default function CapsulesClient({
         return;
       }
       setRevealed((r) => ({ ...r, [c.id]: true }));
+      startTransition(() => router.refresh());
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function restore(id: number) {
+    if (busyId) return;
+    setBusyId(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/capsules/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore" }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "복원 실패");
+        return;
+      }
       startTransition(() => router.refresh());
     } catch (e: any) {
       setError(e?.message ?? "네트워크 오류");
@@ -315,6 +340,40 @@ export default function CapsulesClient({
                   </li>
                 );
               })}
+            </ul>
+          </section>
+        )}
+
+        {meRole === "admin" && deletedCapsules.length > 0 && (
+          <section className="space-y-3 pt-4 border-t border-fg/10">
+            <SectionTitle
+              title="🗑 휴지통"
+              hint={`${deletedCapsules.length}개 · admin`}
+            />
+            <ul className="space-y-2">
+              {deletedCapsules.map((c) => (
+                <li
+                  key={c.id}
+                  className="editorial-card px-4 py-3 space-y-2 opacity-80"
+                >
+                  <header>
+                    <p className="font-display text-sm">{c.title}</p>
+                    <p className="text-[10px] text-fg-faint mt-0.5 serif-italic">
+                      {c.createdBy.nickname} · 삭제됨
+                    </p>
+                  </header>
+                  <p className="text-[13px] whitespace-pre-wrap leading-relaxed text-fg-soft">
+                    {c.body}
+                  </p>
+                  <button
+                    onClick={() => restore(c.id)}
+                    disabled={busyId === c.id}
+                    className="tap text-[11px] text-accent border border-accent/40 rounded-full px-3 py-1 disabled:opacity-40"
+                  >
+                    {busyId === c.id ? "복원 중…" : "↩ 복원하기"}
+                  </button>
+                </li>
+              ))}
             </ul>
           </section>
         )}

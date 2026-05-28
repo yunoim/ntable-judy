@@ -199,6 +199,9 @@ model TimeCapsule {
   opened   Boolean   @default(false)
   openedAt DateTime?
 
+  // soft-delete — 삭제해도 행은 남기고 deletedAt 표시. admin 이 복원 가능.
+  deletedAt DateTime?
+
   createdById String
   createdBy   User   @relation("CapsuleCreator", fields: [createdById], references: [id])
 

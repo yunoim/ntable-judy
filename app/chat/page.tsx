@@ -40,8 +40,8 @@ export default async function ChatPage() {
   // 열자마자 lastReadId 갱신 (서버측 처리는 클라이언트가 마운트 후 호출).
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="px-4 pt-3 pb-2 safe-top flex items-center justify-between border-b border-fg/10">
+    <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
+      <header className="px-4 pt-3 pb-2 safe-top flex items-center justify-between border-b border-fg/10 shrink-0">
         <Link href="/" className="tap text-xs text-fg-faint">
           ← 홈
         </Link>

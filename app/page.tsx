@@ -75,6 +75,7 @@ export default async function HomePage() {
         },
       }),
       prisma.timeCapsule.findMany({
+        where: { deletedAt: null },
         orderBy: [{ opened: "asc" }, { openAt: "asc" }],
         include: { createdBy: { select: { id: true, nickname: true } } },
       }),

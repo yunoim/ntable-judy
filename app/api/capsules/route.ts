@@ -9,6 +9,7 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauth" }, { status: 401 });
   const capsules = await prisma.timeCapsule.findMany({
+    where: { deletedAt: null },
     orderBy: { openAt: "asc" },
     include: { createdBy: { select: { id: true, nickname: true } } },
   });

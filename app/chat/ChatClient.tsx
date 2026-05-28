@@ -67,10 +67,8 @@ export default function ChatClient({
 
   // 마운트 시 즉시 하단 스크롤 (paint 전). 사용자가 맨 위를 안 보게.
   useLayoutEffect(() => {
-    scrollerRef.current?.scrollTo({
-      top: scrollerRef.current.scrollHeight,
-      behavior: "auto",
-    });
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, []);
   // 이미지 등 비동기 로드로 높이 변하면 다시 하단. + lastReadId 갱신.
   useEffect(() => {
@@ -81,13 +79,12 @@ export default function ChatClient({
         body: JSON.stringify({ lastReadId: lastIdRef.current }),
       }).catch(() => {});
     }
-    const t = setTimeout(() => {
-      scrollerRef.current?.scrollTo({
-        top: scrollerRef.current.scrollHeight,
-        behavior: "auto",
-      });
-    }, 300);
-    return () => clearTimeout(t);
+    const jump = () => {
+      const el = scrollerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    };
+    const timers = [50, 200, 500, 1000].map((d) => setTimeout(jump, d));
+    return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -495,7 +492,7 @@ export default function ChatClient({
       )}
 
       <div
-        className="border-t border-fg/10 bg-bg/95 backdrop-blur px-3 py-2 flex items-end gap-2"
+        className="border-t border-fg/10 bg-bg/95 backdrop-blur px-3 py-2 flex items-end gap-2 shrink-0"
         style={{
           marginBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
         }}

@@ -25,6 +25,19 @@ export async function PATCH(
 
   const body = await req.json().catch(() => ({}));
 
+  // 복원 액션 (admin 전용) — soft-delete 된 캡슐 되살리기.
+  if (body.action === "restore") {
+    if (user.role !== "admin") {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    await prisma.timeCapsule.update({
+      where: { id: numId },
+      data: { deletedAt: null },
+    });
+    revalidatePath("/capsules");
+    return NextResponse.json({ id: numId, restored: true });
+  }
+
   // 열기 액션 — KST 날짜 기준 (서버 UTC 자정 비교 시 KST 0~9시 못 여는 버그 회피).
   if (body.action === "open") {
     if (todayKstStr(new Date(existing.openAt)) > todayKstStr()) {
@@ -103,7 +116,11 @@ export async function DELETE(
   if (user.role !== "admin" && existing.createdById !== user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  await prisma.timeCapsule.delete({ where: { id: numId } });
+  // soft-delete — 행 보존, deletedAt 만 찍음. 복원 가능.
+  await prisma.timeCapsule.update({
+    where: { id: numId },
+    data: { deletedAt: new Date() },
+  });
   revalidatePath("/capsules");
   return NextResponse.json({ ok: true });
 }
