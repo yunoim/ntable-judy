@@ -24,6 +24,9 @@ import { getOrCreateDailyQuestion } from "@/lib/dailyQuestions";
 
 export const dynamic = "force-dynamic";
 
+// /event 이벤트가 열리는 날 (KST). app/event/page.tsx 의 EVENT_DATE 와 동일하게.
+const EVENT_DATE = "2026-05-29";
+
 type AnniRow = {
   id: number;
   label: string;
@@ -227,6 +230,21 @@ export default async function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
+        {/* ─── 오늘 하루만 열리는 이벤트 배너 ─────────── */}
+        {todayKstStr() === EVENT_DATE && (
+          <Link
+            href="/event"
+            className="tap lift block rounded-card bg-ink-card text-bg px-4 py-3.5 rise-in"
+          >
+            <p className="text-[10px] tracking-[0.25em] text-accent-soft uppercase">
+              오늘만 열려요
+            </p>
+            <p className="font-display text-base mt-0.5">
+              🎞️ 우리의 추억 상영회 →
+            </p>
+          </Link>
+        )}
+
         {/* ─── 오늘의 질문 (Q&A) — partnerInitial 없어도 본인 답은 가능 ───── */}
         <DailyEntryCard
           meId={me.id}
