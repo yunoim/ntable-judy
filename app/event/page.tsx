@@ -51,20 +51,33 @@ export default async function EventPage({
   let dayNo = 0;
   let dateCount = 0;
   let photoCount = 0;
+  let names: string[] = [];
 
-  if (phase === "open") {
-    const [photos, anniversaries, dCount] = await Promise.all([
-      prisma.datePhoto.findMany({
-        orderBy: [{ date: { scheduledAt: "asc" } }, { createdAt: "asc" }],
-        select: {
-          id: true,
-          url: true,
-          caption: true,
-          date: { select: { number: true, title: true, scheduledAt: true } },
-        },
-      }),
-      prisma.anniversary.findMany({ where: { kind: COUPLE_START_KIND } }),
-      prisma.date.count({ where: { status: { not: "cancelled" } } }),
+  try {
+    const [photos, anniversaries, dCount, users] = await Promise.all([
+      phase === "open"
+        ? prisma.datePhoto.findMany({
+            orderBy: [
+              { date: { scheduledAt: "asc" } },
+              { createdAt: "asc" },
+            ],
+            select: {
+              id: true,
+              url: true,
+              caption: true,
+              date: {
+                select: { number: true, title: true, scheduledAt: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
+      prisma.anniversary
+        .findMany({ where: { kind: COUPLE_START_KIND } })
+        .catch(() => []),
+      prisma.date
+        .count({ where: { status: { not: "cancelled" } } })
+        .catch(() => 0),
+      getActiveUsers().catch(() => []),
     ]);
     slides = photos.map((p) => ({
       id: p.id,
@@ -84,10 +97,10 @@ export default async function EventPage({
     }
     dateCount = dCount;
     photoCount = photos.length;
+    names = users.map((u) => u.nickname);
+  } catch (e) {
+    console.error("[event] data fetch", e);
   }
-
-  const users = await getActiveUsers();
-  const names = users.map((u) => u.nickname);
 
   return (
     <EventClient

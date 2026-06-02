@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // 캘린더 날짜 클릭 시 자동으로 뜨는 액션 시트.
@@ -48,6 +48,8 @@ export default function TimelineActions({
   existingEvents: DayEventSummary[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   // hash 가 #add-event 면 EventsSection 의 form 이 떠야 하므로 이 sheet 는 숨김.
   const [hashAddEvent, setHashAddEvent] = useState(false);
   useEffect(() => {
@@ -61,6 +63,12 @@ export default function TimelineActions({
     window.addEventListener("hashchange", check);
     return () => window.removeEventListener("hashchange", check);
   }, []);
+  // Next.js soft-nav 가 hash 클리어해도 hashchange 가 안 뜰 수 있어
+  // pathname/searchParams 변화도 트리거.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setHashAddEvent(window.location.hash === "#add-event");
+  }, [pathname, searchParams]);
   const open = selectedDayStr !== null && !hashAddEvent;
 
   function close() {

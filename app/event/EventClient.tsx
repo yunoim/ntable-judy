@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -203,14 +202,12 @@ export default function EventClient({
     <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
       {/* 사진 */}
       <div className="absolute inset-0">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           key={slide.id}
           src={slide.url}
           alt=""
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover animate-fade-in"
+          className="absolute inset-0 w-full h-full object-cover animate-fade-in"
         />
         {/* 위/아래 그라데이션 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />

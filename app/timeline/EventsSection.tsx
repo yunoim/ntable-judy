@@ -96,6 +96,15 @@ export default function EventsSection({
     setOwnerId(meId);
     setEditingId(null);
     setAdding(false);
+    // URL 의 #add-event 정리 — 안 그러면 다음에 day-panel 이 안 뜸.
+    if (typeof window !== "undefined" && window.location.hash === "#add-event") {
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
   }
 
   async function save() {
