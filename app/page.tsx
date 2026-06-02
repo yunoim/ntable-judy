@@ -237,10 +237,7 @@ export default async function HomePage() {
             href="/event"
             className="tap lift block rounded-card bg-ink-card text-bg px-4 py-3.5 rise-in"
           >
-            <p className="text-[10px] tracking-[0.25em] text-accent-soft uppercase">
-              오늘만 열려요
-            </p>
-            <p className="font-display text-base mt-0.5">
+            <p className="font-display text-base">
               🎞️ 우리의 추억 상영회 →
             </p>
           </Link>

@@ -41,8 +41,14 @@ export default function EventClient({
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [started, setStarted] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
+  // 재생 순서 — 셔플 off 면 0..n-1, on 이면 Fisher-Yates 로 섞은 인덱스.
   const total = slides.length;
+  const [order, setOrder] = useState<number[]>(() =>
+    Array.from({ length: total }, (_, i) => i),
+  );
   const onEnding = index >= total;
+  const currentSlide = total > 0 && !onEnding ? slides[order[index]] : null;
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -55,6 +61,22 @@ export default function EventClient({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [index, paused, started, onEnding, total]);
+
+  function toggleShuffle() {
+    setShuffle((s) => {
+      const next = !s;
+      const arr = Array.from({ length: total }, (_, i) => i);
+      if (next) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+      setOrder(arr);
+      setIndex(0);
+      return next;
+    });
+  }
 
   // ─── before: 카운트다운 ───
   if (phase === "before") {
@@ -197,14 +219,14 @@ export default function EventClient({
   }
 
   // 슬라이드
-  const slide = slides[index];
+  const slide = currentSlide!;
   return (
     <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
       {/* 사진 */}
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          key={slide.id}
+          key={`${slide.id}-${index}`}
           src={slide.url}
           alt=""
           className="absolute inset-0 w-full h-full object-cover animate-fade-in"
@@ -215,14 +237,14 @@ export default function EventClient({
 
       {/* 진행 바 */}
       <div className="absolute top-0 left-0 right-0 flex gap-1 p-2 safe-top z-10">
-        {slides.map((s, i) => (
+        {order.map((_, i) => (
           <div
-            key={s.id}
+            key={i}
             className="flex-1 h-0.5 rounded-full bg-bg/30 overflow-hidden"
           >
             <div
               className="h-full bg-bg"
-              style={{ width: i < index ? "100%" : i === index ? "100%" : "0%" }}
+              style={{ width: i <= index ? "100%" : "0%" }}
             />
           </div>
         ))}
@@ -236,7 +258,7 @@ export default function EventClient({
       </div>
 
       {/* 캡션 */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 pb-10 z-10">
+      <div className="absolute bottom-20 left-0 right-0 px-6 pb-2 z-10">
         <p className="text-[11px] tracking-widest text-accent-soft mb-1">
           #{String(slide.dateNumber).padStart(2, "0")} · {slide.dateLabel}
         </p>
@@ -248,32 +270,91 @@ export default function EventClient({
         )}
       </div>
 
-      {/* 탭 영역: 좌(이전) / 중앙(일시정지) / 우(다음) */}
+      {/* 컨트롤 바 */}
+      <div className="absolute left-0 right-0 bottom-0 px-4 pb-6 safe-bottom z-20 flex items-center justify-center gap-2">
+        <div className="flex items-center gap-1 bg-fg/40 backdrop-blur-sm rounded-full px-2 py-1.5">
+          <CtlBtn
+            label="이전"
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+          >
+            ⏮
+          </CtlBtn>
+          <CtlBtn
+            label={paused ? "재생" : "일시정지"}
+            onClick={() => setPaused((p) => !p)}
+            primary
+          >
+            {paused ? "▶" : "⏸"}
+          </CtlBtn>
+          <CtlBtn
+            label="다음"
+            onClick={() => setIndex((i) => Math.min(total, i + 1))}
+          >
+            ⏭
+          </CtlBtn>
+          <CtlBtn
+            label="랜덤 재생"
+            onClick={toggleShuffle}
+            active={shuffle}
+          >
+            🔀
+          </CtlBtn>
+        </div>
+      </div>
+
+      {/* 탭 영역: 좌(이전) / 우(다음). 가운데는 컨트롤 바라 탭 X. */}
       <button
         type="button"
         aria-label="이전"
-        className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
+        className="absolute left-0 top-0 bottom-24 w-1/3 z-10"
         onClick={() => setIndex((i) => Math.max(0, i - 1))}
       />
       <button
         type="button"
-        aria-label="일시정지"
-        className="absolute left-1/3 top-0 bottom-0 w-1/3 z-10"
-        onClick={() => setPaused((p) => !p)}
-      />
-      <button
-        type="button"
         aria-label="다음"
-        className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
+        className="absolute right-0 top-0 bottom-24 w-1/3 z-10"
         onClick={() => setIndex((i) => Math.min(total, i + 1))}
       />
 
       {paused && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <span className="text-bg/80 text-5xl">⏸</span>
+          <span className="text-bg/80 text-5xl opacity-70">⏸</span>
         </div>
       )}
     </div>
+  );
+}
+
+function CtlBtn({
+  children,
+  onClick,
+  label,
+  primary,
+  active,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  primary?: boolean;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={[
+        "tap flex items-center justify-center rounded-full",
+        primary ? "w-11 h-11 text-lg" : "w-9 h-9 text-sm",
+        active
+          ? "bg-accent text-bg"
+          : primary
+            ? "bg-bg text-ink-card"
+            : "text-bg/90 hover:bg-bg/15",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }
 
