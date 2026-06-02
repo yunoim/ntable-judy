@@ -12,7 +12,8 @@ export type Slide = {
   dateLabel: string;
 };
 
-const SLIDE_MS = 3800;
+const SPEEDS_MS = [2000, 4000, 8000]; // 빠름 · 보통 · 느림
+const DEFAULT_SPEED_IDX = 1;
 
 export default function EventClient({
   phase,
@@ -42,6 +43,10 @@ export default function EventClient({
   const [paused, setPaused] = useState(false);
   const [started, setStarted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
+  const [speedIdx, setSpeedIdx] = useState(DEFAULT_SPEED_IDX);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  // 현재 슬라이드 이미지가 로드 완료되었는지 — 로드 전엔 타이머 안 시작.
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   // 재생 순서 — 셔플 off 면 0..n-1, on 이면 Fisher-Yates 로 섞은 인덱스.
   const total = slides.length;
   const [order, setOrder] = useState<number[]>(() =>
@@ -49,18 +54,31 @@ export default function EventClient({
   );
   const onEnding = index >= total;
   const currentSlide = total > 0 && !onEnding ? slides[order[index]] : null;
+  const slideKey = currentSlide ? `${currentSlide.id}-${index}` : "";
+  const currentLoaded = loadedKey === slideKey;
+  const slideMs = SPEEDS_MS[speedIdx];
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 다음 슬라이드 preload — 전환 시 깜빡임/부분 노출 줄임.
+  useEffect(() => {
+    if (!started || onEnding || index + 1 >= total) return;
+    const nextSlide = slides[order[index + 1]];
+    if (!nextSlide) return;
+    const pre = new window.Image();
+    pre.src = nextSlide.url;
+  }, [index, started, onEnding, total, slides, order]);
+
   useEffect(() => {
     if (!started || paused || onEnding || total === 0) return;
+    if (!currentLoaded) return; // 이미지 로드 전엔 대기.
     timerRef.current = setTimeout(() => {
       setIndex((i) => Math.min(i + 1, total));
-    }, SLIDE_MS);
+    }, slideMs);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [index, paused, started, onEnding, total]);
+  }, [index, paused, started, onEnding, total, currentLoaded, slideMs]);
 
   function toggleShuffle() {
     setShuffle((s) => {
@@ -222,18 +240,40 @@ export default function EventClient({
   const slide = currentSlide!;
   return (
     <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
-      {/* 사진 */}
+      {/* 사진 — onLoad 까지 타이머 대기. */}
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          key={`${slide.id}-${index}`}
+          key={slideKey}
           src={slide.url}
           alt=""
+          onLoad={() => setLoadedKey(slideKey)}
+          onError={() => setLoadedKey(slideKey)}
           className="absolute inset-0 w-full h-full object-cover animate-fade-in"
         />
         {/* 위/아래 그라데이션 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />
       </div>
+
+      {/* 사진 영역 탭 — 컨트롤 바 토글. 좌/우 가장자리는 prev/next 우선. */}
+      <button
+        type="button"
+        aria-label="이전"
+        className="absolute left-0 top-12 bottom-32 w-1/4 z-10"
+        onClick={() => setIndex((i) => Math.max(0, i - 1))}
+      />
+      <button
+        type="button"
+        aria-label="다음"
+        className="absolute right-0 top-12 bottom-32 w-1/4 z-10"
+        onClick={() => setIndex((i) => Math.min(total, i + 1))}
+      />
+      <button
+        type="button"
+        aria-label="컨트롤 토글"
+        className="absolute left-1/4 right-1/4 top-12 bottom-32 z-10"
+        onClick={() => setControlsVisible((v) => !v)}
+      />
 
       {/* 진행 바 */}
       <div className="absolute top-0 left-0 right-0 flex gap-1 p-2 safe-top z-10">
@@ -257,6 +297,15 @@ export default function EventClient({
         </Link>
       </div>
 
+      {/* 로딩 인디케이터 — 이미지 다운 중 사용자에게 신호. */}
+      {!currentLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <span className="text-bg/70 text-sm tracking-widest animate-pulse">
+            로딩 중…
+          </span>
+        </div>
+      )}
+
       {/* 캡션 */}
       <div className="absolute bottom-20 left-0 right-0 px-6 pb-2 z-10">
         <p className="text-[11px] tracking-widest text-accent-soft mb-1">
@@ -270,8 +319,15 @@ export default function EventClient({
         )}
       </div>
 
-      {/* 컨트롤 바 */}
-      <div className="absolute left-0 right-0 bottom-0 px-4 pb-6 safe-bottom z-20 flex items-center justify-center gap-2">
+      {/* 컨트롤 바 — 탭으로 숨김/노출. */}
+      <div
+        className={[
+          "absolute left-0 right-0 bottom-0 px-4 pb-6 safe-bottom z-20 flex items-center justify-center gap-2 transition-opacity duration-200",
+          controlsVisible
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none",
+        ].join(" ")}
+      >
         <div className="flex items-center gap-1 bg-fg/40 backdrop-blur-sm rounded-full px-2 py-1.5">
           <CtlBtn
             label="이전"
@@ -299,24 +355,26 @@ export default function EventClient({
           >
             🔀
           </CtlBtn>
+          <CtlBtn
+            label="재생 속도"
+            onClick={() => setSpeedIdx((i) => (i + 1) % SPEEDS_MS.length)}
+            wide
+          >
+            <span className="text-[10px] font-display">
+              ⏱{slideMs / 1000}s
+            </span>
+          </CtlBtn>
         </div>
       </div>
 
-      {/* 탭 영역: 좌(이전) / 우(다음). 가운데는 컨트롤 바라 탭 X. */}
-      <button
-        type="button"
-        aria-label="이전"
-        className="absolute left-0 top-0 bottom-24 w-1/3 z-10"
-        onClick={() => setIndex((i) => Math.max(0, i - 1))}
-      />
-      <button
-        type="button"
-        aria-label="다음"
-        className="absolute right-0 top-0 bottom-24 w-1/3 z-10"
-        onClick={() => setIndex((i) => Math.min(total, i + 1))}
-      />
+      {/* 컨트롤 숨김 상태에선 작은 힌트 (1.5s 페이드) */}
+      {!controlsVisible && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <span className="text-[10px] text-bg/40">탭으로 컨트롤</span>
+        </div>
+      )}
 
-      {paused && (
+      {paused && controlsVisible && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <span className="text-bg/80 text-5xl opacity-70">⏸</span>
         </div>
@@ -331,12 +389,14 @@ function CtlBtn({
   label,
   primary,
   active,
+  wide,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   label: string;
   primary?: boolean;
   active?: boolean;
+  wide?: boolean;
 }) {
   return (
     <button
@@ -345,7 +405,11 @@ function CtlBtn({
       aria-label={label}
       className={[
         "tap flex items-center justify-center rounded-full",
-        primary ? "w-11 h-11 text-lg" : "w-9 h-9 text-sm",
+        primary
+          ? "w-11 h-11 text-lg"
+          : wide
+            ? "h-9 px-2.5 text-xs"
+            : "w-9 h-9 text-sm",
         active
           ? "bg-accent text-bg"
           : primary
