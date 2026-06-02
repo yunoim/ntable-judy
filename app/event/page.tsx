@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 // ▼ 이벤트가 열리는 날 (KST). 바꾸려면 여기만 수정.
 const EVENT_DATE = "2026-05-29";
+// ▼ true 면 EVENT_DATE 무시하고 항상 열림. 닫을 땐 false 로.
+const EVENT_FORCE_OPEN = true;
 
 export default async function EventPage({
   searchParams,
@@ -29,13 +31,14 @@ export default async function EventPage({
       : EVENT_DATE;
   const previewing = eventDate !== EVENT_DATE;
 
-  const phase: "before" | "open" | "after" = previewing
-    ? "open"
-    : todayKst < EVENT_DATE
-      ? "before"
-      : todayKst === EVENT_DATE
-        ? "open"
-        : "after";
+  const phase: "before" | "open" | "after" =
+    previewing || EVENT_FORCE_OPEN
+      ? "open"
+      : todayKst < EVENT_DATE
+        ? "before"
+        : todayKst === EVENT_DATE
+          ? "open"
+          : "after";
 
   // D-Day (이벤트까지 남은 일수, KST 기준).
   const daysLeft = Math.round(

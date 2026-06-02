@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { prisma, getActiveUsers } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
+import { todayKstStr } from "@/lib/daily";
 import { TabBar } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -39,8 +40,14 @@ export default async function DailyHistoryPage() {
     );
   }
 
+  // 오늘 질문은 홈에서 진행 중이라 히스토리에 포함하면 reveal 메커니즘이 깨짐
+  // (한쪽만 답해도 답이 노출됨). 어제 이전만.
+  const todayKst = todayKstStr();
   const allEntries = await prisma.dailyEntry.findMany({
-    where: { userId: { in: [me.id, partner.id] } },
+    where: {
+      userId: { in: [me.id, partner.id] },
+      date: { lt: todayKst },
+    },
     orderBy: { date: "desc" },
     select: { date: true, userId: true, body: true, emoji: true },
   });

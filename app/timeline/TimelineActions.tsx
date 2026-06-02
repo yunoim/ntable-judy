@@ -205,9 +205,9 @@ export default function TimelineActions({
               <button
                 type="button"
                 onClick={() => {
-                  router.push(
-                    `/timeline?ym=${ymStr}&day=${selectedDayStr}#add-event`,
-                  );
+                  // router.push 의 soft-nav 는 hashchange 이벤트를 안 쏨.
+                  // EventsSection 이 hashchange 로 폼 오픈을 감지하므로 직접 설정.
+                  window.location.hash = "add-event";
                 }}
                 className="tap w-full text-left flex items-center gap-3 px-3 py-2.5 hover:bg-bg-warm"
               >

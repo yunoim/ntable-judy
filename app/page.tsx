@@ -26,6 +26,7 @@ export const dynamic = "force-dynamic";
 
 // /event 이벤트가 열리는 날 (KST). app/event/page.tsx 의 EVENT_DATE 와 동일하게.
 const EVENT_DATE = "2026-05-29";
+const EVENT_FORCE_OPEN = true;
 
 type AnniRow = {
   id: number;
@@ -231,7 +232,7 @@ export default async function HomePage() {
 
       <main className="flex-1 px-5 pt-2 pb-28 space-y-4">
         {/* ─── 오늘 하루만 열리는 이벤트 배너 ─────────── */}
-        {todayKstStr() === EVENT_DATE && (
+        {(EVENT_FORCE_OPEN || todayKstStr() === EVENT_DATE) && (
           <Link
             href="/event"
             className="tap lift block rounded-card bg-ink-card text-bg px-4 py-3.5 rise-in"
