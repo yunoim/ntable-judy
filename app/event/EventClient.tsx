@@ -122,19 +122,17 @@ export default function EventClient({
   if (phase === "before") {
     return (
       <Shell backLink={backLink}>
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-4">
-          <p className="text-[11px] tracking-[0.3em] opacity-60 uppercase">
-            Coming soon
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-3">
+          <p className="text-[10px] tracking-[0.25em] text-fg-faint uppercase">
+            다가오는 상영회
           </p>
-          <p className="font-display text-3xl leading-tight">
+          <p className="font-display text-2xl leading-tight">
             {eventDateLabel}
-            <br />
-            <em className="italic text-accent-soft">하루만 열리는 추억</em>
           </p>
-          <div className="mt-2 text-5xl font-display text-accent-soft">
+          <div className="font-display text-5xl text-accent mt-1">
             D-{daysLeft}
           </div>
-          <p className="text-sm opacity-70 mt-2 leading-relaxed">
+          <p className="text-sm text-fg-soft leading-relaxed mt-3">
             그날, 우리가 함께한 시간을
             <br />
             한 편의 영상처럼 모아둘게요.
@@ -150,77 +148,77 @@ export default function EventClient({
       <Shell backLink={backLink}>
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-3">
           <p className="text-4xl">🎞️</p>
-          <p className="font-display text-2xl leading-tight">
-            이벤트는 끝났어요
+          <p className="font-display text-xl leading-tight">
+            지난 상영회는 막을 내렸어요
           </p>
-          <p className="text-sm opacity-70 leading-relaxed">
-            그날의 추억 상영회는 막을 내렸어요.
-            <br />
-            다음 특별한 날을 기다려요.
+          <p className="text-sm text-fg-soft leading-relaxed">
+            다음 특별한 날을 기다려요
           </p>
         </div>
       </Shell>
     );
   }
 
-  // ─── open: 슬라이드쇼 ───
+  // ─── open: 슬라이드쇼 (사진 없음) ───
   if (total === 0) {
     return (
       <Shell backLink={backLink}>
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-3">
           <p className="text-4xl">📷</p>
-          <p className="font-display text-xl">아직 사진이 없어요</p>
-          <p className="text-sm opacity-70">
-            데이트에 사진을 올리면 여기 모여요.
+          <p className="font-display text-lg">아직 사진이 없어요</p>
+          <p className="text-sm text-fg-soft">
+            데이트에 사진을 올리면 여기 모여요
           </p>
         </div>
       </Shell>
     );
   }
 
-  // 인트로 (시작 전)
+  // ─── 인트로 (시작 전) ───
   if (!started) {
     return (
       <Shell backLink={backLink}>
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-5">
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-4">
           {previewing && (
-            <span className="text-[10px] tracking-widest opacity-50 uppercase">
-              미리보기 (admin)
+            <span className="text-[10px] tracking-[0.2em] text-fg-faint uppercase">
+              미리보기 · admin
             </span>
           )}
-          <p className="text-[11px] tracking-[0.3em] opacity-60 uppercase">
-            오늘만 열리는
+          <p className="text-[10px] tracking-[0.25em] text-fg-faint uppercase">
+            오늘의 상영회
           </p>
           <p className="font-display text-3xl leading-tight">
-            우리의{" "}
-            <em className="italic text-accent-soft">
-              {dayNo > 0 ? `${dayNo}일` : "기록"}
-            </em>
+            함께한{" "}
+            <span className="text-accent">
+              {dayNo > 0 ? `${dayNo}일` : "시간"}
+            </span>
           </p>
-          <p className="text-sm opacity-70">
-            {names.join(" · ")} 의 추억 상영회
+          {names.length > 0 && (
+            <p className="text-sm text-fg-soft">
+              {names.join(" · ")}
+            </p>
+          )}
+          <p className="text-[11px] text-fg-faint mt-1">
+            사진 {photoCount}장 · 데이트 {dateCount}번
           </p>
           <button
             type="button"
             onClick={() => setStarted(true)}
-            className="tap mt-3 bg-accent text-bg rounded-full px-7 py-3 font-display text-base"
+            className="tap lift mt-4 bg-ink-card text-bg rounded-card px-7 py-3 font-display text-base"
           >
             ▶ 상영 시작
           </button>
-          <p className="text-[11px] opacity-50">
-            사진 {photoCount}장 · 데이트 {dateCount}번
-          </p>
         </div>
       </Shell>
     );
   }
 
-  // 엔딩 통계
+  // ─── 엔딩 통계 ───
   if (onEnding) {
     return (
       <Shell backLink={backLink}>
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-6">
-          <p className="text-[11px] tracking-[0.3em] opacity-60 uppercase">
+          <p className="text-[10px] tracking-[0.25em] text-fg-faint uppercase">
             함께한 시간
           </p>
           <div className="space-y-5">
@@ -230,10 +228,10 @@ export default function EventClient({
               <Stat value={`${photoCount}`} unit="장의 사진" />
             </div>
           </div>
-          <p className="text-sm opacity-70 leading-relaxed mt-2">
+          <p className="text-sm text-fg-soft leading-relaxed mt-2">
             앞으로도 이렇게
             <br />
-            한 장씩 쌓아가요 🤍
+            한 장씩 쌓아가요
           </p>
           <div className="flex gap-3 mt-2">
             <button
@@ -242,15 +240,15 @@ export default function EventClient({
                 setIndex(0);
                 setPaused(false);
               }}
-              className="tap border border-bg/40 rounded-full px-5 py-2.5 text-sm"
+              className="tap rounded-card px-5 py-2.5 text-sm font-display border border-fg/20 text-fg-soft"
             >
-              ↺ 다시 보기
+              다시 보기
             </button>
             <Link
               href="/album"
-              className="tap bg-accent text-bg rounded-full px-5 py-2.5 text-sm font-semibold"
+              className="tap lift bg-ink-card text-bg rounded-card px-5 py-2.5 text-sm font-display"
             >
-              사진첩 →
+              사진첩
             </Link>
           </div>
         </div>
@@ -466,6 +464,8 @@ function CtlBtn({
   );
 }
 
+// 슬라이드 외 화면 (intro/before/after/ending/empty) 의 공통 셸 — 앱 전체와
+// 동일한 cream + editorial 톤. fixed inset-0 + overflow-hidden 로 외부 스크롤 차단.
 function Shell({
   children,
   backLink,
@@ -474,7 +474,7 @@ function Shell({
   backLink: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 bg-ink-card text-bg flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-bg text-fg flex flex-col overflow-hidden">
       <div className="safe-top px-4 pt-3 z-10">{backLink}</div>
       {children}
     </div>
@@ -494,13 +494,13 @@ function Stat({
     <div className="flex flex-col items-center">
       <span
         className={[
-          "font-display text-accent-soft leading-none",
+          "font-display text-accent leading-none",
           big ? "text-6xl" : "text-3xl",
         ].join(" ")}
       >
         {value}
       </span>
-      <span className="text-xs opacity-70 mt-1.5">{unit}</span>
+      <span className="text-xs text-fg-soft mt-1.5">{unit}</span>
     </div>
   );
 }

@@ -116,7 +116,11 @@ export default async function EventPage({
       dateCount={dateCount}
       photoCount={photoCount}
       names={names}
-      backLink={<Link href="/" className="tap text-xs opacity-70">← 홈</Link>}
+      backLink={
+        <Link href="/" className="tap text-xs text-fg-faint">
+          ← 홈
+        </Link>
+      }
     />
   );
 }
