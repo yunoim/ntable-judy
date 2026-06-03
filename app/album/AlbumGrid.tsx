@@ -16,8 +16,9 @@ export type AlbumPhoto = {
   uploadedBy: { id: string; nickname: string; emoji: string | null };
 };
 
-// 라이트박스 이미지 — next/image 로 리사이즈된 변형 (~1080px) 요청해 모바일
-// 메모리 압박 회피. 로딩 인디케이터 + onError 시 1회 재시도.
+// 라이트박스 이미지 — 1장만 표시라 메모리 부담 X. 평범한 img + onLoad 게이팅.
+// 로드 완료 전엔 opacity 0 (부분 노출 방지) + "로딩 중…" 표시.
+// 실패 시 retry → 그래도 실패하면 fallback URL (cache-bust) → 그래도 실패하면 안내.
 function LightboxImage({
   photo,
   onTap,
@@ -43,7 +44,7 @@ function LightboxImage({
         </span>
       )}
       {errored && (
-        <div className="text-bg/70 text-sm text-center">
+        <div className="text-bg/80 text-sm text-center">
           <p>사진을 못 불러왔어요</p>
           <button
             type="button"
@@ -60,25 +61,25 @@ function LightboxImage({
         </div>
       )}
       {!errored && (
-        <Image
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
           key={retry}
           src={src}
           alt={photo.caption ?? photo.dateTitle}
-          width={1080}
-          height={1080}
-          sizes="(max-width: 390px) 100vw, 1080px"
+          decoding="async"
           className={[
-            "max-w-full max-h-full w-auto h-auto object-contain rounded-card cursor-pointer transition-opacity",
+            "max-w-full max-h-full object-contain rounded-card cursor-pointer transition-opacity duration-200",
             loaded ? "opacity-100" : "opacity-0",
           ].join(" ")}
           onLoad={() => setLoaded(true)}
           onError={() => {
-            if (retry < 1) {
+            if (retry < 2) {
               setRetry((r) => r + 1);
             } else {
               setErrored(true);
             }
           }}
+          onClick={onTap}
         />
       )}
     </div>
@@ -231,10 +232,24 @@ export default function AlbumGrid({
           />
 
           <div
-            className="shrink-0 bg-fg/90 backdrop-blur px-4 pt-3 pb-5 safe-bottom border-t border-bg/10 flex flex-col items-center gap-2.5 text-bg"
+            className="shrink-0 bg-fg px-4 pt-4 pb-5 safe-bottom border-t border-bg/15 flex flex-col items-center gap-3 text-bg"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-xs text-center serif-italic">
+            {/* 데이트 제목 — 가장 또렷하게 */}
+            <Link
+              href={`/dates/${lightbox.dateId}`}
+              className="tap text-center font-display text-base text-bg leading-snug max-w-full px-4"
+            >
+              <span className="text-accent-soft text-[11px] tracking-[0.2em] block mb-0.5">
+                #{String(lightbox.dateNumber).padStart(2, "0")}
+              </span>
+              <span className="underline decoration-bg/40 underline-offset-2">
+                {lightbox.dateTitle}
+              </span>
+              <span className="text-accent-soft ml-1">→</span>
+            </Link>
+            {/* 메타 + 캡션 */}
+            <div className="text-[11px] text-center text-bg/70 leading-snug">
               <p>
                 {lightbox.uploadedBy.emoji ?? "👤"}{" "}
                 {lightbox.uploadedBy.nickname}
@@ -246,14 +261,12 @@ export default function AlbumGrid({
                   minute: "2-digit",
                 })}
               </p>
-              {lightbox.caption && <p className="mt-0.5">{lightbox.caption}</p>}
+              {lightbox.caption && (
+                <p className="mt-1 text-bg/85 serif-italic">
+                  {lightbox.caption}
+                </p>
+              )}
             </div>
-            <Link
-              href={`/dates/${lightbox.dateId}`}
-              className="tap text-[13px] underline serif-italic"
-            >
-              #{lightbox.dateNumber} {lightbox.dateTitle} →
-            </Link>
             <div className="flex justify-between items-center w-full max-w-xs mt-1 gap-6">
               <div className="flex-1 flex justify-start">
                 {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
