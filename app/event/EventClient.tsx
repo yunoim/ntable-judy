@@ -259,7 +259,7 @@ export default function EventClient({
   // 슬라이드
   const slide = currentSlide!;
   return (
-    <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
+    <div className="fixed inset-0 z-50 bg-ink-card text-bg overflow-hidden select-none">
       {/* 사진 — onLoad 까지 opacity-0, 실패 시 자동 스킵.
           가로폭 맞춤 (object-contain): 잘리지 않고 전체가 보이도록.
           위아래 남는 공간은 ink-card 배경 + 살짝 그라데이션. */}
@@ -474,7 +474,7 @@ function Shell({
   backLink: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 bg-bg text-fg flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-bg text-fg flex flex-col overflow-hidden">
       <div className="safe-top px-4 pt-3 z-10">{backLink}</div>
       {children}
     </div>

@@ -238,7 +238,7 @@ export default async function HomePage() {
             className="tap lift block rounded-card bg-ink-card text-bg px-4 py-3.5 rise-in"
           >
             <p className="font-display text-base">
-              🎞️ 우리의 추억 상영회 →
+              🎞️ 우리의 추억 상영회
             </p>
           </Link>
         )}
