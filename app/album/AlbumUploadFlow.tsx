@@ -119,8 +119,13 @@ export default function AlbumUploadFlow({
             className="bg-bg w-full max-w-[390px] rounded-t-card sm:rounded-card max-h-[80vh] flex flex-col animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <header className="px-5 pt-4 pb-3 border-b border-fg/10 flex items-center justify-between">
-              <p className="font-display text-base">어느 데이트의 사진?</p>
+            <header className="px-5 pt-4 pb-2 border-b border-fg/10 flex items-center justify-between">
+              <div>
+                <p className="font-display text-base">어느 데이트의 사진?</p>
+                <p className="text-[10px] text-fg-faint mt-0.5">
+                  📷 사진 · 🎞️ GIF (Samsung 갤러리는 GIF 별도 폴더)
+                </p>
+              </div>
               <button
                 onClick={close}
                 disabled={!!busyId}
@@ -172,15 +177,13 @@ export default function AlbumUploadFlow({
                   const busy = busyId === d.id;
                   return (
                     <li key={d.id}>
-                      <label
+                      <div
                         className={[
-                          "tap flex items-center gap-3 px-5 py-3 border-b border-fg/8",
-                          busy
-                            ? "opacity-50 cursor-wait"
-                            : "cursor-pointer hover:bg-bg-warm",
+                          "flex items-center gap-3 px-5 py-3 border-b border-fg/8",
+                          busy ? "opacity-50" : "hover:bg-bg-warm",
                         ].join(" ")}
                       >
-                        <span className="font-display text-[15px] text-fg-soft tabular-nums w-9">
+                        <span className="font-display text-[15px] text-fg-soft tabular-nums w-9 shrink-0">
                           {String(d.number).padStart(2, "0")}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -196,18 +199,43 @@ export default function AlbumUploadFlow({
                             {d.area ? ` · ${d.area}` : ""}
                           </p>
                         </div>
-                        <span className="text-fg-faint text-base">
-                          {busy ? "…" : "📷"}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*,.gif"
-                          multiple
-                          disabled={!!busyId}
-                          onChange={(e) => upload(d, e.target.files)}
-                          className="hidden"
-                        />
-                      </label>
+                        {/* 두 갈래 picker — 사진 / GIF 별도. Samsung 갤러리가
+                            image/* 만으로 GIF 폴더를 안 보여주는 케이스 대응. */}
+                        <label
+                          className={[
+                            "tap shrink-0 text-base px-2",
+                            busy ? "cursor-wait" : "cursor-pointer",
+                          ].join(" ")}
+                          aria-label="사진 선택"
+                        >
+                          📷
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            disabled={!!busyId}
+                            onChange={(e) => upload(d, e.target.files)}
+                            className="hidden"
+                          />
+                        </label>
+                        <label
+                          className={[
+                            "tap shrink-0 text-base px-2",
+                            busy ? "cursor-wait" : "cursor-pointer",
+                          ].join(" ")}
+                          aria-label="GIF 선택"
+                        >
+                          🎞️
+                          <input
+                            type="file"
+                            accept="image/gif"
+                            multiple
+                            disabled={!!busyId}
+                            onChange={(e) => upload(d, e.target.files)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
                     </li>
                   );
                 })}
