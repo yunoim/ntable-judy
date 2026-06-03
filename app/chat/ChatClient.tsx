@@ -508,7 +508,7 @@ export default function ChatClient({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.gif"
             disabled={sending}
             onChange={(e) => {
               const f = e.target.files?.[0];

@@ -201,7 +201,7 @@ export default function AlbumUploadFlow({
                         </span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,.gif"
                           multiple
                           disabled={!!busyId}
                           onChange={(e) => upload(d, e.target.files)}

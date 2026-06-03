@@ -112,7 +112,7 @@ export default function PhotosSection({
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.gif"
             multiple
             disabled={uploading}
             onChange={(e) => upload(e.target.files)}
@@ -154,7 +154,7 @@ export default function PhotosSection({
           </p>
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,.gif"
             multiple
             disabled={uploading}
             onChange={(e) => upload(e.target.files)}
