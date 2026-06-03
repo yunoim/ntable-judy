@@ -286,10 +286,16 @@ export function TabBar({ active }: { active?: TabId }) {
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-1/2 w-full max-w-[390px] bg-bg/95 backdrop-blur border-t border-fg/10 safe-bottom z-40",
+        "fixed bottom-0 left-1/2 w-full max-w-[390px] backdrop-blur-md border-t border-fg/15 safe-bottom z-40",
         "transition-transform duration-200 ease-out will-change-transform",
         hidden ? "-translate-x-1/2 translate-y-full" : "-translate-x-1/2 translate-y-0",
       )}
+      style={{
+        // bg-bg/95 가 CSS 변수에 alpha 가 안 먹어 거의 투명해지는 케이스 회피.
+        // 명시적 rgba 로 92% 불투명 + backdrop-blur 결합 → 투명 느낌 유지하며 가시성 확보.
+        backgroundColor: "rgba(250, 247, 242, 0.92)",
+        boxShadow: "0 -4px 16px -8px rgba(44, 32, 23, 0.08)",
+      }}
     >
       <ul className="flex justify-around items-center px-2 pt-2 pb-1">
         {items.map((it) => {
@@ -302,7 +308,7 @@ export function TabBar({ active }: { active?: TabId }) {
                 prefetch={false}
                 className={cn(
                   "tap flex flex-col items-center gap-1 px-2 py-1.5 relative",
-                  isActive ? "text-fg" : "text-fg-faint",
+                  isActive ? "text-fg" : "text-fg-soft",
                 )}
               >
                 <span className="relative">
@@ -316,7 +322,7 @@ export function TabBar({ active }: { active?: TabId }) {
                 <span
                   className={cn(
                     "text-[10.5px] tracking-wider",
-                    isActive ? "text-fg font-medium" : "text-fg-faint",
+                    isActive ? "text-fg font-medium" : "text-fg-soft",
                   )}
                 >
                   {it.label}
