@@ -298,7 +298,8 @@ export default function CapsulesClient({
             <SectionTitle title="열린 편지" hint={`${opened.length}개`} />
             <ul className="space-y-3">
               {opened.map((c) => {
-                const showBody = revealed[c.id] !== false;
+                // 열린 편지는 기본 접힘 — 사용자가 "다시 보기" 탭해야 본문 노출.
+                const showBody = revealed[c.id] === true;
                 return (
                   <li
                     key={c.id}
