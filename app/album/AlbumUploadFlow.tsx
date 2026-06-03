@@ -123,7 +123,7 @@ export default function AlbumUploadFlow({
               <div>
                 <p className="font-display text-base">어느 데이트의 사진?</p>
                 <p className="text-[10px] text-fg-faint mt-0.5">
-                  📷 사진 · 🎞️ GIF (Samsung 갤러리는 GIF 별도 폴더)
+                  📷 사진 · 🎞️ GIF / 짧은 영상 (mp4·mov)
                 </p>
               </div>
               <button
@@ -228,7 +228,7 @@ export default function AlbumUploadFlow({
                           🎞️
                           <input
                             type="file"
-                            accept="image/gif"
+                            accept="image/gif,video/mp4,video/quicktime"
                             multiple
                             disabled={!!busyId}
                             onChange={(e) => upload(d, e.target.files)}

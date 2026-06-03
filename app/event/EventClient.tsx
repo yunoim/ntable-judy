@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { isVideoUrl } from "@/lib/mediaType";
 
 export type Slide = {
   id: number;
@@ -64,8 +65,10 @@ export default function EventClient({
   const currentFailed = failedKey === slideKey;
   const slideMs = SPEEDS_MS[speedIdx];
   const isGif = !!currentSlide && /\.gif(\?|$)/i.test(currentSlide.url);
-  // GIF 면 파싱된 재생시간 사용, 파싱 전엔 안전하게 12s, 일반 이미지는 slideMs.
-  const effectiveMs = isGif ? (gifDurMs ?? 12_000) : slideMs;
+  const isVideo = !!currentSlide && isVideoUrl(currentSlide.url);
+  const isAuto = isGif || isVideo;
+  // GIF/영상이면 파싱된 재생시간 사용, 파싱 전엔 안전하게 15s, 일반 이미지는 slideMs.
+  const effectiveMs = isAuto ? (gifDurMs ?? 15_000) : slideMs;
   const imgSrc = currentSlide
     ? retryCount > 0
       ? `${currentSlide.url}${currentSlide.url.includes("?") ? "&" : "?"}r=${retryCount}`
@@ -282,7 +285,34 @@ export default function EventClient({
           가로폭 맞춤 (object-contain): 잘리지 않고 전체가 보이도록.
           위아래 남는 공간은 ink-card 배경 + 살짝 그라데이션. */}
       <div className="absolute inset-0 flex items-center justify-center">
-        {!currentFailed && (
+        {!currentFailed && isVideo && (
+          <video
+            key={`${slideKey}-${retryCount}`}
+            src={imgSrc}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            onLoadedMetadata={(e) => {
+              setLoadedKey(slideKey);
+              const ms = e.currentTarget.duration * 1000;
+              if (Number.isFinite(ms) && ms > 0) setGifDurMs(ms);
+            }}
+            onError={() => {
+              if (retryCount < 1) {
+                setRetryCount((r) => r + 1);
+              } else {
+                setFailedKey(slideKey);
+                setLoadedKey(slideKey);
+              }
+            }}
+            className={[
+              "block w-full max-h-full object-contain transition-opacity duration-300",
+              currentLoaded ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+          />
+        )}
+        {!currentFailed && !isVideo && (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
             key={`${slideKey}-${retryCount}`}
@@ -406,15 +436,17 @@ export default function EventClient({
             🔀
           </CtlBtn>
           <CtlBtn
-            label={isGif ? "GIF 재생 시간 자동" : "재생 속도"}
+            label={
+              isAuto ? "재생 시간 자동 (영상/GIF)" : "재생 속도"
+            }
             onClick={() => {
-              if (isGif) return;
+              if (isAuto) return;
               setSpeedIdx((i) => (i + 1) % SPEEDS_MS.length);
             }}
             wide
           >
             <span className="text-[10px] font-display">
-              {isGif ? "GIF" : `⏱${slideMs / 1000}s`}
+              {isVideo ? "VIDEO" : isGif ? "GIF" : `⏱${slideMs / 1000}s`}
             </span>
           </CtlBtn>
         </div>

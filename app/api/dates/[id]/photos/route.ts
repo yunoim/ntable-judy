@@ -12,6 +12,8 @@ const ALLOWED_MIME = [
   "image/webp",
   "image/heic",
   "image/gif",
+  "video/mp4",
+  "video/quicktime",
 ];
 
 export async function POST(
@@ -57,7 +59,11 @@ export async function POST(
           ? "heic"
           : file.type === "image/gif"
             ? "gif"
-            : "jpg";
+            : file.type === "video/mp4"
+              ? "mp4"
+              : file.type === "video/quicktime"
+                ? "mov"
+                : "jpg";
   const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
   try {

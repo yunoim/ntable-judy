@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { isVideoUrl } from "@/lib/mediaType";
 
 export type AlbumPhoto = {
   id: number;
@@ -61,7 +62,29 @@ function LightboxImage({
           </button>
         </div>
       )}
-      {!errored && (
+      {!errored && isVideoUrl(photo.url) && (
+        <video
+          key={retry}
+          src={src}
+          controls
+          autoPlay
+          loop
+          playsInline
+          className={[
+            "max-w-full max-h-full object-contain rounded-card transition-opacity duration-200",
+            loaded ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          onLoadedMetadata={() => setLoaded(true)}
+          onError={() => {
+            if (retry < 2) {
+              setRetry((r) => r + 1);
+            } else {
+              setErrored(true);
+            }
+          }}
+        />
+      )}
+      {!errored && !isVideoUrl(photo.url) && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
           key={retry}
@@ -142,6 +165,26 @@ function AlbumCell({
     } else {
       setErrored(true);
     }
+  }
+
+  if (isVideoUrl(photo.url)) {
+    // 영상 (mp4/mov): 썸네일은 첫 프레임 자동 표시. autoPlay 안 함 (그리드 다수).
+    return (
+      <button onClick={onOpen} className={baseClass}>
+        <video
+          key={retry}
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          onError={handleError}
+        />
+        <span className="absolute right-1.5 bottom-1.5 bg-fg/70 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
+          ▶
+        </span>
+      </button>
+    );
   }
 
   return (

@@ -16,6 +16,8 @@ const ALLOWED_MIME = [
   "image/webp",
   "image/heic",
   "image/gif",
+  "video/mp4",
+  "video/quicktime",
 ];
 
 export async function POST(req: Request) {
@@ -57,7 +59,11 @@ export async function POST(req: Request) {
           ? "heic"
           : file.type === "image/gif"
             ? "gif"
-            : "jpg";
+            : file.type === "video/mp4"
+              ? "mp4"
+              : file.type === "video/quicktime"
+                ? "mov"
+                : "jpg";
   const arrayBuf = await file.arrayBuffer();
   const buf = Buffer.from(arrayBuf);
   const path = `chat/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
