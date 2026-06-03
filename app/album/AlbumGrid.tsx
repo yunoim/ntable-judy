@@ -16,6 +16,75 @@ export type AlbumPhoto = {
   uploadedBy: { id: string; nickname: string; emoji: string | null };
 };
 
+// 라이트박스 이미지 — next/image 로 리사이즈된 변형 (~1080px) 요청해 모바일
+// 메모리 압박 회피. 로딩 인디케이터 + onError 시 1회 재시도.
+function LightboxImage({
+  photo,
+  onTap,
+}: {
+  photo: AlbumPhoto;
+  onTap: () => void;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const src =
+    retry === 0
+      ? photo.url
+      : `${photo.url}${photo.url.includes("?") ? "&" : "?"}r=${retry}`;
+  return (
+    <div
+      className="flex-1 flex items-center justify-center min-h-0 px-4 pt-4 pb-2 relative"
+      onClick={onTap}
+    >
+      {!loaded && !errored && (
+        <span className="absolute text-bg/70 text-sm tracking-widest animate-pulse z-10">
+          로딩 중…
+        </span>
+      )}
+      {errored && (
+        <div className="text-bg/70 text-sm text-center">
+          <p>사진을 못 불러왔어요</p>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setErrored(false);
+              setLoaded(false);
+              setRetry((r) => r + 1);
+            }}
+            className="tap mt-2 text-[11px] underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+      {!errored && (
+        <Image
+          key={retry}
+          src={src}
+          alt={photo.caption ?? photo.dateTitle}
+          width={1080}
+          height={1080}
+          sizes="(max-width: 390px) 100vw, 1080px"
+          className={[
+            "max-w-full max-h-full w-auto h-auto object-contain rounded-card cursor-pointer transition-opacity",
+            loaded ? "opacity-100" : "opacity-0",
+          ].join(" ")}
+          onLoad={() => setLoaded(true)}
+          onError={() => {
+            if (retry < 1) {
+              setRetry((r) => r + 1);
+            } else {
+              setErrored(true);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 // 개별 그리드 셀 — 이미지 로딩 실패 시 최대 2회 재시도 (cache-busting query 로
 // 캐리어/WebView 의 stale negative cache 우회), 그 후에도 실패하면 fallback.
 const MAX_RETRY = 2;
@@ -155,15 +224,12 @@ export default function AlbumGrid({
           className="fixed inset-0 z-50 bg-fg/95 flex flex-col"
           onClick={() => setLightbox(null)}
         >
-          <div className="flex-1 flex items-center justify-center min-h-0 px-4 pt-4 pb-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.url}
-              alt={lightbox.caption ?? lightbox.dateTitle}
-              className="max-w-full max-h-full object-contain rounded-card cursor-pointer"
-              onClick={() => setLightbox(null)}
-            />
-          </div>
+          <LightboxImage
+            key={lightbox.id}
+            photo={lightbox}
+            onTap={() => setLightbox(null)}
+          />
+
           <div
             className="shrink-0 bg-fg/90 backdrop-blur px-4 pt-3 pb-5 safe-bottom border-t border-bg/10 flex flex-col items-center gap-2.5 text-bg"
             onClick={(e) => e.stopPropagation()}

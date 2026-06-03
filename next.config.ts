@@ -13,9 +13,9 @@ const nextConfig: NextConfig = {
         hostname: "pub-16ab5eb5220a45fd9c6adacbd37efb8f.r2.dev",
       },
     ],
-    // 큰 원본 8MB 가 모바일 WebView 메모리 압박 → 작은 썸네일 사이즈만 활성.
-    deviceSizes: [320, 480, 640, 768],
-    imageSizes: [80, 120, 160, 200],
+    // 그리드 썸네일 (작은 셀) 부터 라이트박스 (모바일 1080px 정도) 까지 커버.
+    deviceSizes: [320, 480, 640, 768, 1080, 1280],
+    imageSizes: [80, 120, 160, 200, 300, 480],
   },
 };
 
