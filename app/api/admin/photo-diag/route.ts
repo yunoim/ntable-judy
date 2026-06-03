@@ -1,10 +1,13 @@
-// Admin 진단 — 모든 DatePhoto URL 에 HEAD 요청해서 깨진 사진 식별.
-// PWA 에서만 안 보이는 케이스 vs 객관적으로 깨진 케이스 구분용.
+// Admin 진단 — 모든 DatePhoto URL 을 GET 으로 받아 sharp 로 decode 시도.
+// HEAD 200 이라도 body 가 잘렸거나 깨진 이미지는 decode 단계에서 실패.
+// 어떤 사진이 진짜 망가졌는지 (=재업로드 필요) 식별.
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Diag = {
   id: number;
@@ -15,29 +18,73 @@ type Diag = {
   key: string | null;
   status: number | "fetch_error";
   contentType: string | null;
-  contentLength: string | null;
+  size: number | null;
+  width: number | null;
+  height: number | null;
+  format: string | null;
+  decodable: boolean;
   error?: string;
 };
 
-async function probe(url: string): Promise<Omit<Diag, "id" | "dateId" | "dateNumber" | "dateTitle" | "key">> {
+async function probe(
+  url: string,
+): Promise<
+  Omit<Diag, "id" | "dateId" | "dateNumber" | "dateTitle" | "key">
+> {
   try {
-    const res = await fetch(url, {
-      method: "HEAD",
-      cache: "no-store",
-      redirect: "follow",
-    });
-    return {
-      url,
-      status: res.status,
-      contentType: res.headers.get("content-type"),
-      contentLength: res.headers.get("content-length"),
-    };
+    const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+    if (!res.ok) {
+      return {
+        url,
+        status: res.status,
+        contentType: res.headers.get("content-type"),
+        size: null,
+        width: null,
+        height: null,
+        format: null,
+        decodable: false,
+        error: `HTTP ${res.status}`,
+      };
+    }
+    const ab = await res.arrayBuffer();
+    const buf = Buffer.from(ab);
+    const size = buf.length;
+    const contentType = res.headers.get("content-type");
+    try {
+      const meta = await sharp(buf).metadata();
+      return {
+        url,
+        status: res.status,
+        contentType,
+        size,
+        width: meta.width ?? null,
+        height: meta.height ?? null,
+        format: meta.format ?? null,
+        decodable: true,
+      };
+    } catch (e: any) {
+      return {
+        url,
+        status: res.status,
+        contentType,
+        size,
+        width: null,
+        height: null,
+        format: null,
+        decodable: false,
+        error: `decode_failed: ${e?.message ?? "unknown"}`,
+      };
+    }
   } catch (e: any) {
     return {
       url,
       status: "fetch_error",
       contentType: null,
-      contentLength: null,
+      size: null,
+      width: null,
+      height: null,
+      format: null,
+      decodable: false,
       error: e?.message ?? "unknown",
     };
   }
@@ -61,10 +108,10 @@ export async function GET() {
     orderBy: { id: "asc" },
   });
 
-  // 동시 6개 worker 로 HEAD.
+  // 동시 4개 worker — body 다 받아오니 너무 병렬화하면 메모리 압박.
   const results: Diag[] = [];
   const queue = [...photos];
-  const concurrency = 6;
+  const concurrency = 4;
   await Promise.all(
     Array.from({ length: concurrency }, async () => {
       while (queue.length) {
@@ -84,17 +131,22 @@ export async function GET() {
   );
   results.sort((a, b) => a.id - b.id);
 
-  const ok = results.filter(
-    (r) => typeof r.status === "number" && r.status >= 200 && r.status < 300,
-  );
-  const bad = results.filter((r) => !ok.includes(r));
+  const decodable = results.filter((r) => r.decodable);
+  const broken = results.filter((r) => !r.decodable);
 
   return NextResponse.json({
     total: results.length,
-    okCount: ok.length,
-    badCount: bad.length,
-    bad,
-    ok: ok.map((r) => ({ id: r.id, status: r.status, contentType: r.contentType })),
+    decodableCount: decodable.length,
+    brokenCount: broken.length,
+    broken,
+    decodable: decodable.map((r) => ({
+      id: r.id,
+      dateNumber: r.dateNumber,
+      size: r.size,
+      width: r.width,
+      height: r.height,
+      format: r.format,
+    })),
     r2PublicUrl: process.env.R2_PUBLIC_URL ?? null,
   });
 }
