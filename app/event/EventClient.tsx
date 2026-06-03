@@ -262,8 +262,10 @@ export default function EventClient({
   const slide = currentSlide!;
   return (
     <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
-      {/* 사진 — onLoad 까지 opacity-0, 실패 시 자동 스킵. */}
-      <div className="absolute inset-0">
+      {/* 사진 — onLoad 까지 opacity-0, 실패 시 자동 스킵.
+          가로폭 맞춤 (object-contain): 잘리지 않고 전체가 보이도록.
+          위아래 남는 공간은 ink-card 배경 + 살짝 그라데이션. */}
+      <div className="absolute inset-0 flex items-center justify-center">
         {!currentFailed && (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -281,13 +283,13 @@ export default function EventClient({
               }
             }}
             className={[
-              "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+              "block w-full max-h-full object-contain transition-opacity duration-300",
               currentLoaded ? "opacity-100" : "opacity-0",
             ].join(" ")}
           />
         )}
-        {/* 위/아래 그라데이션 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />
+        {/* 위/아래 그라데이션 — 진행바·캡션 영역 가독성용 (이미지 없는 letterbox 영역에서도 자연스럽게 깔림) */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30" />
       </div>
 
       {/* 사진 영역 탭 — 컨트롤 바 토글. 좌/우 가장자리는 prev/next 우선. */}
