@@ -232,45 +232,62 @@ export default function AlbumGrid({
             onTap={() => setLightbox(null)}
           />
 
+          {/* 하단 패널 — /timeline day-panel 과 동일한 스타일로 통일. */}
           <div
-            className="shrink-0 bg-fg px-4 pt-4 pb-5 safe-bottom border-t border-bg/15 flex flex-col items-center gap-3 text-bg"
+            className="shrink-0 bg-bg text-fg rounded-t-card safe-bottom"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 데이트 제목 — 가장 또렷하게 */}
-            <Link
-              href={`/dates/${lightbox.dateId}`}
-              className="tap text-center font-display text-base text-bg leading-snug max-w-full px-4"
-            >
-              <span className="text-accent-soft text-[11px] tracking-[0.2em] block mb-0.5">
-                #{String(lightbox.dateNumber).padStart(2, "0")}
-              </span>
-              <span className="underline decoration-bg/40 underline-offset-2">
-                {lightbox.dateTitle}
-              </span>
-              <span className="text-accent-soft ml-1">→</span>
-            </Link>
-            {/* 메타 + 캡션 */}
-            <div className="text-[11px] text-center text-bg/70 leading-snug">
-              <p>
-                {lightbox.uploadedBy.emoji ?? "👤"}{" "}
-                {lightbox.uploadedBy.nickname}
-                {" · "}
-                {new Date(lightbox.dateScheduledAt).toLocaleDateString("ko", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-              {lightbox.caption && (
-                <p className="mt-1 text-bg/85 serif-italic">
-                  {lightbox.caption}
+            <div className="px-5 pt-3 pb-2 border-b border-fg/10 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-sm truncate">
+                  #{String(lightbox.dateNumber).padStart(2, "0")}{" "}
+                  {lightbox.dateTitle}
                 </p>
-              )}
+                <p className="text-[10px] text-fg-faint mt-0.5">
+                  {lightbox.uploadedBy.emoji ?? "👤"}{" "}
+                  {lightbox.uploadedBy.nickname}
+                  {" · "}
+                  {new Date(lightbox.dateScheduledAt).toLocaleDateString("ko", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                aria-label="닫기"
+                className="tap text-fg-faint text-sm shrink-0"
+              >
+                ✕
+              </button>
             </div>
-            <div className="flex justify-between items-center w-full max-w-xs mt-1 gap-6">
-              <div className="flex-1 flex justify-start">
-                {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
+
+            {lightbox.caption && (
+              <p className="px-5 py-2.5 text-[13px] text-fg-soft border-b border-fg/8">
+                {lightbox.caption}
+              </p>
+            )}
+
+            <ul className="divide-y divide-fg/8">
+              <li>
+                <Link
+                  href={`/dates/${lightbox.dateId}`}
+                  onClick={() => setLightbox(null)}
+                  className="tap flex items-center gap-3 px-5 py-3 hover:bg-bg-warm"
+                >
+                  <span className="text-base">📓</span>
+                  <p className="font-display text-sm flex-1">
+                    데이트 상세 보기
+                  </p>
+                  <span className="text-fg-faint text-sm">→</span>
+                </Link>
+              </li>
+              {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
+                <li>
                   <button
+                    type="button"
                     onClick={() => {
                       if (!confirmDelete) {
                         setConfirmDelete(true);
@@ -281,23 +298,23 @@ export default function AlbumGrid({
                     }}
                     disabled={busy}
                     className={[
-                      "tap text-xs rounded-full px-4 py-1.5 border transition-colors",
-                      confirmDelete
-                        ? "bg-rain text-bg border-rain"
-                        : "text-rain border-rain/60",
+                      "tap w-full text-left flex items-center gap-3 px-5 py-3 hover:bg-bg-warm",
+                      confirmDelete ? "bg-rain/10 text-rain" : "text-rain",
                     ].join(" ")}
                   >
-                    {confirmDelete ? "정말 삭제 ✓" : "삭제"}
+                    <span className="text-base">🗑</span>
+                    <p className="font-display text-sm flex-1">
+                      {confirmDelete
+                        ? "정말 삭제할까요?"
+                        : "사진 삭제"}
+                    </p>
+                    {confirmDelete && (
+                      <span className="text-xs font-display">탭하면 삭제</span>
+                    )}
                   </button>
-                )}
-              </div>
-              <button
-                onClick={() => setLightbox(null)}
-                className="tap text-xs text-bg border border-bg/60 rounded-full px-4 py-1.5"
-              >
-                닫기
-              </button>
-            </div>
+                </li>
+              )}
+            </ul>
           </div>
         </div>
       )}

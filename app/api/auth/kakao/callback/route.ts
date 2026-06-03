@@ -72,10 +72,11 @@ export async function GET(req: Request) {
 
     let user;
     if (existing) {
+      // 닉네임은 첫 생성 때만 카카오 프로필 사용 — 이후 사용자가 직접 변경한
+      // 닉네임 (/settings/profile) 을 매 로그인마다 카카오 값으로 덮어쓰지 않게.
       user = await prisma.user.update({
         where: { kakaoId },
         data: {
-          nickname,
           profileImage,
           email,
           lastLoginAt: new Date(),

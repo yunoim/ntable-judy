@@ -19,7 +19,8 @@
 html, body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-body), "Noto Serif KR", serif;
+  font-family: var(--font-body), "Noto Sans KR", "Apple SD Gothic Neo",
+    "Pretendard", system-ui, sans-serif;
 }
 
 /* min-h-screen 에 dvh fallback (iOS Safari 주소창 보정) */

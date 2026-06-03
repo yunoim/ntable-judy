@@ -1,7 +1,7 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { DM_Serif_Display, Noto_Serif_KR } from "next/font/google";
+import { DM_Serif_Display, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
@@ -13,7 +13,9 @@ const dmSerif = DM_Serif_Display({
   display: "swap",
 });
 
-const notoSerif = Noto_Serif_KR({
+// 본문은 산세리프 (Noto Sans KR) — Serif 가 너무 명조/궁서 느낌이라는 피드백 반영.
+// DM Serif Display 는 영문 디스플레이 (큰 제목/숫자) 용으로 유지.
+const notoSans = Noto_Sans_KR({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-body",
@@ -50,7 +52,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${dmSerif.variable} ${notoSerif.variable}`}>
+    <html lang="ko" className={`${dmSerif.variable} ${notoSans.variable}`}>
       <body className="bg-bg text-fg font-body antialiased min-h-screen overflow-x-hidden">
         <div className="mx-auto max-w-[390px] min-h-screen relative overflow-x-hidden">
           {children}
