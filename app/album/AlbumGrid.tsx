@@ -13,6 +13,7 @@ export type AlbumPhoto = {
   dateId: string;
   dateTitle: string;
   dateNumber: number;
+  dateScheduledAt: string;
   uploadedBy: { id: string; nickname: string; emoji: string | null };
 };
 
@@ -254,11 +255,10 @@ export default function AlbumGrid({
                 {lightbox.uploadedBy.emoji ?? "👤"}{" "}
                 {lightbox.uploadedBy.nickname}
                 {" · "}
-                {new Date(lightbox.createdAt).toLocaleString("ko", {
-                  month: "numeric",
+                {new Date(lightbox.dateScheduledAt).toLocaleDateString("ko", {
+                  year: "numeric",
+                  month: "long",
                   day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
                 })}
               </p>
               {lightbox.caption && (

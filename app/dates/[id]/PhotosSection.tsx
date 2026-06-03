@@ -28,16 +28,24 @@ export default function PhotosSection({
   const [, startTransition] = useTransition();
   const [photos, setPhotos] = useState<Photo[]>(initial);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
+    const list = Array.from(files);
     setUploading(true);
     setError(null);
+    setProgress({ current: 0, total: list.length });
     try {
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        setProgress({ current: i + 1, total: list.length });
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch(`/api/dates/${dateId}/photos`, {
@@ -66,6 +74,7 @@ export default function PhotosSection({
       setError(e?.message ?? "네트워크 오류");
     } finally {
       setUploading(false);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
@@ -111,6 +120,24 @@ export default function PhotosSection({
           />
         </label>
       </div>
+      {progress && (
+        <div className="px-3 py-2.5 rounded-card bg-bg-warm border border-accent/30 space-y-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[11px] font-display">📤 업로드 중…</span>
+            <span className="text-[11px] text-fg-faint tabular-nums">
+              {progress.current} / {progress.total}장
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-fg/10 overflow-hidden">
+            <div
+              className="h-full bg-accent transition-[width] duration-200"
+              style={{
+                width: `${Math.round((progress.current / progress.total) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
       {error && (
         <p className="text-xs text-rain bg-rain/10 px-3 py-2 rounded-card">
           {error}

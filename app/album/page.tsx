@@ -57,6 +57,7 @@ export default async function AlbumPage() {
       dateId: p.date.id,
       dateTitle: p.date.title,
       dateNumber: p.date.number,
+      dateScheduledAt: p.date.scheduledAt.toISOString(),
       uploadedBy: p.uploadedBy,
     };
     const arr = groups.get(ym);

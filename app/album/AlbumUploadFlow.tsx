@@ -24,6 +24,11 @@ export default function AlbumUploadFlow({
   const [done, setDone] = useState<{ count: number; title: string } | null>(
     null,
   );
+  // 진행률: current / total. null 이면 표시 안 함.
+  const [progress, setProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   // ESC 로 닫기
   useEffect(() => {
@@ -45,12 +50,16 @@ export default function AlbumUploadFlow({
 
   async function upload(date: UploadTargetDate, files: FileList | null) {
     if (!files || files.length === 0) return;
+    const list = Array.from(files);
     setBusyId(date.id);
     setError(null);
     setDone(null);
+    setProgress({ current: 0, total: list.length });
     let uploaded = 0;
     try {
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
+        setProgress({ current: i + 1, total: list.length });
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch(`/api/dates/${date.id}/photos`, {
@@ -82,6 +91,7 @@ export default function AlbumUploadFlow({
       setError(e?.message ?? "네트워크 오류");
     } finally {
       setBusyId(null);
+      setProgress(null);
     }
   }
 
@@ -121,12 +131,32 @@ export default function AlbumUploadFlow({
               </button>
             </header>
 
+            {progress && (
+              <div className="mx-5 mt-3 px-3 py-2.5 rounded-card bg-bg-warm border border-accent/30 space-y-1.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[11px] font-display">
+                    📤 업로드 중…
+                  </span>
+                  <span className="text-[11px] text-fg-faint tabular-nums">
+                    {progress.current} / {progress.total}장
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-fg/10 overflow-hidden">
+                  <div
+                    className="h-full bg-accent transition-[width] duration-200"
+                    style={{
+                      width: `${Math.round((progress.current / progress.total) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {error && (
               <p className="mx-5 mt-3 text-xs text-rain bg-rain/10 px-3 py-2 rounded-card">
                 {error}
               </p>
             )}
-            {done && (
+            {done && !progress && (
               <p className="mx-5 mt-3 text-xs text-accent bg-accent/10 px-3 py-2 rounded-card">
                 ✓ {done.title} 에 {done.count}장 추가됨
               </p>
