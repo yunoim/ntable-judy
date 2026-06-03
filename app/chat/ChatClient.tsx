@@ -535,8 +535,13 @@ export default function ChatClient({
           onKeyDown={handleKey}
           rows={1}
           placeholder="메시지"
-          className="flex-1 resize-none bg-bg-warm/40 border border-fg/15 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:border-accent max-h-32"
-          style={{ minHeight: "40px" }}
+          className="flex-1 resize-none bg-bg-warm/40 border border-fg/15 rounded-full px-4 text-sm leading-tight focus:outline-none focus:border-accent max-h-32 py-[10px]"
+          style={{ minHeight: "40px", height: "40px" }}
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = "40px";
+            el.style.height = Math.min(128, el.scrollHeight) + "px";
+          }}
         />
         <button
           type="button"
