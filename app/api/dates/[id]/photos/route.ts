@@ -6,7 +6,13 @@ import { storage } from "@/lib/storage";
 import { notifyOthers } from "@/lib/push";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+const ALLOWED_MIME = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/gif",
+];
 
 export async function POST(
   req: Request,
@@ -49,7 +55,9 @@ export async function POST(
         ? "webp"
         : file.type === "image/heic"
           ? "heic"
-          : "jpg";
+          : file.type === "image/gif"
+            ? "gif"
+            : "jpg";
   const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
   try {

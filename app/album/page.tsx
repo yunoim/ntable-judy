@@ -1,4 +1,5 @@
 // app/album/page.tsx — 모든 데이트 사진 한 화면 (월별 그룹) + 사진 등록 진입
+import Link from "next/link";
 import { prisma, getPastDates } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
@@ -71,6 +72,12 @@ export default async function AlbumPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 px-5 pt-6 safe-top pb-28 space-y-7">
+        <Link
+          href="/event"
+          className="tap lift block rounded-card bg-ink-card text-bg px-4 py-3.5"
+        >
+          <p className="font-display text-base">🎞️ 우리의 추억 상영회</p>
+        </Link>
         {photos.length === 0 ? (
           <div className="text-center pt-16 pb-8 space-y-3">
             <p className="text-5xl">📷</p>

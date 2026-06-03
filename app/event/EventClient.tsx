@@ -44,11 +44,14 @@ export default function EventClient({
   const [started, setStarted] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [speedIdx, setSpeedIdx] = useState(DEFAULT_SPEED_IDX);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  // 기본 숨김 — 필요할 때만 탭으로 펼치고 다시 탭으로 숨김.
+  const [controlsVisible, setControlsVisible] = useState(false);
   // 현재 슬라이드 이미지가 로드 완료되었는지 — 로드 전엔 타이머 안 시작.
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  // 현재 슬라이드가 GIF 일 때 파싱한 재생 시간 (ms). null 이면 평소 slideMs 사용.
+  const [gifDurMs, setGifDurMs] = useState<number | null>(null);
   // 재생 순서 — 셔플 off 면 0..n-1, on 이면 Fisher-Yates 로 섞은 인덱스.
   const total = slides.length;
   const [order, setOrder] = useState<number[]>(() =>
@@ -60,15 +63,30 @@ export default function EventClient({
   const currentLoaded = loadedKey === slideKey;
   const currentFailed = failedKey === slideKey;
   const slideMs = SPEEDS_MS[speedIdx];
+  const isGif = !!currentSlide && /\.gif(\?|$)/i.test(currentSlide.url);
+  // GIF 면 파싱된 재생시간 사용, 파싱 전엔 안전하게 12s, 일반 이미지는 slideMs.
+  const effectiveMs = isGif ? (gifDurMs ?? 12_000) : slideMs;
   const imgSrc = currentSlide
     ? retryCount > 0
       ? `${currentSlide.url}${currentSlide.url.includes("?") ? "&" : "?"}r=${retryCount}`
       : currentSlide.url
     : "";
 
-  // 슬라이드 바뀌면 retryCount 초기화.
+  // 슬라이드 바뀌면 retryCount + GIF duration 초기화 + 필요 시 GIF 파싱.
   useEffect(() => {
     setRetryCount(0);
+    setGifDurMs(null);
+    if (!currentSlide || !isGif) return;
+    let cancelled = false;
+    import("@/lib/gifDuration").then(({ getGifDurationMs }) =>
+      getGifDurationMs(currentSlide.url).then((ms) => {
+        if (!cancelled && ms != null) setGifDurMs(ms);
+      }),
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideKey]);
 
   // 영구 실패 슬라이드는 600ms 뒤 자동 스킵.
@@ -96,11 +114,11 @@ export default function EventClient({
     if (!currentLoaded) return; // 이미지 로드 전엔 대기.
     timerRef.current = setTimeout(() => {
       setIndex((i) => Math.min(i + 1, total));
-    }, slideMs);
+    }, effectiveMs);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [index, paused, started, onEnding, total, currentLoaded, slideMs]);
+  }, [index, paused, started, onEnding, total, currentLoaded, effectiveMs]);
 
   function toggleShuffle() {
     setShuffle((s) => {
@@ -398,12 +416,15 @@ export default function EventClient({
             🔀
           </CtlBtn>
           <CtlBtn
-            label="재생 속도"
-            onClick={() => setSpeedIdx((i) => (i + 1) % SPEEDS_MS.length)}
+            label={isGif ? "GIF 재생 시간 자동" : "재생 속도"}
+            onClick={() => {
+              if (isGif) return;
+              setSpeedIdx((i) => (i + 1) % SPEEDS_MS.length);
+            }}
             wide
           >
             <span className="text-[10px] font-display">
-              ⏱{slideMs / 1000}s
+              {isGif ? "GIF" : `⏱${slideMs / 1000}s`}
             </span>
           </CtlBtn>
         </div>
