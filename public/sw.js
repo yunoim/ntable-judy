@@ -19,7 +19,8 @@ self.addEventListener("push", (event) => {
   const options = {
     body: data.body || "",
     icon: data.icon || "/icon.svg",
-    badge: "/icon.svg",
+    // Android 상태바용 작은 모노크롬 마스크. 흰색 하트.
+    badge: "/badge-heart.svg",
     tag: data.tag,
     data: { url: data.url || "/" },
   };
