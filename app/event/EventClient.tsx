@@ -47,6 +47,8 @@ export default function EventClient({
   const [controlsVisible, setControlsVisible] = useState(true);
   // 현재 슬라이드 이미지가 로드 완료되었는지 — 로드 전엔 타이머 안 시작.
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   // 재생 순서 — 셔플 off 면 0..n-1, on 이면 Fisher-Yates 로 섞은 인덱스.
   const total = slides.length;
   const [order, setOrder] = useState<number[]>(() =>
@@ -56,7 +58,27 @@ export default function EventClient({
   const currentSlide = total > 0 && !onEnding ? slides[order[index]] : null;
   const slideKey = currentSlide ? `${currentSlide.id}-${index}` : "";
   const currentLoaded = loadedKey === slideKey;
+  const currentFailed = failedKey === slideKey;
   const slideMs = SPEEDS_MS[speedIdx];
+  const imgSrc = currentSlide
+    ? retryCount > 0
+      ? `${currentSlide.url}${currentSlide.url.includes("?") ? "&" : "?"}r=${retryCount}`
+      : currentSlide.url
+    : "";
+
+  // 슬라이드 바뀌면 retryCount 초기화.
+  useEffect(() => {
+    setRetryCount(0);
+  }, [slideKey]);
+
+  // 영구 실패 슬라이드는 600ms 뒤 자동 스킵.
+  useEffect(() => {
+    if (!currentFailed || paused || onEnding) return;
+    const t = setTimeout(() => {
+      setIndex((i) => Math.min(i + 1, total));
+    }, 600);
+    return () => clearTimeout(t);
+  }, [currentFailed, paused, onEnding, total]);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -240,17 +262,30 @@ export default function EventClient({
   const slide = currentSlide!;
   return (
     <div className="fixed inset-0 bg-ink-card text-bg overflow-hidden select-none">
-      {/* 사진 — onLoad 까지 타이머 대기. */}
+      {/* 사진 — onLoad 까지 opacity-0, 실패 시 자동 스킵. */}
       <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          key={slideKey}
-          src={slide.url}
-          alt=""
-          onLoad={() => setLoadedKey(slideKey)}
-          onError={() => setLoadedKey(slideKey)}
-          className="absolute inset-0 w-full h-full object-cover animate-fade-in"
-        />
+        {!currentFailed && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            key={`${slideKey}-${retryCount}`}
+            src={imgSrc}
+            alt=""
+            decoding="async"
+            onLoad={() => setLoadedKey(slideKey)}
+            onError={() => {
+              if (retryCount < 1) {
+                setRetryCount((r) => r + 1);
+              } else {
+                setFailedKey(slideKey);
+                setLoadedKey(slideKey);
+              }
+            }}
+            className={[
+              "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+              currentLoaded ? "opacity-100" : "opacity-0",
+            ].join(" ")}
+          />
+        )}
         {/* 위/아래 그라데이션 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40" />
       </div>
@@ -297,11 +332,18 @@ export default function EventClient({
         </Link>
       </div>
 
-      {/* 로딩 인디케이터 — 이미지 다운 중 사용자에게 신호. */}
-      {!currentLoaded && (
+      {/* 로딩 / 실패 인디케이터 */}
+      {!currentLoaded && !currentFailed && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <span className="text-bg/70 text-sm tracking-widest animate-pulse">
             로딩 중…
+          </span>
+        </div>
+      )}
+      {currentFailed && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <span className="text-bg/40 text-xs tracking-widest">
+            이 사진은 못 불러왔어요 — 다음으로 →
           </span>
         </div>
       )}
