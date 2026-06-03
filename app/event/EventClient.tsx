@@ -309,22 +309,12 @@ export default function EventClient({
       </div>
 
       {/* 사진 영역 탭 — 컨트롤 바 토글. 좌/우 가장자리는 prev/next 우선. */}
-      <button
-        type="button"
-        aria-label="이전"
-        className="absolute left-0 top-12 bottom-32 w-1/4 z-10"
-        onClick={() => setIndex((i) => Math.max(0, i - 1))}
-      />
-      <button
-        type="button"
-        aria-label="다음"
-        className="absolute right-0 top-12 bottom-32 w-1/4 z-10"
-        onClick={() => setIndex((i) => Math.min(total, i + 1))}
-      />
+      {/* 전체 화면 탭 — 컨트롤 바 토글. 화면 어디든 탭하면 펼침/숨김.
+          닫기(✕) 와 컨트롤 바는 z-20 이라 그 위에 있어 정상 동작. */}
       <button
         type="button"
         aria-label="컨트롤 토글"
-        className="absolute left-1/4 right-1/4 top-12 bottom-32 z-10"
+        className="absolute inset-0 z-10"
         onClick={() => setControlsVisible((v) => !v)}
       />
 
