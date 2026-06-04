@@ -24,17 +24,22 @@ export default async function CapsulesPage() {
   ]);
 
   const todayKst = todayKstStr();
-  const toItem = (c: (typeof capsules)[number]) => ({
-    id: c.id,
-    title: c.title,
-    body: c.body,
-    openAt: c.openAt.toISOString(),
-    opened: c.opened,
-    openedAt: c.openedAt?.toISOString() ?? null,
-    createdById: c.createdById,
-    createdBy: c.createdBy,
-    canOpen: todayKstStr(new Date(c.openAt)) <= todayKst && !c.opened,
-  });
+  const toItem = (c: (typeof capsules)[number]) => {
+    const isOwner = c.createdById === me.id;
+    // 봉인 + 비소유자에게는 본문 숨김 (네트워크 누수 방지).
+    const visibleBody = c.opened || isOwner || isAdmin ? c.body : "";
+    return {
+      id: c.id,
+      title: c.title,
+      body: visibleBody,
+      openAt: c.openAt.toISOString(),
+      opened: c.opened,
+      openedAt: c.openedAt?.toISOString() ?? null,
+      createdById: c.createdById,
+      createdBy: c.createdBy,
+      canOpen: todayKstStr(new Date(c.openAt)) <= todayKst && !c.opened,
+    };
+  };
 
   return (
     <CapsulesClient

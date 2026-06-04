@@ -81,6 +81,10 @@ export async function PATCH(
     if (Number.isNaN(d.getTime())) {
       return NextResponse.json({ error: "bad_openAt" }, { status: 400 });
     }
+    // KST 기준 오늘 이하면 거부 — POST 와 동일 규칙.
+    if (todayKstStr(d) <= todayKstStr()) {
+      return NextResponse.json({ error: "openAt_past" }, { status: 400 });
+    }
     data.openAt = d;
   }
 

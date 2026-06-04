@@ -8,10 +8,19 @@ import { todayKstStr } from "@/lib/daily";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauth" }, { status: 401 });
-  const capsules = await prisma.timeCapsule.findMany({
+  const rows = await prisma.timeCapsule.findMany({
     where: { deletedAt: null },
     orderBy: { openAt: "asc" },
     include: { createdBy: { select: { id: true, nickname: true } } },
+  });
+  const isAdmin = user.role === "admin";
+  const capsules = rows.map((c) => {
+    const isOwner = c.createdById === user.id;
+    // 봉인 + 비소유자에게는 본문 숨김.
+    if (!c.opened && !isOwner && !isAdmin) {
+      return { ...c, body: "" };
+    }
+    return c;
   });
   return NextResponse.json({ capsules });
 }

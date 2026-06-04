@@ -44,11 +44,60 @@ export default function CapsulesClient({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
+  const [peekedId, setPeekedId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editOpenAt, setEditOpenAt] = useState("");
 
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [openAt, setOpenAt] = useState("");
   const [saving, setSaving] = useState(false);
+
+  function startEdit(c: Capsule) {
+    setEditingId(c.id);
+    setEditTitle(c.title);
+    setEditBody(c.body);
+    // <input type=date> 는 YYYY-MM-DD 만 받음.
+    setEditOpenAt(new Date(c.openAt).toISOString().slice(0, 10));
+    setError(null);
+  }
+
+  async function saveEdit(id: number) {
+    if (!editTitle.trim() || !editBody.trim() || !editOpenAt) {
+      setError("제목·내용·열 날짜 모두 필수");
+      return;
+    }
+    setBusyId(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/capsules/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          body: editBody,
+          openAt: editOpenAt,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          data.error === "openAt_past"
+            ? "열 날짜는 미래여야 해요"
+            : data.error ?? "수정 실패",
+        );
+        return;
+      }
+      setEditingId(null);
+      startTransition(() => router.refresh());
+    } catch (e: any) {
+      setError(e?.message ?? "네트워크 오류");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const sealed = capsules.filter((c) => !c.opened);
   const opened = capsules.filter((c) => c.opened);
@@ -240,6 +289,11 @@ export default function CapsulesClient({
               {sealed.map((c) => {
                 const days = daysUntil(new Date(c.openAt));
                 const isMine = c.createdById === meId;
+                const isEditing = editingId === c.id;
+                const isPeeked = peekedId === c.id;
+                const tomorrowStr = new Date(Date.now() + 86400000)
+                  .toISOString()
+                  .slice(0, 10);
                 return (
                   <li
                     key={c.id}
@@ -269,6 +323,68 @@ export default function CapsulesClient({
                       })}{" "}
                       에 열림 · {c.createdBy.nickname}
                     </p>
+
+                    {isMine && isEditing && (
+                      <div className="mt-3 space-y-2">
+                        <input
+                          value={editTitle}
+                          onChange={(e) =>
+                            setEditTitle(e.target.value.slice(0, 80))
+                          }
+                          className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                        />
+                        <textarea
+                          value={editBody}
+                          onChange={(e) =>
+                            setEditBody(e.target.value.slice(0, 5000))
+                          }
+                          rows={6}
+                          className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none"
+                        />
+                        <div>
+                          <label className="eyebrow block mb-1">
+                            열 날짜
+                          </label>
+                          <input
+                            type="date"
+                            value={editOpenAt}
+                            min={tomorrowStr}
+                            onChange={(e) => setEditOpenAt(e.target.value)}
+                            className="w-full bg-bg border border-fg/20 rounded-card px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                          />
+                          <p className="text-[10px] text-fg-faint italic mt-1">
+                            아직 도래하지 않은 날짜만 가능
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveEdit(c.id)}
+                            disabled={busyId === c.id}
+                            className="flex-1 bg-ink-card text-bg rounded-card py-2 text-sm font-semibold disabled:opacity-40"
+                          >
+                            {busyId === c.id ? "저장 중..." : "저장"}
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="px-3 border border-fg/20 rounded-card text-xs text-fg-faint"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {isMine && !isEditing && isPeeked && (
+                      <div className="mt-3 p-3 rounded-card bg-bg/60 border border-fg/10 space-y-2">
+                        <p className="eyebrow text-fg-faint">
+                          내가 쓴 내용 · 상대는 못 봐요
+                        </p>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-fg-soft">
+                          {c.body}
+                        </p>
+                      </div>
+                    )}
+
                     {c.canOpen ? (
                       <button
                         type="button"
@@ -278,12 +394,35 @@ export default function CapsulesClient({
                       >
                         {busyId === c.id ? "여는 중..." : "지금 열기"}
                       </button>
-                    ) : isMine || meRole === "admin" ? (
+                    ) : isMine && !isEditing ? (
+                      <div className="flex gap-3 mt-2 text-[11px]">
+                        <button
+                          onClick={() =>
+                            setPeekedId(isPeeked ? null : c.id)
+                          }
+                          className="text-accent underline"
+                        >
+                          {isPeeked ? "접기" : "내 글 보기"}
+                        </button>
+                        <button
+                          onClick={() => startEdit(c)}
+                          className="text-accent underline"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => remove(c.id)}
+                          className="text-fg-faint underline ml-auto"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ) : meRole === "admin" ? (
                       <button
                         onClick={() => remove(c.id)}
                         className="text-[10px] text-fg-faint underline mt-1.5"
                       >
-                        삭제 (봉인 전)
+                        삭제 (admin)
                       </button>
                     ) : null}
                   </li>
