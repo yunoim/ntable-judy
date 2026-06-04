@@ -1,7 +1,7 @@
 // app/plan/new/PlanNewClient.tsx — 자연어 AI 또는 직접 입력 → 코스 → 확정
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Eyebrow, Pill, TabBar } from "@/components/ui";
 
@@ -324,6 +324,89 @@ export default function PlanNewClient({
     setCourse({ ...course, stops: next });
   }
 
+  // 한 단계 재추천 — 누적 회피 후보 유지.
+  const triedBySlot = useRef<Record<number, StopOption[]>>({});
+  const [regenIdx, setRegenIdx] = useState<number | null>(null);
+  const [regenError, setRegenError] = useState<string | null>(null);
+
+  async function regenerateSlot(idx: number) {
+    if (!course || regenIdx !== null) return;
+    const slot = course.stops[idx];
+    if (!slot) return;
+    setRegenIdx(idx);
+    setRegenError(null);
+    try {
+      const prevTried = triedBySlot.current[idx] ?? [];
+      const merged = [...prevTried, ...slot.options];
+      // 중복 제거 (name 기준).
+      const seen = new Set<string>();
+      const previouslyTried = merged.filter((o) => {
+        if (!o.name || seen.has(o.name)) return false;
+        seen.add(o.name);
+        return true;
+      });
+      triedBySlot.current[idx] = previouslyTried;
+
+      const stopsCtx = course.stops.map((s) => ({
+        stepOrder: s.stepOrder,
+        time: s.time,
+        label: s.label,
+        chosen: s.options[s.selectedIdx] ?? s.options[0],
+      }));
+
+      const res = await fetch("/api/plan/regenerate-stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          area: course.area,
+          themeNote: course.themeNote,
+          weather: course.weather,
+          stops: stopsCtx,
+          targetIndex: idx,
+          previouslyTried,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.stop) {
+        setRegenError(data.error ?? "재추천 실패");
+        return;
+      }
+      const newOptions: StopOption[] = (data.stop.options ?? [])
+        .slice(0, 3)
+        .map((o: StopOption) => ({
+          emoji: o.emoji ?? "✨",
+          name: o.name ?? "",
+          address: o.address ?? "",
+          type: o.type ?? "",
+          description: o.description ?? "",
+          mapQuery: o.mapQuery ?? "",
+          estimatedCost: o.estimatedCost ?? 0,
+        }));
+      if (newOptions.length === 0) {
+        setRegenError("새 후보가 없어요. 다시 시도");
+        return;
+      }
+      setCourse({
+        ...course,
+        stops: course.stops.map((s, i) =>
+          i === idx
+            ? {
+                ...s,
+                options: newOptions,
+                selectedIdx: 0,
+                label: data.stop.label ?? s.label,
+                time: data.stop.time ?? s.time,
+              }
+            : s,
+        ),
+      });
+    } catch (e: any) {
+      setRegenError(e?.message ?? "네트워크 오류");
+    } finally {
+      setRegenIdx(null);
+    }
+  }
+
   function moveSlot(idx: number, dir: -1 | 1) {
     if (!course) return;
     const target = idx + dir;
@@ -576,6 +659,11 @@ export default function PlanNewClient({
                 </span>
               )}
             </div>
+            {regenError && (
+              <p className="text-xs text-rain bg-rain/10 px-3 py-2 rounded-card">
+                {regenError}
+              </p>
+            )}
             {course.stops.map((slot, idx) => (
               <SlotEditor
                 key={idx}
@@ -589,6 +677,9 @@ export default function PlanNewClient({
                 onOptionEdit={(optIdx, patch) =>
                   setOption(idx, optIdx, patch)
                 }
+                onRegenerate={() => regenerateSlot(idx)}
+                regenerating={regenIdx === idx}
+                canRegenerate={mode !== "past"}
               />
             ))}
             <button
@@ -696,6 +787,9 @@ function SlotEditor({
   onMeta,
   onPick,
   onOptionEdit,
+  onRegenerate,
+  regenerating,
+  canRegenerate,
 }: {
   slot: StopSlot;
   index: number;
@@ -705,8 +799,12 @@ function SlotEditor({
   onMeta: (patch: Partial<StopSlot>) => void;
   onPick: (optIdx: number) => void;
   onOptionEdit: (optIdx: number, patch: Partial<StopOption>) => void;
+  onRegenerate?: () => void;
+  regenerating?: boolean;
+  canRegenerate?: boolean;
 }) {
   const isManual = slot.manual === true;
+  const showRegen = canRegenerate && !isManual && !!onRegenerate;
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
@@ -714,6 +812,16 @@ function SlotEditor({
           no.{String(index + 1).padStart(2, "0")}
         </span>
         <div className="flex gap-1">
+          {showRegen && (
+            <button
+              onClick={onRegenerate}
+              disabled={regenerating}
+              className="text-xs px-2 py-1 rounded border border-accent/40 text-accent disabled:opacity-40"
+              title="이 단계 후보 다시 추천"
+            >
+              {regenerating ? "…" : "✨ 다시"}
+            </button>
+          )}
           <button
             onClick={() => onMove(-1)}
             disabled={index === 0}
