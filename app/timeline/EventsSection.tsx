@@ -62,15 +62,43 @@ export default function EventsSection({
   const addAnchorRef = useRef<HTMLDivElement | null>(null);
 
   // #add-event 해시 + initialDate 가 들어오면 자동 열기 + 스크롤.
+  // #edit-event-{id} 면 해당 이벤트의 폼을 prefill 한 수정 모드로 진입.
   // hashchange 도 감지 — 같은 selectedDay 상태에서 "+ 개인 일정 등록" 링크를
   // 다시 클릭해도 URL hash 만 바뀌어 mount 가 안 일어나는 케이스 대응.
   useEffect(() => {
     if (typeof window === "undefined") return;
     function open() {
-      if (window.location.hash !== "#add-event") return;
-      if (!initialDate) return;
-      setAdding(true);
-      setDate(initialDate);
+      const h = window.location.hash;
+      if (h === "#add-event") {
+        if (!initialDate) return;
+        setAdding(true);
+        setEditingId(null);
+        setDate(initialDate);
+      } else if (h.startsWith("#edit-event-")) {
+        const eid = Number(h.slice("#edit-event-".length));
+        const target = events.find((e) => e.id === eid);
+        if (!target) return;
+        const start = new Date(target.startsAt);
+        const end = target.endsAt ? new Date(target.endsAt) : null;
+        const pad = (n: number) => String(n).padStart(2, "0");
+        const ymd = (d: Date) =>
+          `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const hm = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        setEditingId(target.id);
+        setAdding(false);
+        setTitle(target.title);
+        setDate(ymd(start));
+        setTime(target.allDay ? "19:00" : hm(start));
+        setAllDay(target.allDay);
+        setMultiDay(end !== null);
+        setEndDate(end ? ymd(end) : ymd(start));
+        setEndTime(end && !target.allDay ? hm(end) : "21:00");
+        setCategory(target.category ?? "");
+        setNote(target.note ?? "");
+        setOwnerId(target.user.id);
+      } else {
+        return;
+      }
       setTimeout(() => {
         addAnchorRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -81,7 +109,7 @@ export default function EventsSection({
     open();
     window.addEventListener("hashchange", open);
     return () => window.removeEventListener("hashchange", open);
-  }, [initialDate]);
+  }, [initialDate, events]);
 
   function reset() {
     setTitle("");
@@ -96,14 +124,17 @@ export default function EventsSection({
     setOwnerId(meId);
     setEditingId(null);
     setAdding(false);
-    // URL 의 #add-event 정리 — 안 그러면 다음에 day-panel 이 안 뜸.
-    if (typeof window !== "undefined" && window.location.hash === "#add-event") {
-      history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search,
-      );
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    // URL 의 폼 관련 hash 정리 — 안 그러면 다음에 day-panel 이 안 뜸.
+    if (typeof window !== "undefined") {
+      const h = window.location.hash;
+      if (h === "#add-event" || h.startsWith("#edit-event-")) {
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
     }
   }
 
@@ -361,6 +392,37 @@ export default function EventsSection({
           >
             {saving ? "저장 중..." : editingId ? "수정 ✓" : "추가 ✓"}
           </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm("이 일정을 삭제할까요?")) return;
+                setSaving(true);
+                setError(null);
+                try {
+                  const res = await fetch(
+                    `/api/personal-events/${editingId}`,
+                    { method: "DELETE" },
+                  );
+                  if (!res.ok) {
+                    const d = await res.json().catch(() => ({}));
+                    setError(d.error ?? "삭제 실패");
+                    return;
+                  }
+                  reset();
+                  startTransition(() => router.refresh());
+                } catch (e: any) {
+                  setError(e?.message ?? "네트워크 오류");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+              className="w-full border border-rain/40 text-rain rounded-card py-2 text-xs disabled:opacity-40"
+            >
+              삭제
+            </button>
+          )}
         </div>
       )}
 

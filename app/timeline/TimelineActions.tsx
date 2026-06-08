@@ -50,14 +50,13 @@ export default function TimelineActions({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // hash 가 #add-event 면 EventsSection 의 form 이 떠야 하므로 이 sheet 는 숨김.
-  const [hashAddEvent, setHashAddEvent] = useState(false);
+  // hash 가 #add-event 또는 #edit-event-* 면 EventsSection 의 form 이 떠야 하므로 이 sheet 는 숨김.
+  const [hashUsesForm, setHashUsesForm] = useState(false);
   useEffect(() => {
     function check() {
-      setHashAddEvent(
-        typeof window !== "undefined" &&
-          window.location.hash === "#add-event",
-      );
+      if (typeof window === "undefined") return setHashUsesForm(false);
+      const h = window.location.hash;
+      setHashUsesForm(h === "#add-event" || h.startsWith("#edit-event-"));
     }
     check();
     window.addEventListener("hashchange", check);
@@ -67,9 +66,10 @@ export default function TimelineActions({
   // pathname/searchParams 변화도 트리거.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setHashAddEvent(window.location.hash === "#add-event");
+    const h = window.location.hash;
+    setHashUsesForm(h === "#add-event" || h.startsWith("#edit-event-"));
   }, [pathname, searchParams]);
-  const open = selectedDayStr !== null && !hashAddEvent;
+  const open = selectedDayStr !== null && !hashUsesForm;
 
   function close() {
     router.push(`/timeline?ym=${ymStr}`);
@@ -141,31 +141,37 @@ export default function TimelineActions({
               {existingEvents.length > 0 && (
                 <ul className="space-y-1">
                   {existingEvents.map((e) => (
-                    <li
-                      key={e.id}
-                      className="bg-bg border border-fg/10 rounded-card px-3 py-1.5 flex items-center gap-2"
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{
-                          background:
-                            e.userId === adminId
-                              ? "var(--accent)"
-                              : "var(--rain)",
+                    <li key={e.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // EventsSection 이 hashchange 로 감지 → 수정 폼 자동 오픈.
+                          window.location.hash = `edit-event-${e.id}`;
                         }}
-                      />
-                      <p className="text-[12px] flex-1 truncate">
-                        {e.title}
-                      </p>
-                      <p className="text-[10px] text-fg-faint shrink-0">
-                        {e.userNickname}
-                        {!e.allDay &&
-                          " · " +
-                            new Date(e.startsAt).toLocaleTimeString("ko", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                      </p>
+                        className="tap w-full bg-bg border border-fg/10 rounded-card px-3 py-1.5 flex items-center gap-2 hover:bg-bg-warm"
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            background:
+                              e.userId === adminId
+                                ? "var(--accent)"
+                                : "var(--rain)",
+                          }}
+                        />
+                        <p className="text-[12px] flex-1 truncate text-left">
+                          {e.title}
+                        </p>
+                        <p className="text-[10px] text-fg-faint shrink-0">
+                          {e.userNickname}
+                          {!e.allDay &&
+                            " · " +
+                              new Date(e.startsAt).toLocaleTimeString("ko", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                        </p>
+                      </button>
                     </li>
                   ))}
                 </ul>
