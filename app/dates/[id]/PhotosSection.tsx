@@ -58,12 +58,14 @@ export default function PhotosSection({
             data.error === "storage_not_configured"
               ? "사진 저장소가 아직 설정되지 않았어요 (R2 env 확인)"
               : data.error === "too_large"
-                ? "파일이 너무 커요 (8MB 이하)"
+                ? `파일이 너무 커요 (${data.detail ?? "사진 8MB · 영상 80MB"})`
                 : data.error === "bad_mime"
-                  ? "이미지 파일만 가능"
-                  : data.error === "upload_failed"
-                    ? `업로드 실패: ${data.detail ?? "원인 불명"}`
-                    : data.error ?? `업로드 실패 (${res.status})`,
+                  ? `지원 안 하는 형식 (${data.detail ?? "?"})`
+                  : data.error === "body_parse_failed"
+                    ? `업로드 중단됨 (${data.detail ?? "용량 초과 의심"})`
+                    : data.error === "upload_failed"
+                      ? `업로드 실패: ${data.detail ?? "원인 불명"}`
+                      : data.error ?? `업로드 실패 (${res.status})`,
           );
           break;
         }

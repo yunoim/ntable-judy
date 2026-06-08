@@ -72,12 +72,14 @@ export default function AlbumUploadFlow({
             data.error === "storage_not_configured"
               ? "사진 저장소 미설정 (R2 env)"
               : data.error === "too_large"
-                ? "파일이 너무 커요 (8MB 이하)"
+                ? `파일이 너무 커요 (${data.detail ?? "사진 8MB · 영상 80MB"})`
                 : data.error === "bad_mime"
-                  ? "이미지 파일만 가능"
-                  : data.error === "upload_failed"
-                    ? `업로드 실패: ${data.detail ?? "원인 불명"}`
-                    : data.error ?? `실패 (${res.status})`,
+                  ? `지원 안 하는 형식 (${data.detail ?? "?"})`
+                  : data.error === "body_parse_failed"
+                    ? `업로드 중단됨 (${data.detail ?? "용량 초과 의심"})`
+                    : data.error === "upload_failed"
+                      ? `업로드 실패: ${data.detail ?? "원인 불명"}`
+                      : data.error ?? `실패 (${res.status})`,
           );
           break;
         }
@@ -123,7 +125,7 @@ export default function AlbumUploadFlow({
               <div>
                 <p className="font-display text-base">어느 데이트의 사진?</p>
                 <p className="text-[10px] text-fg-faint mt-0.5">
-                  📷 사진 · 🎞️ GIF / 짧은 영상 (mp4·mov)
+                  📷 사진 8MB · 🎞️ 영상 80MB 이내 (mp4·mov·webm)
                 </p>
               </div>
               <button

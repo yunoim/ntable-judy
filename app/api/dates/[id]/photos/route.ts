@@ -5,16 +5,25 @@ import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { notifyOthers } from "@/lib/push";
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_MIME = [
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
+const MAX_VIDEO_BYTES = 80 * 1024 * 1024; // 80MB — 폰 짧은 영상 커버 (Cloudflare free 100MB 한도 안)
+const ALLOWED_IMAGE_MIME = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/heic",
+  "image/heif",
   "image/gif",
+];
+const ALLOWED_VIDEO_MIME = [
   "video/mp4",
   "video/quicktime",
+  "video/webm",
+  "video/x-m4v",
 ];
+
+// 큰 영상 업로드가 Railway/Node 의 기본 timeout 에 걸리지 않게.
+export const maxDuration = 60;
 
 export async function POST(
   req: Request,
@@ -36,34 +45,72 @@ export async function POST(
   const date = await prisma.date.findUnique({ where: { id } });
   if (!date) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const form = await req.formData();
-  const file = form.get("file");
-  const caption = (form.get("caption") ?? "").toString().trim() || null;
+  // formData() 자체가 큰 body 에서 throw 할 수 있어 try 안에서 파싱.
+  let file: File;
+  let caption: string | null;
+  try {
+    const form = await req.formData();
+    const f = form.get("file");
+    if (!(f instanceof File)) {
+      return NextResponse.json({ error: "no_file" }, { status: 400 });
+    }
+    file = f;
+    caption = (form.get("caption") ?? "").toString().trim() || null;
+  } catch (e: any) {
+    console.error("[photos] formdata parse failed", e);
+    return NextResponse.json(
+      {
+        error: "body_parse_failed",
+        detail: e?.message ?? String(e),
+      },
+      { status: 400 },
+    );
+  }
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "no_file" }, { status: 400 });
+  const isVideo = file.type.startsWith("video/");
+  const isImage = file.type.startsWith("image/");
+  if (!isVideo && !isImage) {
+    return NextResponse.json(
+      { error: "bad_mime", detail: `mime=${file.type || "(empty)"}` },
+      { status: 400 },
+    );
   }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "too_large" }, { status: 400 });
+  if (isVideo && !ALLOWED_VIDEO_MIME.includes(file.type)) {
+    return NextResponse.json(
+      { error: "bad_mime", detail: `video mime=${file.type}` },
+      { status: 400 },
+    );
   }
-  if (!ALLOWED_MIME.includes(file.type)) {
-    return NextResponse.json({ error: "bad_mime" }, { status: 400 });
+  if (isImage && !ALLOWED_IMAGE_MIME.includes(file.type)) {
+    return NextResponse.json(
+      { error: "bad_mime", detail: `image mime=${file.type}` },
+      { status: 400 },
+    );
+  }
+  const sizeCap = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+  if (file.size > sizeCap) {
+    return NextResponse.json(
+      {
+        error: "too_large",
+        detail: `${Math.round(file.size / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
+      },
+      { status: 400 },
+    );
   }
 
-  const ext =
-    file.type === "image/png"
-      ? "png"
-      : file.type === "image/webp"
-        ? "webp"
-        : file.type === "image/heic"
-          ? "heic"
-          : file.type === "image/gif"
-            ? "gif"
-            : file.type === "video/mp4"
-              ? "mp4"
-              : file.type === "video/quicktime"
-                ? "mov"
-                : "jpg";
+  const EXT: Record<string, string> = {
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/heic": "heic",
+    "image/heif": "heif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "video/mp4": "mp4",
+    "video/quicktime": "mov",
+    "video/webm": "webm",
+    "video/x-m4v": "m4v",
+  };
+  const ext = EXT[file.type] ?? "bin";
   const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
   try {
