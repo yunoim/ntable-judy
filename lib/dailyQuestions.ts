@@ -10,7 +10,10 @@ export type Category =
   | "fantasy" // 상상 — 가정/만약
   | "mundane" // 일상 사소한 — 사물·디테일
   | "mind" // 마음/내면 — 감정·내면
-  | "past"; // 추억/취향 — 과거 기억
+  | "past" // 추억/취향 — 과거 기억
+  | "play" // 장난 — 가벼운 놀림/관찰
+  | "guess" // 맞춰봐 — 상대가 나를 알아맞히기
+  | "future"; // 미래 — 동거/결혼/노후 상상
 
 export type DailyQ = { text: string; cat: Category };
 
@@ -110,6 +113,66 @@ export const DAILY_QUESTIONS: DailyQ[] = [
   { text: "마지막으로 운 게 언제야?", cat: "past" },
   { text: "최근에 받은 칭찬 중 가장 기쁜 거?", cat: "past" },
   { text: "다음 생에는 뭘로 태어나고 싶어?", cat: "past" },
+
+  // 커플 만약에 게임 (fantasy)
+  { text: "하루 동안 서로 몸이 바뀐다면 제일 먼저 할 일은?", cat: "fantasy" },
+  { text: "우리가 60살에 처음 만났다면 사귈 수 있었을까?", cat: "fantasy" },
+  { text: "내가 갑자기 반려동물로 변한다면 무슨 동물?", cat: "fantasy" },
+  { text: "오늘 당장 해외로 떠나야 한다면 어디 갈래?", cat: "fantasy" },
+  { text: "내가 재벌 2세면 어떨 것 같아?", cat: "fantasy" },
+  { text: "우리 둘이 유튜브를 시작한다면 어떤 콘텐츠일까?", cat: "fantasy" },
+  { text: "내일 지구가 멸망한다면 오늘 뭐 할 거야?", cat: "fantasy" },
+  { text: "오늘이 마지막 데이트라면 뭐 하고 싶어?", cat: "fantasy" },
+  { text: "우리가 처음 만난 날로 돌아간다면 어떨까?", cat: "fantasy" },
+  { text: "내 휴대폰을 하루 동안 쓸 수 있다면 뭐 할 거야?", cat: "fantasy" },
+
+  // 달달하고 설레는 (us)
+  { text: "처음 나한테 설렜던 순간이 기억나?", cat: "us" },
+  { text: "나를 좋아하게 된 계기가 뭐야?", cat: "us" },
+  { text: "내가 가장 예뻐 보이는 순간이 언제야?", cat: "us" },
+  { text: "가장 기억에 남는 데이트는?", cat: "us" },
+  { text: "나랑 꼭 한번 해보고 싶은 데이트는?", cat: "us" },
+  { text: "내가 가장 귀여워 보일 때가 언제야?", cat: "us" },
+  { text: "내가 안아줄 때 어떤 기분이야?", cat: "us" },
+  { text: "가장 좋아하는 스킨십이 뭐야?", cat: "us" },
+  { text: "지금 나한테 가장 듣고 싶은 말 있어?", cat: "us" },
+  { text: "오늘 나한테 해주고 싶은 말은?", cat: "us" },
+
+  // 장난치고 싶을 때 (play)
+  { text: "나한테 이런 말버릇이 있다? 들킨 거 하나만.", cat: "play" },
+  { text: "내가 잘 때 맨날 ○○ 하는 거 알지? ㅋㅋ", cat: "play" },
+  { text: "가끔 내가 ○○ 할 때 살짝 킹받지 ㅋㅋ", cat: "play" },
+  { text: "동물 중에 내가 닮은 거 딱 하나 골라봐.", cat: "play" },
+  { text: "내 얼굴상을 한 단어로 표현하면?", cat: "play" },
+  { text: "내가 자주 하는 말 TOP 3는?", cat: "play" },
+  { text: "어릴 때 별명 뭐였어? 왜?", cat: "play" },
+  { text: "나랑 절대 안 어울리는 직업 있어?", cat: "play" },
+  { text: "솔직히 내가 입었던 옷 중에 별로였던 거 있어?", cat: "play" },
+  { text: "넌 내가 뭐 할 때 질투 나?", cat: "play" },
+
+  // 나를 맞춰 봐 퀴즈 (guess)
+  { text: "내가 기분 좋을 때 자주 하는 행동은?", cat: "guess" },
+  { text: "내가 사랑받는다고 느끼는 순간은 언제일 거 같아?", cat: "guess" },
+  { text: "내 기분을 풀리게 하는 치트키는 뭘까?", cat: "guess" },
+  { text: "내가 연락에서 중요하게 생각하는 건?", cat: "guess" },
+  { text: "내가 화났을 때 가장 좋은 대처법은?", cat: "guess" },
+  { text: "내가 힘들 때 공감받고 싶어할까, 해결책 듣고 싶어할까?", cat: "guess" },
+  { text: "내가 가장 좋아하는 스킨십은 뭘까?", cat: "guess" },
+  { text: "내가 혼자 있고 싶을 때는 보통 언제일까?", cat: "guess" },
+  { text: "내가 너를 좋아하는 핵심 포인트, 뭐일 거 같아?", cat: "guess" },
+  { text: "내가 가장 좋아하는 음식, 맞춰봐.", cat: "guess" },
+
+  // 우리 둘만의 미래 계획 (future)
+  { text: "같이 살면 어느 동네가 좋을까?", cat: "future" },
+  { text: "나랑 같이 키우고 싶은 반려동물은?", cat: "future" },
+  { text: "같이 살면 누가 더 깔끔할 것 같아?", cat: "future" },
+  { text: "신혼여행은 어디로 가고 싶어?", cat: "future" },
+  { text: "같이 살 때 이것만은 지켜줬으면 하는 거 있어?", cat: "future" },
+  { text: "50년 뒤에 우리는 서로를 뭐라고 부를까?", cat: "future" },
+  { text: "나중에 가장 그리워할 지금의 모습은 뭐일까?", cat: "future" },
+  { text: "아이는 몇 명 낳고 싶어?", cat: "future" },
+  { text: "나중에 우리 집 냉장고엔 뭐가 가득할까?", cat: "future" },
+  { text: "결혼하면 꼭 해보고 싶은 로망 있어?", cat: "future" },
 ];
 
 const KST_OFFSET_MS = 9 * 3600 * 1000;
