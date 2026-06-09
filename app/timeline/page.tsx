@@ -298,14 +298,13 @@ export default async function TimelinePage({
                     aria-hidden
                     className="absolute inset-0 flex items-center justify-center pointer-events-none leading-none select-none"
                     style={{
-                      color: planned
-                        ? "var(--accent)"
-                        : "var(--fg)",
+                      // 데이트: 빨간(분홍) 하트. 예정은 진하게, 다녀온 건 약간 흐리게.
+                      color: "#e64980",
                       fontSize: "2.4em",
-                      opacity: planned ? 0.35 : 0.25,
+                      opacity: planned ? 0.55 : 0.35,
                     }}
                   >
-                    ♡
+                    ♥
                   </span>
                 )}
                 <span
@@ -314,18 +313,11 @@ export default async function TimelinePage({
                   {c.day}
                 </span>
                 {dayEvents.length > 0 && (
-                  <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center gap-1 z-10">
+                  <div className="absolute bottom-0.5 left-0 right-0 flex items-center justify-center gap-0.5 z-10 leading-none">
                     {dayEvents.slice(0, 3).map((e, idx) => (
-                      <span
-                        key={idx}
-                        className="w-2 h-2 rounded-full"
-                        style={{
-                          background:
-                            e.user.id === adminId
-                              ? "var(--accent)"
-                              : "var(--rain)",
-                        }}
-                      />
+                      <span key={idx} className="text-[10px] leading-none">
+                        {e.user.emoji || "●"}
+                      </span>
                     ))}
                     {dayEvents.length > 3 && (
                       <span className="text-[9px] text-fg-faint leading-none font-display">
@@ -341,21 +333,24 @@ export default async function TimelinePage({
         </CalendarSwipe>
         <div className="flex items-center gap-4 mt-3 text-[11px] text-fg-soft">
           <span className="flex items-center gap-1.5">
-            <span className="text-accent text-base leading-none">♡</span>
+            <span
+              className="text-base leading-none"
+              style={{ color: "#e64980" }}
+            >
+              ♥
+            </span>
             데이트
           </span>
           <span className="flex items-center gap-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: "var(--accent)" }}
-            />
+            <span className="text-base leading-none">
+              {admin?.emoji || "●"}
+            </span>
             {admin?.nickname ?? "닉"}
           </span>
           <span className="flex items-center gap-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: "var(--rain)" }}
-            />
+            <span className="text-base leading-none">
+              {partner?.emoji || "●"}
+            </span>
             {partner?.nickname ?? "주디"}
           </span>
         </div>
@@ -430,6 +425,7 @@ export default async function TimelinePage({
           startsAt: e.startsAt.toISOString(),
           userId: e.user.id,
           userNickname: e.user.nickname,
+          userEmoji: e.user.emoji,
         }))}
       />
       <TabBar active="log" />

@@ -24,6 +24,7 @@ export type DayEventSummary = {
   startsAt: string;
   userId: string;
   userNickname: string;
+  userEmoji: string | null;
 };
 
 export default function TimelineActions({
@@ -150,15 +151,9 @@ export default function TimelineActions({
                         }}
                         className="tap w-full bg-bg border border-fg/10 rounded-card px-3 py-1.5 flex items-center gap-2 hover:bg-bg-warm"
                       >
-                        <span
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{
-                            background:
-                              e.userId === adminId
-                                ? "var(--accent)"
-                                : "var(--rain)",
-                          }}
-                        />
+                        <span className="text-sm leading-none shrink-0">
+                          {e.userEmoji || "●"}
+                        </span>
                         <p className="text-[12px] flex-1 truncate text-left">
                           {e.title}
                         </p>
