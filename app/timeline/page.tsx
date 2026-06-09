@@ -8,6 +8,7 @@ import MonthPicker from "./MonthPicker";
 import TimelineActions from "./TimelineActions";
 import CalendarSwipe from "./CalendarSwipe";
 import PastDatesList, { type PastItem } from "../PastDatesList";
+import { holidayName } from "@/lib/holidays";
 
 export const dynamic = "force-dynamic";
 
@@ -232,8 +233,14 @@ export default async function TimelinePage({
           nextHref={`/timeline?ym=${ymStr(next.y, next.m)}`}
         >
         <div className="grid grid-cols-7 gap-1.5 mb-1">
-          {KO_WEEK.map((d) => (
-            <div key={d} className="text-[10px] text-fg-faint text-center">
+          {KO_WEEK.map((d, i) => (
+            <div
+              key={d}
+              className={[
+                "text-[10px] text-center",
+                i === 0 ? "text-rain" : i === 6 ? "text-blue-500" : "text-fg-faint",
+              ].join(" ")}
+            >
               {d}
             </div>
           ))}
@@ -246,6 +253,19 @@ export default async function TimelinePage({
             const dRec = c.day ? dateByDay.get(c.day) : undefined;
             const planned = dRec?.status === "planned";
             const dayEvents = c.day ? eventsByDay.get(c.day) ?? [] : [];
+            // 요일·공휴일 색상 — 일/공휴일=빨강, 토=파랑, 나머지=기본.
+            const dow = i % 7; // 0=일 … 6=토
+            const isHoliday =
+              c.day !== null && holidayName(year, month + 1, c.day) !== null;
+            const isSun = dow === 0;
+            const isSat = dow === 6;
+            const dayColor = isSun || isHoliday
+              ? "text-rain"
+              : isSat
+                ? "text-blue-500"
+                : dRec
+                  ? "text-fg"
+                  : "text-fg-soft";
             // 지나간 날짜는 디밍 (오늘 포함은 아님, 오늘 자정 기준 < today 만).
             const isPastDay = (() => {
               if (!c.day) return false;
@@ -289,7 +309,7 @@ export default async function TimelinePage({
                   </span>
                 )}
                 <span
-                  className={`relative z-10 text-xs ${isToday ? "font-bold" : dRec ? "text-fg" : "text-fg-soft"}`}
+                  className={`relative z-10 text-xs ${isToday ? "font-bold" : ""} ${dayColor}`}
                 >
                   {c.day}
                 </span>
