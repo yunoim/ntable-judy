@@ -171,7 +171,7 @@ export default function AlbumUploadFlow({
 
             {dates.length === 0 ? (
               <div className="px-5 py-10 text-center text-fg-faint text-sm">
-                아직 지난 데이트가 없어요.
+                아직 등록된 데이트가 없어요.
               </div>
             ) : (
               <ul className="flex-1 overflow-y-auto pb-4">

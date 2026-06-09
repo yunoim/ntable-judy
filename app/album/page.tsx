@@ -1,6 +1,6 @@
 // app/album/page.tsx — 모든 데이트 사진 한 화면 (월별 그룹) + 사진 등록 진입
 import Link from "next/link";
-import { prisma, getPastDates } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { requireApproved } from "@/lib/auth";
 import { TabBar } from "@/components/ui";
 import AlbumGrid, { type AlbumPhoto } from "./AlbumGrid";
@@ -24,7 +24,14 @@ function formatYm(ym: string): string {
 export default async function AlbumPage() {
   const me = await requireApproved();
 
-  const [photos, pastDates] = await Promise.all([
+  // 업로드 대상: 오늘이 지났거나 오늘 시작한 데이트 (KST 기준).
+  // 지난 데이트(과거) + 오늘 데이트 + 진행 중 다일 일정 모두 포함. 미래 데이트는 제외.
+  const now = new Date();
+  const kstYmd = now.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  const endOfTodayKstUtc = new Date(`${kstYmd}T00:00:00+09:00`);
+  endOfTodayKstUtc.setUTCDate(endOfTodayKstUtc.getUTCDate() + 1);
+
+  const [photos, uploadable] = await Promise.all([
     prisma.datePhoto.findMany({
       orderBy: [{ date: { scheduledAt: "desc" } }, { createdAt: "desc" }],
       include: {
@@ -34,10 +41,17 @@ export default async function AlbumPage() {
         uploadedBy: { select: { id: true, nickname: true, emoji: true } },
       },
     }),
-    getPastDates(),
+    prisma.date.findMany({
+      where: {
+        status: { not: "cancelled" },
+        scheduledAt: { lt: endOfTodayKstUtc },
+      },
+      orderBy: { scheduledAt: "desc" },
+      select: { id: true, number: true, title: true, scheduledAt: true, area: true },
+    }),
   ]);
 
-  const uploadTargets: UploadTargetDate[] = pastDates.map((d) => ({
+  const uploadTargets: UploadTargetDate[] = uploadable.map((d) => ({
     id: d.id,
     number: d.number,
     title: d.title,
