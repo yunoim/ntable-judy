@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
+import {
+  uploadPhotoForDate,
+  photoUploadErrorMessage,
+} from "@/lib/uploadPhoto";
 
 type Photo = {
   id: number;
@@ -46,32 +50,13 @@ export default function PhotosSection({
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
         setProgress({ current: i + 1, total: list.length });
-        // multipart formData 우회 — raw 바이트로 PUT.
-        const res = await fetch(`/api/dates/${dateId}/photos`, {
-          method: "POST",
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-          },
-          body: file,
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setError(
-            data.error === "storage_not_configured"
-              ? "사진 저장소가 아직 설정되지 않았어요 (R2 env 확인)"
-              : data.error === "too_large"
-                ? `파일이 너무 커요 (${data.detail ?? "사진 8MB · 영상 80MB"})`
-                : data.error === "bad_mime"
-                  ? `지원 안 하는 형식 (${data.detail ?? "?"})`
-                  : data.error === "body_parse_failed"
-                    ? `업로드 중단됨 (${data.detail ?? "용량 초과 의심"})`
-                    : data.error === "upload_failed"
-                      ? `업로드 실패: ${data.detail ?? "원인 불명"}`
-                      : data.error ?? `업로드 실패 (${res.status})`,
-          );
+        try {
+          const created = await uploadPhotoForDate(dateId, file);
+          setPhotos((ps) => [created, ...ps]);
+        } catch (e) {
+          setError(photoUploadErrorMessage(e));
           break;
         }
-        setPhotos((ps) => [data, ...ps]);
       }
       startTransition(() => router.refresh());
     } catch (e: any) {

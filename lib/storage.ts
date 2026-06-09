@@ -3,7 +3,9 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export type PutInput = {
   path: string; // 버킷 내 key (확장자 포함)
@@ -16,10 +18,25 @@ export type PutResult = {
   url: string;
 };
 
+export type PresignedPutInput = {
+  path: string;
+  contentType: string;
+  expiresSec?: number;
+};
+
+export type PresignedPutResult = {
+  uploadUrl: string; // 브라우저가 PUT 할 URL
+  key: string;
+  publicUrl: string; // 업로드 끝난 객체의 공개 URL
+  expiresIn: number;
+};
+
 export interface BlobStorage {
   put(input: PutInput): Promise<PutResult>;
   del(key: string): Promise<void>;
   isConfigured(): boolean;
+  getPresignedPutUrl(input: PresignedPutInput): Promise<PresignedPutResult>;
+  headExists(key: string): Promise<boolean>;
 }
 
 function readEnv() {
@@ -87,6 +104,44 @@ export const storage: BlobStorage = {
     await client.send(
       new DeleteObjectCommand({ Bucket: bucket, Key: key }),
     );
+  },
+
+  async getPresignedPutUrl({ path, contentType, expiresSec = 300 }) {
+    const { bucket, publicUrl } = readEnv();
+    const client = getClient();
+    if (!client || !bucket || !publicUrl) {
+      throw new Error("storage_not_configured");
+    }
+    // @aws-sdk/client-s3 와 s3-request-presigner 가 @smithy/types 다른 버전을
+    // 가져와 generic 이 안 맞음 — 런타임은 정상이라 any 캐스트.
+    const cmd = new PutObjectCommand({
+      Bucket: bucket,
+      Key: path,
+      ContentType: contentType,
+    });
+    const uploadUrl = await getSignedUrl(
+      client as unknown as Parameters<typeof getSignedUrl>[0],
+      cmd as unknown as Parameters<typeof getSignedUrl>[1],
+      { expiresIn: expiresSec },
+    );
+    return {
+      uploadUrl,
+      key: path,
+      publicUrl: `${publicUrl.replace(/\/$/, "")}/${path}`,
+      expiresIn: expiresSec,
+    };
+  },
+
+  async headExists(key) {
+    const { bucket } = readEnv();
+    const client = getClient();
+    if (!client || !bucket) return false;
+    try {
+      await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+      return true;
+    } catch {
+      return false;
+    }
   },
 };
 
