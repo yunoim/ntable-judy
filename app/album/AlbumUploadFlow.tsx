@@ -60,11 +60,13 @@ export default function AlbumUploadFlow({
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
         setProgress({ current: i + 1, total: list.length });
-        const fd = new FormData();
-        fd.append("file", file);
+        // multipart formData 우회 — raw 바이트 PUT. Content-Type 으로 mime 전달.
         const res = await fetch(`/api/dates/${date.id}/photos`, {
           method: "POST",
-          body: fd,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

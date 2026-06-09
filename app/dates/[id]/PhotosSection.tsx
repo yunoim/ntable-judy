@@ -46,11 +46,13 @@ export default function PhotosSection({
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
         setProgress({ current: i + 1, total: list.length });
-        const fd = new FormData();
-        fd.append("file", file);
+        // multipart formData 우회 — raw 바이트로 PUT.
         const res = await fetch(`/api/dates/${dateId}/photos`, {
           method: "POST",
-          body: fd,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
