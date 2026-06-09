@@ -99,7 +99,7 @@ export default function DailyEntryCard({
         )}
 
         {both ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 items-start">
             <EntryBubble
               label={meNickname}
               entry={myEntry!}
@@ -114,7 +114,7 @@ export default function DailyEntryCard({
           </div>
         ) : myEntry ? (
           // 내가 답했고 파트너는 아직.
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 items-start">
             <EntryBubble
               label={meNickname}
               entry={myEntry}
@@ -262,7 +262,7 @@ function EntryBubble({
   const inner = (
     <>
       <p className="text-[10px] text-fg-faint">{label}</p>
-      <p className="text-[13px] line-clamp-3 leading-snug">
+      <p className="text-[13px] leading-snug whitespace-pre-wrap break-words">
         {entry.emoji && <span className="mr-1">{entry.emoji}</span>}
         {entry.body}
       </p>

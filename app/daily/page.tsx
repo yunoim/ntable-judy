@@ -126,13 +126,13 @@ export default async function DailyHistoryPage() {
                     Q. {p.question}
                   </p>
                 )}
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-2 gap-2 pt-1 items-start">
                   {p.my ? (
                     <div className="bg-accent/10 rounded-card px-3 py-2">
                       <p className="text-[10px] text-fg-faint mb-0.5">
                         {me.nickname}
                       </p>
-                      <p className="text-[13px] leading-snug">
+                      <p className="text-[13px] leading-snug whitespace-pre-wrap break-words">
                         {p.my.emoji && (
                           <span className="mr-1">{p.my.emoji}</span>
                         )}
@@ -154,7 +154,7 @@ export default async function DailyHistoryPage() {
                       <p className="text-[10px] text-fg-faint mb-0.5">
                         {partner.nickname}
                       </p>
-                      <p className="text-[13px] leading-snug">
+                      <p className="text-[13px] leading-snug whitespace-pre-wrap break-words">
                         {p.partner.emoji && (
                           <span className="mr-1">{p.partner.emoji}</span>
                         )}
