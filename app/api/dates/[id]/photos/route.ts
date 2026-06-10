@@ -1,33 +1,23 @@
+// 사진/영상 업로드 — 단일 엔드포인트, 서버가 raw 바디를 R2 에 스트리밍.
+// 클라이언트 → 서버 (same-origin, CORS 무관) → R2 (서버 권한으로 PUT).
+// 메모리는 part 단위(5MB) 만 유지 → 큰 영상도 OK.
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { Readable } from "node:stream";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { notifyOthers } from "@/lib/push";
+import {
+  EXT_BY_MIME,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  checkMimeAndSize,
+} from "@/lib/photo-limits";
 
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
-const MAX_VIDEO_BYTES = 80 * 1024 * 1024; // 80MB — 폰 짧은 영상 커버 (Cloudflare free 100MB 한도 안)
-const ALLOWED_IMAGE_MIME = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-  "image/gif",
-];
-const ALLOWED_VIDEO_MIME = [
-  "video/mp4",
-  "video/quicktime",
-  "video/webm",
-  "video/x-m4v",
-];
+// Railway/Node 기본 timeout 이 짧지 않게.
+export const maxDuration = 300;
 
-// 큰 영상 업로드가 Railway/Node 의 기본 timeout 에 걸리지 않게.
-export const maxDuration = 60;
-
-// multipart formData() 가 큰 영상에서 "Failed to parse body as FormData" 로
-// 던지는 케이스 (undici 한계) 가 있어 multipart 자체를 우회 — 클라가 file 객체를
-// 그대로 body 로 PUT 한다 (Content-Type=file.type). caption 은 X-Caption 헤더로.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -53,91 +43,95 @@ export async function POST(
     .trim()
     .toLowerCase();
   const caption = (req.headers.get("x-caption") ?? "").trim() || null;
-
-  const isVideo = fileType.startsWith("video/");
-  const isImage = fileType.startsWith("image/");
-  if (!isVideo && !isImage) {
-    return NextResponse.json(
-      { error: "bad_mime", detail: `mime=${fileType || "(empty)"}` },
-      { status: 400 },
-    );
-  }
-  if (isVideo && !ALLOWED_VIDEO_MIME.includes(fileType)) {
-    return NextResponse.json(
-      { error: "bad_mime", detail: `video mime=${fileType}` },
-      { status: 400 },
-    );
-  }
-  if (isImage && !ALLOWED_IMAGE_MIME.includes(fileType)) {
-    return NextResponse.json(
-      { error: "bad_mime", detail: `image mime=${fileType}` },
-      { status: 400 },
-    );
-  }
-  const sizeCap = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-  // 미리 Content-Length 가 있으면 빠른 거부.
   const declaredLen = Number(req.headers.get("content-length") ?? "0");
-  if (declaredLen && declaredLen > sizeCap) {
-    return NextResponse.json(
-      {
-        error: "too_large",
-        detail: `${Math.round(declaredLen / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
-      },
-      { status: 400 },
-    );
-  }
 
-  // raw body 읽기 — multipart 파싱 안 함.
-  let buffer: Buffer;
-  try {
-    buffer = Buffer.from(await req.arrayBuffer());
-  } catch (e: any) {
-    console.error("[photos] body read failed", e);
+  const check = checkMimeAndSize(
+    fileType,
+    declaredLen > 0 ? declaredLen : null,
+  );
+  if (!check.ok) {
     return NextResponse.json(
-      { error: "body_parse_failed", detail: e?.message ?? String(e) },
-      { status: 400 },
+      { error: check.error, detail: check.detail },
+      { status: check.status },
     );
   }
-  if (buffer.byteLength === 0) {
-    return NextResponse.json({ error: "no_file" }, { status: 400 });
-  }
-  if (buffer.byteLength > sizeCap) {
-    return NextResponse.json(
-      {
-        error: "too_large",
-        detail: `${Math.round(buffer.byteLength / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
-      },
-      { status: 400 },
-    );
-  }
+  const sizeCap = check.isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
 
-  const EXT: Record<string, string> = {
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/heic": "heic",
-    "image/heif": "heif",
-    "image/gif": "gif",
-    "image/jpeg": "jpg",
-    "video/mp4": "mp4",
-    "video/quicktime": "mov",
-    "video/webm": "webm",
-    "video/x-m4v": "m4v",
-  };
-  const ext = EXT[fileType] ?? "bin";
+  const ext = EXT_BY_MIME[fileType] ?? "bin";
   const path = `dates/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
+  if (!req.body) {
+    return NextResponse.json({ error: "no_body" }, { status: 400 });
+  }
+
+  // Web ReadableStream → Node Readable (AWS SDK lib-storage 는 둘 다 받지만
+  // 일부 버전에서 Web stream 처리가 불안정해 Node Readable 로 변환).
+  // 변환 중 size cap 초과 감시 — 초과 즉시 abort.
+  let received = 0;
+  const abortedRef: { current: { error: string; detail?: string } | null } = {
+    current: null,
+  };
+  const reader = req.body.getReader();
+  const nodeStream = new Readable({
+    async read() {
+      if (abortedRef.current) {
+        this.destroy(new Error(abortedRef.current.error));
+        return;
+      }
+      try {
+        const { value, done } = await reader.read();
+        if (done) {
+          this.push(null);
+          return;
+        }
+        received += value.byteLength;
+        if (received > sizeCap) {
+          abortedRef.current = {
+            error: "too_large",
+            detail: `${Math.round(received / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
+          };
+          this.destroy(new Error("too_large"));
+          return;
+        }
+        this.push(Buffer.from(value));
+      } catch (e: any) {
+        this.destroy(e instanceof Error ? e : new Error(String(e)));
+      }
+    },
+  });
+
+  let putResult: { url: string; key: string };
   try {
-    const { url, key } = await storage.put({
+    putResult = await storage.putStream({
       path,
-      data: buffer,
+      body: nodeStream,
       contentType: fileType,
     });
+  } catch (e: any) {
+    console.error("[photos] stream upload failed", e);
+    if (abortedRef.current) {
+      return NextResponse.json(
+        {
+          error: abortedRef.current.error,
+          detail: abortedRef.current.detail,
+        },
+        { status: 400 },
+      );
+    }
+    const name = e?.name ?? e?.Code ?? null;
+    const msg = e?.message ?? String(e);
+    return NextResponse.json(
+      { error: "upload_failed", detail: name ? `${name}: ${msg}` : msg },
+      { status: 500 },
+    );
+  }
 
+  try {
     const created = await prisma.datePhoto.create({
       data: {
         dateId: id,
-        url,
-        key,
+        url: putResult.url,
+        key: putResult.key,
         caption,
         uploadedById: user.id,
       },
@@ -165,14 +159,9 @@ export async function POST(
       createdAt: created.createdAt.toISOString(),
     });
   } catch (e: any) {
-    console.error("photo upload failed", e);
-    const name = e?.name ?? e?.Code ?? null;
-    const msg = e?.message ?? String(e);
+    console.error("[photos] db create failed", e);
     return NextResponse.json(
-      {
-        error: "upload_failed",
-        detail: name ? `${name}: ${msg}` : msg,
-      },
+      { error: "db_failed", detail: e?.message ?? String(e) },
       { status: 500 },
     );
   }

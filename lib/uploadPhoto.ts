@@ -45,74 +45,32 @@ export async function uploadPhotoForDate(
   // 다 잡으려고 type → 확장자 → 힌트 → 기본 순서로 추론.
   const contentType = inferMime(file, kindHint);
 
-  // 1. init — presigned URL 발급.
-  const initRes = await fetch(`/api/dates/${dateId}/photos/upload-init`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contentType,
-      size: file.size,
-    }),
-  });
-  const init = await initRes.json().catch(() => ({}));
-  if (!initRes.ok) {
-    throw new PhotoUploadError(
-      "init",
-      initRes.status,
-      init.error ?? "init_failed",
-      init.detail,
-    );
-  }
-  const { uploadUrl, key, publicUrl } = init as {
-    uploadUrl: string;
-    key: string;
-    publicUrl: string;
-  };
-
-  // 2. PUT to R2 — init 때 서명에 쓴 contentType 와 정확히 같아야 함.
-  let putRes: Response;
+  // 단일 POST — 서버가 raw 바디를 R2 에 스트리밍 (CORS 무관).
+  let res: Response;
   try {
-    putRes = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": contentType,
-      },
+    res = await fetch(`/api/dates/${dateId}/photos`, {
+      method: "POST",
+      headers: { "Content-Type": contentType },
       body: file,
     });
   } catch (e: any) {
     throw new PhotoUploadError(
       "put",
       0,
-      "r2_fetch_failed",
+      "network_failed",
       e?.message ?? String(e),
     );
   }
-  if (!putRes.ok) {
-    const txt = await putRes.text().catch(() => "");
-    throw new PhotoUploadError(
-      "put",
-      putRes.status,
-      "r2_put_failed",
-      txt.slice(0, 200),
-    );
-  }
-
-  // 3. finalize.
-  const finRes = await fetch(`/api/dates/${dateId}/photos/upload-finalize`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key, publicUrl }),
-  });
-  const fin = await finRes.json().catch(() => ({}));
-  if (!finRes.ok) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
     throw new PhotoUploadError(
       "finalize",
-      finRes.status,
-      fin.error ?? "finalize_failed",
-      fin.detail,
+      res.status,
+      data.error ?? "upload_failed",
+      data.detail,
     );
   }
-  return fin as UploadedPhoto;
+  return data as UploadedPhoto;
 }
 
 // file.type → 파일명 확장자 → 피커 힌트 → 기본 순서로 mime 추론.
@@ -152,19 +110,13 @@ export function photoUploadErrorMessage(e: unknown): string {
       return `파일이 너무 커요 (${e.detail ?? "사진 8MB · 영상 80MB"})`;
     if (e.error === "bad_mime")
       return `지원 안 하는 형식 (${e.detail ?? "?"})`;
-    if (e.error === "object_missing")
-      return "업로드는 됐는데 R2 에 안 보여요. 다시 시도해 주세요.";
-    if (e.stage === "put") {
-      // R2 PUT 실패 — CORS 미설정이면 fetch 가 throw 하거나 200 외 코드.
-      if (e.status === 0)
-        return "R2 직접 업로드 실패 — 네트워크 또는 CORS 설정 확인 필요";
-      return `R2 ${e.status} ${e.error}${e.detail ? " " + e.detail : ""}`;
-    }
-    if (e.stage === "init")
-      return `업로드 준비 실패: ${e.detail ?? e.error}`;
-    if (e.stage === "finalize")
-      return `업로드 마무리 실패: ${e.detail ?? e.error}`;
-    return e.message;
+    if (e.error === "network_failed")
+      return `네트워크 연결 실패 — 다시 시도해주세요 (${e.detail ?? ""})`;
+    if (e.error === "upload_failed")
+      return `업로드 실패: ${e.detail ?? "원인 불명"}`;
+    if (e.error === "db_failed")
+      return `DB 저장 실패: ${e.detail ?? ""}`;
+    return `${e.error}${e.detail ? " " + e.detail : ""}`;
   }
   return (e as { message?: string })?.message ?? "네트워크 오류";
 }

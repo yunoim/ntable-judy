@@ -6,6 +6,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
 
 export type PutInput = {
   path: string; // 버킷 내 key (확장자 포함)
@@ -31,8 +32,16 @@ export type PresignedPutResult = {
   expiresIn: number;
 };
 
+export type StreamInput = {
+  path: string;
+  // Node Readable / Web ReadableStream / AsyncIterable 모두 받음.
+  body: any;
+  contentType: string;
+};
+
 export interface BlobStorage {
   put(input: PutInput): Promise<PutResult>;
+  putStream(input: StreamInput): Promise<PutResult>;
   del(key: string): Promise<void>;
   isConfigured(): boolean;
   getPresignedPutUrl(input: PresignedPutInput): Promise<PresignedPutResult>;
@@ -91,6 +100,32 @@ export const storage: BlobStorage = {
         ContentType: contentType,
       }),
     );
+    return {
+      key: path,
+      url: `${publicUrl.replace(/\/$/, "")}/${path}`,
+    };
+  },
+
+  // multipart streaming 업로드 — 큰 영상도 메모리에 다 안 올림.
+  async putStream({ path, body, contentType }) {
+    const { bucket, publicUrl } = readEnv();
+    const client = getClient();
+    if (!client || !bucket || !publicUrl) {
+      throw new Error("storage_not_configured");
+    }
+    const upload = new Upload({
+      client: client as unknown as ConstructorParameters<typeof Upload>[0]["client"],
+      params: {
+        Bucket: bucket,
+        Key: path,
+        Body: body,
+        ContentType: contentType,
+      },
+      queueSize: 4,
+      partSize: 5 * 1024 * 1024, // 5MB per part
+      leavePartsOnError: false,
+    });
+    await upload.done();
     return {
       key: path,
       url: `${publicUrl.replace(/\/$/, "")}/${path}`,
