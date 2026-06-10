@@ -37,9 +37,13 @@ export class PhotoUploadError extends Error {
 export async function uploadPhotoForDate(
   dateId: string,
   file: File,
+  // 사용자가 어떤 피커(사진/영상) 로 골랐는지 — file.type 도 확장자도 없을 때
+  // 최후 fallback 결정에 씀.
+  kindHint?: "image" | "video",
 ): Promise<UploadedPhoto> {
-  // Android 갤러리 등이 file.type 을 비워서 주는 케이스가 있어 확장자로 보정.
-  const contentType = inferMime(file);
+  // Android 갤러리 등이 file.type 을 비우거나 확장자 없는 이름으로 주는 케이스를
+  // 다 잡으려고 type → 확장자 → 힌트 → 기본 순서로 추론.
+  const contentType = inferMime(file, kindHint);
 
   // 1. init — presigned URL 발급.
   const initRes = await fetch(`/api/dates/${dateId}/photos/upload-init`, {
@@ -111,8 +115,10 @@ export async function uploadPhotoForDate(
   return fin as UploadedPhoto;
 }
 
-// file.type 이 비었거나 octet-stream 이면 파일명 확장자에서 추론.
-function inferMime(file: File): string {
+// file.type → 파일명 확장자 → 피커 힌트 → 기본 순서로 mime 추론.
+// Samsung Internet / Android picker 가 type 없이, 그리고 확장자도 없는 이름
+// (예: "20260604_171530") 으로 주는 케이스까지 잡는다.
+function inferMime(file: File, hint?: "image" | "video"): string {
   const t = (file.type || "").toLowerCase().trim();
   if (t && t !== "application/octet-stream") return t;
   const ext = (file.name.toLowerCase().split(".").pop() ?? "").trim();
@@ -129,7 +135,12 @@ function inferMime(file: File): string {
     mov: "video/quicktime",
     webm: "video/webm",
   };
-  return map[ext] ?? "application/octet-stream";
+  // 확장자가 점 포함 (예: "video.mp4") 일 때만 map 조회.
+  if (file.name.includes(".") && map[ext]) return map[ext];
+  // 확장자 추론 실패 — 피커 힌트로 fallback.
+  if (hint === "video") return "video/mp4";
+  if (hint === "image") return "image/jpeg";
+  return "application/octet-stream";
 }
 
 // 에러 → 사용자에게 보일 한국어 메시지.

@@ -52,7 +52,11 @@ export default function AlbumUploadFlow({
     setDone(null);
   }
 
-  async function upload(date: UploadTargetDate, files: FileList | null) {
+  async function upload(
+    date: UploadTargetDate,
+    files: FileList | null,
+    kindHint: "image" | "video",
+  ) {
     if (!files || files.length === 0) return;
     const list = Array.from(files);
     setBusyId(date.id);
@@ -65,7 +69,7 @@ export default function AlbumUploadFlow({
         const file = list[i];
         setProgress({ current: i + 1, total: list.length });
         try {
-          await uploadPhotoForDate(date.id, file);
+          await uploadPhotoForDate(date.id, file, kindHint);
           uploaded += 1;
         } catch (e) {
           setError(photoUploadErrorMessage(e));
@@ -203,7 +207,7 @@ export default function AlbumUploadFlow({
                             accept="image/*"
                             multiple
                             disabled={!!busyId}
-                            onChange={(e) => upload(d, e.target.files)}
+                            onChange={(e) => upload(d, e.target.files, "image")}
                             className="hidden"
                           />
                         </label>
@@ -220,7 +224,7 @@ export default function AlbumUploadFlow({
                             accept="image/gif,video/mp4,video/quicktime"
                             multiple
                             disabled={!!busyId}
-                            onChange={(e) => upload(d, e.target.files)}
+                            onChange={(e) => upload(d, e.target.files, "video")}
                             className="hidden"
                           />
                         </label>

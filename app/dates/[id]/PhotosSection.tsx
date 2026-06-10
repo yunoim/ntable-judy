@@ -51,7 +51,7 @@ export default function PhotosSection({
         const file = list[i];
         setProgress({ current: i + 1, total: list.length });
         try {
-          const created = await uploadPhotoForDate(dateId, file);
+          const created = await uploadPhotoForDate(dateId, file, "image");
           setPhotos((ps) => [created, ...ps]);
         } catch (e) {
           setError(photoUploadErrorMessage(e));
