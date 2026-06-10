@@ -38,12 +38,15 @@ export async function uploadPhotoForDate(
   dateId: string,
   file: File,
 ): Promise<UploadedPhoto> {
+  // Android 갤러리 등이 file.type 을 비워서 주는 케이스가 있어 확장자로 보정.
+  const contentType = inferMime(file);
+
   // 1. init — presigned URL 발급.
   const initRes = await fetch(`/api/dates/${dateId}/photos/upload-init`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contentType: file.type || "application/octet-stream",
+      contentType,
       size: file.size,
     }),
   });
@@ -62,13 +65,13 @@ export async function uploadPhotoForDate(
     publicUrl: string;
   };
 
-  // 2. PUT to R2.
+  // 2. PUT to R2 — init 때 서명에 쓴 contentType 와 정확히 같아야 함.
   let putRes: Response;
   try {
     putRes = await fetch(uploadUrl, {
       method: "PUT",
       headers: {
-        "Content-Type": file.type || "application/octet-stream",
+        "Content-Type": contentType,
       },
       body: file,
     });
@@ -106,6 +109,27 @@ export async function uploadPhotoForDate(
     );
   }
   return fin as UploadedPhoto;
+}
+
+// file.type 이 비었거나 octet-stream 이면 파일명 확장자에서 추론.
+function inferMime(file: File): string {
+  const t = (file.type || "").toLowerCase().trim();
+  if (t && t !== "application/octet-stream") return t;
+  const ext = (file.name.toLowerCase().split(".").pop() ?? "").trim();
+  const map: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    heic: "image/heic",
+    heif: "image/heif",
+    gif: "image/gif",
+    mp4: "video/mp4",
+    m4v: "video/x-m4v",
+    mov: "video/quicktime",
+    webm: "video/webm",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 // 에러 → 사용자에게 보일 한국어 메시지.
