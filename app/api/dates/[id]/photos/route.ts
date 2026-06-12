@@ -3,7 +3,6 @@
 // 메모리는 part 단위(5MB) 만 유지 → 큰 영상도 OK.
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { Readable } from "node:stream";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { storage } from "@/lib/storage";
@@ -64,60 +63,41 @@ export async function POST(
     return NextResponse.json({ error: "no_body" }, { status: 400 });
   }
 
-  // Web ReadableStream → Node Readable (AWS SDK lib-storage 는 둘 다 받지만
-  // 일부 버전에서 Web stream 처리가 불안정해 Node Readable 로 변환).
-  // 변환 중 size cap 초과 감시 — 초과 즉시 abort.
-  let received = 0;
-  const abortedRef: { current: { error: string; detail?: string } | null } = {
-    current: null,
-  };
-  const reader = req.body.getReader();
-  const nodeStream = new Readable({
-    async read() {
-      if (abortedRef.current) {
-        this.destroy(new Error(abortedRef.current.error));
-        return;
-      }
-      try {
-        const { value, done } = await reader.read();
-        if (done) {
-          this.push(null);
-          return;
-        }
-        received += value.byteLength;
-        if (received > sizeCap) {
-          abortedRef.current = {
-            error: "too_large",
-            detail: `${Math.round(received / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
-          };
-          this.destroy(new Error("too_large"));
-          return;
-        }
-        this.push(Buffer.from(value));
-      } catch (e: any) {
-        this.destroy(e instanceof Error ? e : new Error(String(e)));
-      }
-    },
-  });
+  // 작은 파일은 그냥 버퍼링 — 메모리 부담 X, stream 변환 버그 회피.
+  // 큰 파일도 80MB 까지는 Railway 메모리 여유 안 — 다 버퍼링.
+  let buffer: Buffer;
+  try {
+    const ab = await req.arrayBuffer();
+    buffer = Buffer.from(ab);
+  } catch (e: any) {
+    console.error("[photos] body read failed", e);
+    return NextResponse.json(
+      { error: "body_parse_failed", detail: e?.message ?? String(e) },
+      { status: 400 },
+    );
+  }
+  if (buffer.byteLength === 0) {
+    return NextResponse.json({ error: "no_file" }, { status: 400 });
+  }
+  if (buffer.byteLength > sizeCap) {
+    return NextResponse.json(
+      {
+        error: "too_large",
+        detail: `${Math.round(buffer.byteLength / 1024 / 1024)}MB > ${Math.round(sizeCap / 1024 / 1024)}MB`,
+      },
+      { status: 400 },
+    );
+  }
 
   let putResult: { url: string; key: string };
   try {
-    putResult = await storage.putStream({
+    putResult = await storage.put({
       path,
-      body: nodeStream,
+      data: buffer,
       contentType: fileType,
     });
   } catch (e: any) {
-    console.error("[photos] stream upload failed", e);
-    if (abortedRef.current) {
-      return NextResponse.json(
-        {
-          error: abortedRef.current.error,
-          detail: abortedRef.current.detail,
-        },
-        { status: 400 },
-      );
-    }
+    console.error("[photos] R2 upload failed", e);
     const name = e?.name ?? e?.Code ?? null;
     const msg = e?.message ?? String(e);
     return NextResponse.json(
