@@ -201,8 +201,8 @@ export default function PhotosSection({
               <video
                 src={lightbox.url}
                 controls
-                autoPlay
                 playsInline
+                preload="none"
                 className="max-w-full max-h-[80vh] object-contain rounded-card"
               />
             ) : (

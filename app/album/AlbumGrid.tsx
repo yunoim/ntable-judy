@@ -40,41 +40,49 @@ function LightboxImage({
       className="flex-1 flex items-center justify-center min-h-0 px-4 pt-4 pb-2 relative"
       onClick={onTap}
     >
-      {!loaded && !errored && (
+      {!loaded && !errored && !isVideoUrl(photo.url) && (
         <span className="absolute text-bg/70 text-sm tracking-widest animate-pulse z-10">
           로딩 중…
         </span>
       )}
       {errored && (
-        <div className="text-bg/80 text-sm text-center">
-          <p>사진을 못 불러왔어요</p>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setErrored(false);
-              setLoaded(false);
-              setRetry((r) => r + 1);
-            }}
-            className="tap mt-2 text-[11px] underline"
-          >
-            다시 시도
-          </button>
+        <div className="text-bg/80 text-sm text-center px-4">
+          <p>{isVideoUrl(photo.url) ? "영상을 못 불러왔어요" : "사진을 못 불러왔어요"}</p>
+          <div className="flex gap-3 justify-center mt-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setErrored(false);
+                setLoaded(false);
+                setRetry((r) => r + 1);
+              }}
+              className="tap text-[11px] underline"
+            >
+              다시 시도
+            </button>
+            <a
+              href={photo.url}
+              target="_blank"
+              rel="noopener"
+              onClick={(e) => e.stopPropagation()}
+              className="tap text-[11px] underline"
+            >
+              새 창에서 열기
+            </a>
+          </div>
         </div>
       )}
       {!errored && isVideoUrl(photo.url) && (
+        // 큰 mp4 의 metadata 로딩이 Samsung Internet 등에서 onError 던지는 케이스
+        // 대비 — preload="none" + autoPlay 제거. 사용자가 ▶ 누를 때만 fetch 시작.
         <video
           key={retry}
           src={src}
           controls
-          autoPlay
-          loop
           playsInline
-          className={[
-            "max-w-full max-h-full object-contain rounded-card transition-opacity duration-200",
-            loaded ? "opacity-100" : "opacity-0",
-          ].join(" ")}
-          onLoadedMetadata={() => setLoaded(true)}
+          preload="none"
+          className="max-w-full max-h-full object-contain rounded-card"
           onError={() => {
             if (retry < 2) {
               setRetry((r) => r + 1);
