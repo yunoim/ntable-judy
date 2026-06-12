@@ -153,38 +153,30 @@ export default function PhotosSection({
         </label>
       ) : (
         <div className="grid grid-cols-3 gap-1.5">
-          {photos.map((p) => {
-            const isVideo = isVideoUrl(p.url);
-            return (
+          {photos.map((p) =>
+            isVideoUrl(p.url) ? (
+              <PhotoVideoCell
+                key={p.id}
+                url={p.url}
+                caption={p.caption}
+                onOpen={() => setLightbox(p)}
+              />
+            ) : (
               <button
                 key={p.id}
                 onClick={() => setLightbox(p)}
-                className={[
-                  "tap relative aspect-square overflow-hidden rounded-card group",
-                  isVideo ? "bg-fg/85 flex items-center justify-center" : "bg-bg-warm/40",
-                ].join(" ")}
+                className="tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
               >
-                {isVideo ? (
-                  <>
-                    <span className="w-10 h-10 rounded-full bg-bg/95 flex items-center justify-center shadow-lg">
-                      <span className="text-fg text-base ml-0.5">▶</span>
-                    </span>
-                    <span className="absolute right-1.5 bottom-1.5 bg-bg/15 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
-                      🎞 영상
-                    </span>
-                  </>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={p.url}
-                    alt={p.caption ?? ""}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    loading="lazy"
-                  />
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.url}
+                  alt={p.caption ?? ""}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  loading="lazy"
+                />
               </button>
-            );
-          })}
+            ),
+          )}
         </div>
       )}
 
@@ -244,5 +236,52 @@ export default function PhotosSection({
         </div>
       )}
     </section>
+  );
+}
+
+// 영상 셀 — 첫 프레임 시도, 실패 시 ▶ placeholder.
+function PhotoVideoCell({
+  url,
+  caption,
+  onOpen,
+}: {
+  url: string;
+  caption: string | null;
+  onOpen: () => void;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (errored) {
+    return (
+      <button
+        onClick={onOpen}
+        className="tap relative aspect-square overflow-hidden rounded-card bg-fg/85 flex items-center justify-center group"
+        aria-label={`영상 — ${caption ?? "재생"}`}
+      >
+        <span className="w-10 h-10 rounded-full bg-bg/95 flex items-center justify-center shadow-lg">
+          <span className="text-fg text-base ml-0.5">▶</span>
+        </span>
+        <span className="absolute right-1.5 bottom-1.5 bg-bg/15 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
+          🎞 영상
+        </span>
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onOpen}
+      className="tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
+    >
+      <video
+        src={url}
+        muted
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        onError={() => setErrored(true)}
+      />
+      <span className="absolute right-1.5 bottom-1.5 bg-fg/70 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
+        ▶
+      </span>
+    </button>
   );
 }
