@@ -56,23 +56,21 @@ async function probe(
     const contentType = res.headers.get("content-type");
     if (isVideo) {
       // 영상은 sharp 디코드 X. 사이즈 + magic byte (ftyp box) 만 확인.
-      // mp4: offset 4 부터 "ftyp" 가 있으면 일단 유효한 mp4.
-      // brand (offset 8~12) 로 코덱 추정: isom/mp41/mp42 = H.264, hev1/hvc1 = HEVC.
-      // ftyp 가 isom 같은 generic 이면 실제 트랙 코덱은 stsd 안의 atom 으로 결정 —
-      // 처음 8KB 안에서 hvc1/hev1/avc1 signature 찾아 추가 확인.
+      // mp4 코덱 정확히 찾으려면 trak→stsd 안의 hvc1/avc1 atom 확인 필요.
+      // moov atom 이 파일 끝쪽에 있을 수도 있어서 (faststart 미설정) 전체 스캔.
       const hasFtyp = buf.length > 12 && buf.slice(4, 8).toString("ascii") === "ftyp";
       const brand = hasFtyp ? buf.slice(8, 12).toString("ascii") : null;
-      const scanWindow = buf.slice(0, Math.min(buf.length, 8192));
-      const hasHvc1 = scanWindow.includes(Buffer.from("hvc1"));
-      const hasHev1 = scanWindow.includes(Buffer.from("hev1"));
-      const hasAvc1 = scanWindow.includes(Buffer.from("avc1"));
+      const hasHvc1 = buf.includes(Buffer.from("hvc1"));
+      const hasHev1 = buf.includes(Buffer.from("hev1"));
+      const hasAvc1 = buf.includes(Buffer.from("avc1"));
+      const hasAvc3 = buf.includes(Buffer.from("avc3"));
       const codecGuess = !hasFtyp
         ? "mp4-no-ftyp"
-        : hasHvc1 || hasHev1 || brand === "hvc1" || brand === "hev1" || brand === "heic"
+        : hasHvc1 || hasHev1
           ? `HEVC (H.265) — Chrome 일부 device 만 재생 (brand=${brand}, hvc1=${hasHvc1}, hev1=${hasHev1})`
-          : hasAvc1
-            ? `H.264 — 거의 모든 브라우저 OK (brand=${brand}, avc1=true)`
-            : `unknown codec (brand=${brand}, no hvc1/hev1/avc1 signature)`;
+          : hasAvc1 || hasAvc3
+            ? `H.264 — 거의 모든 브라우저 OK (brand=${brand}, avc1=${hasAvc1}, avc3=${hasAvc3})`
+            : `unknown codec (brand=${brand}, no hvc1/hev1/avc1/avc3 signature)`;
       return {
         url,
         status: res.status,
