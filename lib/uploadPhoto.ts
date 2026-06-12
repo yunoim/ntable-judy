@@ -112,6 +112,8 @@ export function photoUploadErrorMessage(e: unknown): string {
       return `지원 안 하는 형식 (${e.detail ?? "?"})`;
     if (e.error === "network_failed")
       return `네트워크 연결 실패 — 다시 시도해주세요 (${e.detail ?? ""})`;
+    if (e.error === "hevc_unsupported")
+      return "HEVC (H.265) 코덱 영상이라 브라우저에서 재생이 안 돼요. 갤럭시 카메라 → 설정 → 동영상 → '호환성 우선' 으로 바꾸고 다시 찍으면 H.264 로 저장돼요.";
     if (e.error === "upload_failed")
       return `업로드 실패: ${e.detail ?? "원인 불명"}`;
     if (e.error === "db_failed")

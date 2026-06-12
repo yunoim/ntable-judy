@@ -89,6 +89,21 @@ export async function POST(
     );
   }
 
+  // mp4 면 ftyp brand 검사 — HEVC (H.265) 는 브라우저 디코더 호환성 낮음.
+  // 업로드 단계에서 거부 + 안내 메시지 — 깨진 채로 R2 에 쌓이는 거 방지.
+  if (check.isVideo && fileType === "video/mp4") {
+    const hevc = detectHevc(buffer);
+    if (hevc) {
+      return NextResponse.json(
+        {
+          error: "hevc_unsupported",
+          detail: `브랜드: ${hevc}. Chrome 등 브라우저가 디코드 못 함.`,
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   let putResult: { url: string; key: string };
   try {
     putResult = await storage.put({
@@ -145,4 +160,21 @@ export async function POST(
       { status: 500 },
     );
   }
+}
+
+// mp4 의 ftyp box 에서 major brand + compatible brands 추출 → HEVC 식별.
+// hvc1/hev1 = HEVC (H.265). Chrome 디코더 호환성 낮아 거부 대상.
+function detectHevc(buf: Buffer): string | null {
+  if (buf.length < 16) return null;
+  if (buf.slice(4, 8).toString("ascii") !== "ftyp") return null;
+  const HEVC = new Set(["hvc1", "hev1", "heic", "heix", "hvcC"]);
+  const major = buf.slice(8, 12).toString("ascii");
+  if (HEVC.has(major)) return major;
+  // compatible brands — ftyp box 의 minor version (12~16) 다음부터 끝까지.
+  // box size 가 너무 크지 않게 처음 64바이트만 스캔.
+  for (let i = 16; i + 4 <= Math.min(buf.length, 64); i += 4) {
+    const cb = buf.slice(i, i + 4).toString("ascii");
+    if (HEVC.has(cb)) return cb;
+  }
+  return null;
 }
