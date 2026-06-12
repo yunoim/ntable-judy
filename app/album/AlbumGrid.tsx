@@ -168,20 +168,21 @@ function AlbumCell({
   }
 
   if (isVideoUrl(photo.url)) {
-    // 영상 (mp4/mov): 썸네일은 첫 프레임 자동 표시. autoPlay 안 함 (그리드 다수).
+    // 그리드 셀에선 <video> 자체를 안 띄움 — Samsung Internet 등에서
+    // preload=metadata 가 onError 던지고 retry 도 실패해서 "사진 누락" 으로
+    // 빠지는 케이스 있음. 정적 플레이스홀더 + ▶ 만 표시.
+    // 클릭하면 라이트박스의 <video controls> 가 정상 재생.
     return (
-      <button onClick={onOpen} className={baseClass}>
-        <video
-          key={retry}
-          src={src}
-          muted
-          playsInline
-          preload="metadata"
-          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-          onError={handleError}
-        />
-        <span className="absolute right-1.5 bottom-1.5 bg-fg/70 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
-          ▶
+      <button
+        onClick={onOpen}
+        className={`${baseClass} bg-fg/85 flex items-center justify-center`}
+        aria-label={`영상 — ${photo.dateTitle}`}
+      >
+        <span className="w-10 h-10 rounded-full bg-bg/95 flex items-center justify-center shadow-lg">
+          <span className="text-fg text-base ml-0.5">▶</span>
+        </span>
+        <span className="absolute right-1.5 bottom-1.5 bg-bg/15 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
+          🎞 영상
         </span>
       </button>
     );

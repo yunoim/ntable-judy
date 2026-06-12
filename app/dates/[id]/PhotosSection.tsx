@@ -6,6 +6,7 @@ import {
   uploadPhotoForDate,
   photoUploadErrorMessage,
 } from "@/lib/uploadPhoto";
+import { isVideoUrl } from "@/lib/mediaType";
 
 type Photo = {
   id: number;
@@ -152,21 +153,38 @@ export default function PhotosSection({
         </label>
       ) : (
         <div className="grid grid-cols-3 gap-1.5">
-          {photos.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setLightbox(p)}
-              className="tap relative aspect-square overflow-hidden rounded-card bg-bg-warm/40 group"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.url}
-                alt={p.caption ?? ""}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
-              />
-            </button>
-          ))}
+          {photos.map((p) => {
+            const isVideo = isVideoUrl(p.url);
+            return (
+              <button
+                key={p.id}
+                onClick={() => setLightbox(p)}
+                className={[
+                  "tap relative aspect-square overflow-hidden rounded-card group",
+                  isVideo ? "bg-fg/85 flex items-center justify-center" : "bg-bg-warm/40",
+                ].join(" ")}
+              >
+                {isVideo ? (
+                  <>
+                    <span className="w-10 h-10 rounded-full bg-bg/95 flex items-center justify-center shadow-lg">
+                      <span className="text-fg text-base ml-0.5">▶</span>
+                    </span>
+                    <span className="absolute right-1.5 bottom-1.5 bg-bg/15 text-bg text-[9px] px-1.5 py-0.5 rounded-full font-display">
+                      🎞 영상
+                    </span>
+                  </>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.url}
+                    alt={p.caption ?? ""}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -179,12 +197,22 @@ export default function PhotosSection({
             className="max-w-full max-h-full flex flex-col items-center gap-3"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.url}
-              alt={lightbox.caption ?? ""}
-              className="max-w-full max-h-[80vh] object-contain rounded-card"
-            />
+            {isVideoUrl(lightbox.url) ? (
+              <video
+                src={lightbox.url}
+                controls
+                autoPlay
+                playsInline
+                className="max-w-full max-h-[80vh] object-contain rounded-card"
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={lightbox.url}
+                alt={lightbox.caption ?? ""}
+                className="max-w-full max-h-[80vh] object-contain rounded-card"
+              />
+            )}
             <div className="text-bg text-xs text-center serif-italic">
               {lightbox.uploadedBy.emoji ?? "👤"} {lightbox.uploadedBy.nickname}
               {" · "}
