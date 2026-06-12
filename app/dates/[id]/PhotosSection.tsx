@@ -217,6 +217,16 @@ export default function PhotosSection({
               {lightbox.caption && <p className="mt-1">{lightbox.caption}</p>}
             </div>
             <div className="flex gap-3">
+              {isVideoUrl(lightbox.url) && (
+                <a
+                  href={lightbox.url}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-xs text-bg/90 underline"
+                >
+                  ↗ 새 창에서 열기
+                </a>
+              )}
               {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
                 <button
                   onClick={() => remove(lightbox.id)}

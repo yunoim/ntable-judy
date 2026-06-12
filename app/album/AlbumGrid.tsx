@@ -364,6 +364,22 @@ export default function AlbumGrid({
                   <span className="text-fg-faint text-sm">→</span>
                 </Link>
               </li>
+              {isVideoUrl(lightbox.url) && (
+                <li>
+                  <a
+                    href={lightbox.url}
+                    target="_blank"
+                    rel="noopener"
+                    className="tap flex items-center gap-3 px-5 py-3 hover:bg-bg-warm"
+                  >
+                    <span className="text-base">↗</span>
+                    <p className="font-display text-sm flex-1">
+                      새 창에서 영상 열기
+                    </p>
+                    <span className="text-fg-faint text-xs">native</span>
+                  </a>
+                </li>
+              )}
               {(lightbox.uploadedBy.id === meId || meRole === "admin") && (
                 <li>
                   <button
