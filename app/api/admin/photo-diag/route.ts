@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isVideoUrl } from "@/lib/mediaType";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -23,6 +24,7 @@ type Diag = {
   height: number | null;
   format: string | null;
   decodable: boolean;
+  isVideo: boolean;
   error?: string;
 };
 
@@ -31,6 +33,7 @@ async function probe(
 ): Promise<
   Omit<Diag, "id" | "dateId" | "dateNumber" | "dateTitle" | "key">
 > {
+  const isVideo = isVideoUrl(url);
   try {
     const res = await fetch(url, { cache: "no-store", redirect: "follow" });
     if (!res.ok) {
@@ -43,6 +46,7 @@ async function probe(
         height: null,
         format: null,
         decodable: false,
+        isVideo,
         error: `HTTP ${res.status}`,
       };
     }
@@ -50,6 +54,28 @@ async function probe(
     const buf = Buffer.from(ab);
     const size = buf.length;
     const contentType = res.headers.get("content-type");
+    if (isVideo) {
+      // 영상은 sharp 디코드 X. 사이즈 + magic byte (ftyp box) 만 확인.
+      // mp4: offset 4 부터 "ftyp" 가 있으면 일단 유효한 mp4.
+      const hasFtyp = buf.length > 12 && buf.slice(4, 8).toString("ascii") === "ftyp";
+      return {
+        url,
+        status: res.status,
+        contentType,
+        size,
+        width: null,
+        height: null,
+        format: hasFtyp ? "mp4-ftyp" : null,
+        decodable: size > 0 && (hasFtyp || size > 1024),
+        isVideo,
+        error:
+          size === 0
+            ? "empty_body"
+            : hasFtyp
+              ? undefined
+              : "no_ftyp_marker (다른 영상 컨테이너일 수 있음)",
+      };
+    }
     try {
       const meta = await sharp(buf).metadata();
       return {
@@ -61,6 +87,7 @@ async function probe(
         height: meta.height ?? null,
         format: meta.format ?? null,
         decodable: true,
+        isVideo,
       };
     } catch (e: any) {
       return {
@@ -72,6 +99,7 @@ async function probe(
         height: null,
         format: null,
         decodable: false,
+        isVideo,
         error: `decode_failed: ${e?.message ?? "unknown"}`,
       };
     }
@@ -85,6 +113,7 @@ async function probe(
       height: null,
       format: null,
       decodable: false,
+      isVideo,
       error: e?.message ?? "unknown",
     };
   }
@@ -134,10 +163,24 @@ export async function GET() {
   const decodable = results.filter((r) => r.decodable);
   const broken = results.filter((r) => !r.decodable);
 
+  // R2 env 진단 (값은 노출 X, 존재 여부만).
+  const env = {
+    R2_ACCOUNT_ID: !!process.env.R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID: !!process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: !!process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME: !!process.env.R2_BUCKET_NAME,
+    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL ?? null,
+  };
+
+  // 최신 5개만 따로 표기 — 마지막 업로드 디버깅 편의.
+  const recent = results.slice(-5).reverse();
+
   return NextResponse.json({
+    env,
     total: results.length,
     decodableCount: decodable.length,
     brokenCount: broken.length,
+    recent,
     broken,
     decodable: decodable.map((r) => ({
       id: r.id,
@@ -146,7 +189,7 @@ export async function GET() {
       width: r.width,
       height: r.height,
       format: r.format,
+      isVideo: r.isVideo,
     })),
-    r2PublicUrl: process.env.R2_PUBLIC_URL ?? null,
   });
 }
