@@ -91,13 +91,13 @@ export const DAILY_QUESTIONS: DailyQ[] = [
   { text: "오늘 들었던 노래 중 한 곡만.", cat: "mundane" },
 
   // 마음/내면
-  { text: "최근에 부끄러웠던 작은 실수 하나?", cat: "mind" },
-  { text: "요즘 가장 자주 하는 걱정은?", cat: "mind" },
+  { text: "최근에 스스로 잘했다고 느낀 순간 하나?", cat: "mind" },
+  { text: "요즘 가장 자주 떠오르는 생각은?", cat: "mind" },
   { text: "지금 가장 기다리는 것은?", cat: "mind" },
-  { text: "최근에 누구한테 미안한 마음이 들었어?", cat: "mind" },
+  { text: "최근에 누구한테 고마운 마음이 들었어?", cat: "mind" },
   { text: "스스로가 멋있다고 느낀 최근 순간?", cat: "mind" },
-  { text: "요즘 잘 안 풀리는 거 하나?", cat: "mind" },
-  { text: "포기하고 싶을 때 너를 붙잡는 건?", cat: "mind" },
+  { text: "요즘 잘 풀리는 거 하나?", cat: "mind" },
+  { text: "에너지가 필요할 때 너에게 힘이 되는 건?", cat: "mind" },
   { text: "최근에 가장 크게 웃은 게 언제야?", cat: "mind" },
   { text: "오늘 하루 점수를 매긴다면 10점 만점에?", cat: "mind" },
   { text: "오늘의 나, 한 마디 칭찬해준다면?", cat: "mind" },
@@ -110,7 +110,7 @@ export const DAILY_QUESTIONS: DailyQ[] = [
   { text: "가족 중 가장 닮은 사람 누구야?", cat: "past" },
   { text: "어릴 때 장래희망과 지금, 어느 정도 가까워?", cat: "past" },
   { text: "가장 좋아하는 영화 한 편만 꼽으면?", cat: "past" },
-  { text: "마지막으로 운 게 언제야?", cat: "past" },
+  { text: "최근에 가장 마음이 따뜻해진 순간은?", cat: "past" },
   { text: "최근에 받은 칭찬 중 가장 기쁜 거?", cat: "past" },
   { text: "다음 생에는 뭘로 태어나고 싶어?", cat: "past" },
 
@@ -147,7 +147,7 @@ export const DAILY_QUESTIONS: DailyQ[] = [
   { text: "내가 자주 하는 말 TOP 3는?", cat: "play" },
   { text: "어릴 때 별명 뭐였어? 왜?", cat: "play" },
   { text: "나랑 절대 안 어울리는 직업 있어?", cat: "play" },
-  { text: "솔직히 내가 입었던 옷 중에 별로였던 거 있어?", cat: "play" },
+  { text: "솔직히 내가 자주 입었으면 하는 스타일 있어?", cat: "play" },
   { text: "넌 내가 뭐 할 때 질투 나?", cat: "play" },
 
   // 나를 맞춰 봐 퀴즈 (guess)
@@ -199,7 +199,8 @@ export function pickQuestionForDate(dateStr: string): string {
 }
 
 // 최근 14일 텍스트 + 최근 3일 카테고리 제외 후 결정적 픽.
-// DB read 후 cache hit 이면 그대로 반환 — 이미 결정된 질문 안 바꿈.
+// DB cache hit 시: 풀에 여전히 있으면 그대로, 풀에서 빠진 (예: 부정적 톤이라
+// 제거한) 질문이면 새로 결정해 update — 자동 갱신.
 export async function getOrCreateDailyQuestion(
   dateStr: string,
   prisma: import("@prisma/client").PrismaClient,
@@ -209,7 +210,9 @@ export async function getOrCreateDailyQuestion(
     const existed = await prisma.dailyQuestion.findUnique({
       where: { date: dateStr },
     });
-    if (existed) return existed.question;
+    const existedInPool =
+      existed && DAILY_QUESTIONS.some((q) => q.text === existed.question);
+    if (existedInPool) return existed!.question;
 
     // 최근 14일치 질문 fetch.
     const from = shiftKstDateStr(dateStr, -14);
@@ -246,8 +249,10 @@ export async function getOrCreateDailyQuestion(
     const chosen = pool[idx].text;
 
     try {
-      await prisma.dailyQuestion.create({
-        data: { date: dateStr, question: chosen },
+      await prisma.dailyQuestion.upsert({
+        where: { date: dateStr },
+        create: { date: dateStr, question: chosen },
+        update: { question: chosen },
       });
     } catch {
       const again = await prisma.dailyQuestion
