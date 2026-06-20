@@ -74,14 +74,16 @@ function LightboxImage({
         </div>
       )}
       {!errored && isVideoUrl(photo.url) && (
-        // 큰 mp4 의 metadata 로딩이 Samsung Internet 등에서 onError 던지는 케이스
-        // 대비 — preload="none" + autoPlay 제거. 사용자가 ▶ 누를 때만 fetch 시작.
+        // 라이트박스 진입 시 자동재생. autoPlay 정책상 muted 필요 (모바일 Chrome
+        // 은 unmuted autoPlay 차단). 사용자가 controls 의 음소거 해제 가능.
         <video
           key={retry}
           src={src}
           controls
+          autoPlay
+          muted
           playsInline
-          preload="none"
+          preload="metadata"
           className="max-w-full max-h-full object-contain rounded-card"
           onError={() => {
             if (retry < 2) {
